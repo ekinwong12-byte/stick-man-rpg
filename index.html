@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stickman RPG: Drip & Destruction</title>
+    <title>Stickman RPG: Loot & Clarity</title>
     <style>
         body { margin: 0; background: #0b0c10; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; font-family: 'Arial Black', sans-serif; color: white; user-select: none; touch-action: none; }
 
@@ -30,19 +30,23 @@
         body.fatality-mode .top-bar, body.fatality-mode .bars-container, body.fatality-mode .drone, 
         body.fatality-mode .prop, body.fatality-mode #mobile-controls { opacity: 0 !important; transition: opacity 0.2s; pointer-events: none; }
         
-        body.fatality-mode .stickman { filter: brightness(200%) grayscale(100%) drop-shadow(0 0 15px white) !important; z-index: 1000; transition: transform 0.1s, left 0.1s, bottom 0.1s !important; }
+        body.fatality-mode .stickman { filter: brightness(200%) grayscale(100%) drop-shadow(0 0 20px white) !important; z-index: 1000; transition: transform 0.05s, left 0.05s, bottom 0.05s !important; }
         
-        .fatality-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0.1); font-size: 6rem; color: #e74c3c; text-shadow: 0 0 30px #c0392b, 0 5px 0 #fff; opacity: 0; z-index: 1001; font-style: italic; pointer-events: none; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .fatality-text { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%) scale(0.1); font-size: 6rem; color: #e74c3c; text-shadow: 0 0 30px #c0392b, 0 5px 0 #fff; opacity: 0; z-index: 1001; font-style: italic; pointer-events: none; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .show-fatality { opacity: 1 !important; transform: translate(-50%, -50%) scale(1) !important; }
+
+        .slash-mark { position: absolute; width: 250px; height: 4px; background: #fff; box-shadow: 0 0 20px #00d2ff, 0 0 40px #00d2ff; z-index: 1005; opacity: 1; animation: slash-fade 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards; transform-origin: center; pointer-events: none; }
+        @keyframes slash-fade { 0% { transform: scaleX(0) rotate(var(--rot)); opacity: 1; } 50% { transform: scaleX(1) rotate(var(--rot)); opacity: 1; } 100% { transform: scaleX(1.5) rotate(var(--rot)); opacity: 0; } }
+        
+        .meteor-drop { filter: brightness(300%) sepia(1) hue-rotate(-50deg) saturate(10) drop-shadow(0 0 40px red) !important; transform: scale(1.8) rotate(180deg) !important; }
         
         @keyframes fatality-flurry {
             0%, 100% { transform: scaleX(var(--facing, 1)) translateX(0); }
-            20% { transform: scaleX(var(--facing, 1)) translateX(80px) translateY(-50px); }
-            40% { transform: scaleX(calc(var(--facing, 1) * -1)) translateX(-80px) translateY(50px); }
-            60% { transform: scaleX(var(--facing, 1)) translateX(40px) translateY(-80px); }
-            80% { transform: scaleX(calc(var(--facing, 1) * -1)) translateX(-40px) translateY(0); }
+            25% { transform: scaleX(var(--facing, 1)) translateX(80px) translateY(-50px) scale(1.2); }
+            50% { transform: scaleX(calc(var(--facing, 1) * -1)) translateX(-80px) translateY(50px) scale(1.2); }
+            75% { transform: scaleX(var(--facing, 1)) translateX(40px) translateY(-80px) scale(1.2); }
         }
-        .fatality-strikes { animation: fatality-flurry 0.2s infinite; }
+        .fatality-strikes { animation: fatality-flurry 0.15s infinite; filter: blur(2px) drop-shadow(0 0 20px #f1c40f) !important; }
 
         /* --- STAGE HAZARDS --- */
         .hazard-warning { position: absolute; bottom: 0; width: 60px; height: 10px; background: rgba(231, 76, 60, 0.5); border: 1px solid red; z-index: 1; animation: flash-warning 0.2s infinite; }
@@ -55,6 +59,7 @@
         .slow-mo .stickman, .slow-mo .limb, .slow-mo .torso, .slow-mo .head, .slow-mo .lower { transition-duration: 1.5s !important; transition-timing-function: cubic-bezier(0.1, 0.9, 0.2, 1) !important; }
         @keyframes shake { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-10px, 5px); } 40% { transform: translate(10px, -5px); } 60% { transform: translate(-10px, -5px); } 80% { transform: translate(10px, 5px); } }
         .shake-screen { animation: shake 0.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+        .heavy-shake { animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
 
         /* --- TOP UI & GOD MODE --- */
         .top-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; box-sizing: border-box; z-index: 200; flex-wrap: wrap; gap: 10px; transition: opacity 0.5s; }
@@ -70,14 +75,15 @@
 
         /* --- THE DOJO SHOP UI --- */
         #shop-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 12, 16, 0.95); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px); padding: 10px; box-sizing: border-box; }
-        .shop-panel { background: #1f2833; padding: 20px; border-radius: 15px; border: 2px solid #66fcf1; box-shadow: 0 0 30px rgba(102, 252, 241, 0.2); width: 100%; max-width: 600px; text-align: center; max-height: 95vh; overflow-y: auto; }
+        .shop-panel { background: #1f2833; padding: 20px; border-radius: 15px; border: 2px solid #66fcf1; box-shadow: 0 0 30px rgba(102, 252, 241, 0.2); width: 100%; max-width: 650px; text-align: center; max-height: 95vh; overflow-y: auto; }
         .shop-panel h1 { color: #66fcf1; margin-top: 0; text-transform: uppercase; letter-spacing: 2px; font-size: 1.5rem; }
-        .ultimate-selector { background: #0b0c10; padding: 10px; border-radius: 8px; border: 1px solid #f1c40f; margin-bottom: 10px; }
+        .ultimate-selector { background: #0b0c10; padding: 10px; border-radius: 8px; border: 1px solid #f1c40f; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
         .ultimate-selector select { background: #1f2833; color: #f1c40f; border: 1px solid #f1c40f; padding: 8px; font-size: 0.9rem; font-family: 'Arial Black', sans-serif; border-radius: 5px; width: 100%; cursor: pointer; outline: none; margin-top: 5px; }
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .shop-item { background: #0b0c10; padding: 10px; border-radius: 8px; border-left: 4px solid #45a29e; text-align: left; display: flex; flex-direction: column; justify-content: space-between; }
         .shop-item.relic { border-left-color: #f1c40f; }
         .shop-item.cosmetic { border-left-color: #9b59b6; }
+        .shop-item.utility { border-left-color: #e74c3c; }
         .shop-item p { margin: 0; font-size: 0.75rem; color: #c5c6c7; }
         .shop-item h3 { margin: 0 0 5px 0; color: #fff; font-size: 0.9rem; }
         .buy-btn { background: #f1c40f; color: #000; border: none; padding: 5px; font-weight: bold; border-radius: 3px; cursor: pointer; margin-top: 5px; }
@@ -100,7 +106,7 @@
         .combo-counter { position: absolute; top: 60px; font-size: 3rem; color: #f1c40f; text-shadow: 0 5px 0 #c0392b, 0 0 20px #f1c40f; opacity: 0; transform: scale(0.5); transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; font-style: italic; pointer-events: none; }
         #combo-p1 { left: 10%; } #combo-p2 { right: 10%; }
         .show-combo { opacity: 1; transform: scale(1) rotate(-5deg); }
-        #skill-display { position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%) scale(0.5); font-size: 3.5rem; font-weight: 900; color: #fff; text-shadow: 0 0 20px #e74c3c, 0 5px 0 #c0392b; opacity: 0; z-index: 100; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; pointer-events: none; }
+        #skill-display { position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%) scale(0.5); font-size: 3.5rem; font-weight: 900; color: #fff; text-shadow: 0 0 20px #e74c3c, 0 5px 0 #c0392b; opacity: 0; z-index: 100; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; pointer-events: none; width: 100%; }
         .show-skill { transform: translate(-50%, -50%) scale(1.2) !important; opacity: 1 !important; }
 
         /* --- PARTICLES, PROPS & ELEMENTS --- */
@@ -114,6 +120,10 @@
 
         @keyframes aura-pulse { 0%, 100% { filter: drop-shadow(0 0 5px var(--aura-color)); } 50% { filter: drop-shadow(0 0 25px var(--aura-color)) brightness(1.5); } }
         .charging { animation: aura-pulse 0.8s infinite; }
+
+        /* NEW: GIFT PROP */
+        .gift-prop { width: 35px; height: 35px; background: #e74c3c; border: 2px solid #f1c40f; box-shadow: 0 0 15px #f1c40f; border-radius: 4px; display: flex; justify-content: center; align-items: center; cursor: pointer; animation: pulse-btn 1s infinite; }
+        .gift-prop::before { content: '🎁'; font-size: 22px; }
 
         .prop { position: absolute; bottom: 0; z-index: 5; transition: top 0.3s ease-in; }
         .box-prop { width: 30px; height: 30px; background: #8e44ad; border: 2px solid #9b59b6; box-shadow: 0 5px 15px rgba(0,0,0,0.5); border-radius: 4px; }
@@ -133,28 +143,38 @@
         .on-fire { filter: sepia(1) hue-rotate(-50deg) saturate(3) !important; }
         .frozen { filter: hue-rotate(180deg) saturate(2) brightness(1.5) !important; }
 
-        /* --- SKELETON WITH HATS & ENEMIES --- */
+        /* --- SKELETON WITH ROLES & ENEMIES --- */
         .stickman { position: absolute; display: flex; flex-direction: column; align-items: center; transform-origin: bottom center; z-index: 10; transform: scaleX(var(--facing, 1)) translateX(var(--shift, 0)); transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), left 0.2s ease-out, right 0.2s ease-out, filter 0.1s; }
         .stickman::before { content: ''; position: absolute; bottom: 0; width: 40px; height: 8px; background: rgba(0,0,0,0.8); border-radius: 50%; filter: blur(3px); z-index: -1; transform: translateY(calc(var(--y) * 1px)) scale(calc(1 - var(--y) / 200)); transition: opacity 0.5s; }
         
+        /* NEW: PLAYER INDICATOR */
+        .player-indicator { position: absolute; top: -85px; font-size: 14px; font-weight: bold; color: #f1c40f; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 6px; border: 2px solid #f1c40f; animation: bounce-indicator 1s infinite; white-space: nowrap; z-index: 20; box-shadow: 0 0 10px #f1c40f; }
+        @keyframes bounce-indicator { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+        /* Player Role Filters */
+        .role-assassin { filter: hue-rotate(-100deg); }
+        .role-tank { filter: hue-rotate(40deg) saturate(2); }
+        .role-mage { filter: hue-rotate(90deg) drop-shadow(0 0 5px #00d2ff); }
+        .role-witch { filter: hue-rotate(270deg) drop-shadow(0 0 5px #9b59b6); }
+        .role-archer { filter: hue-rotate(150deg) drop-shadow(0 0 5px #2ecc71); }
+
         .enemy-ninja { filter: hue-rotate(-100deg); transform: scaleX(calc(var(--facing, -1) * 0.8)) scaleY(0.8) translateX(var(--shift, 0)) !important; }
         .enemy-tank { filter: hue-rotate(40deg) saturate(2); transform: scaleX(calc(var(--facing, -1) * 1.2)) scaleY(1.1) translateX(var(--shift, 0)) !important; }
         .boss-mode { transform: scale(calc(var(--facing, -1) * 1.5), 1.5) translateX(var(--shift, 0)) !important; filter: brightness(0.6) sepia(1) hue-rotate(-50deg) saturate(5) drop-shadow(0 0 10px red); }
 
-        .bars-container { position: absolute; top: -45px; width: 60px; display: flex; flex-direction: column; gap: 4px; transform: scaleX(var(--facing, 1)); transition: opacity 0.5s; }
+        .bars-container { position: absolute; top: -45px; width: 60px; display: flex; flex-direction: column; gap: 4px; transform: scaleX(var(--facing, 1)); transition: opacity 0.5s; z-index: 100; }
         .enemy-ninja .bars-container { transform: scaleX(calc(var(--facing, -1) * -1)) scale(1.2); }
         .enemy-tank .bars-container { transform: scaleX(calc(var(--facing, -1) * -1)) scale(0.8); }
         .boss-mode .bars-container { top: -60px; transform: scaleX(calc(var(--facing, -1) * -1)) scale(0.6); } 
         
-        .bar-bg { position: relative; width: 100%; height: 10px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .bar-bg { position: relative; width: 100%; height: 12px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         .hp-bar { position: absolute; left: 0; height: 100%; width: 100%; background: #2ecc71; transition: width 0.2s ease, background-color 0.3s; z-index: 1; }
-        .hp-text { position: relative; z-index: 2; font-size: 8px; color: white; font-family: sans-serif; text-shadow: 0 1px 2px black; font-weight: bold; }
+        .hp-text { position: relative; z-index: 2; font-size: 9px; color: white; font-family: sans-serif; text-shadow: 0 1px 2px black; font-weight: bold; }
         
         .mp-bar { position: absolute; left: 0; height: 100%; width: 100%; background: #00d2ff; transition: width 0.2s ease; box-shadow: 0 0 5px #00d2ff; }
 
         .head { width: 35px; height: 35px; border: 6px solid; border-radius: 50%; position: relative; z-index: 3; box-sizing: border-box; transform-origin: bottom center; transition: all 0.3s ease; }
         
-        /* THE DRIP (HATS) */
         .hat { position: absolute; display: none; z-index: 10; }
         .hat-straw { display: block; width: 50px; height: 12px; background: #e67e22; border-radius: 50%; top: -10px; left: -13px; border: 2px solid #d35400; transform: rotate(-5deg); }
         .hat-straw::after { content: ''; position: absolute; top: -12px; left: 12px; width: 22px; height: 15px; background: #e67e22; border-radius: 50% 50% 0 0; border: 2px solid #d35400; border-bottom: none; }
@@ -175,27 +195,37 @@
         .front-leg { transform: rotate(20deg); } .front-leg .lower { transform: rotate(10deg); }
         .back-leg { transform: rotate(-20deg); } .back-leg .lower { transform: rotate(10deg); }
 
-        .debug-mode .head, .debug-mode .torso, .debug-mode .limb, .debug-mode .lower { background-color: rgba(46, 204, 113, 0.6) !important; box-shadow: 0 0 5px #2ecc71 !important; }
-        .debug-mode .head { border-color: rgba(46, 204, 113, 0.6) !important; }
-        .debug-mode .palm .front-arm .lower, .debug-mode .crane .front-leg .lower, .debug-mode .uppercut .front-arm .lower, .debug-mode .spin-kick .back-leg .lower, .debug-mode .dragon-punch .front-arm .lower, .debug-mode .shadow-kick .front-leg .lower, .debug-mode .omega-burst .front-arm .lower, .debug-mode .titan-smash .front-arm .lower, .debug-mode .phantom-strike .front-leg .lower { background-color: rgba(231, 76, 60, 0.9) !important; box-shadow: 0 0 15px red !important; border-color: red !important; }
-
-        /* --- ACTIONS --- */
-        .palm { --shift: 80px; } .palm .torso { transform: rotate(20deg); } .palm .front-arm { transform: rotate(110deg); } .palm .front-arm .lower { transform: rotate(0deg); } 
-        .crane { --shift: 70px; } .crane .torso { transform: rotate(-10deg); } .crane .front-leg { transform: rotate(100deg); } .crane .front-leg .lower { transform: rotate(-80deg); } 
-        .uppercut { --shift: 60px; } .uppercut .torso { transform: rotate(-10deg); } .uppercut .front-arm { transform: rotate(160deg); } .uppercut .front-arm .lower { transform: rotate(0deg); }
-        .spin-kick { --shift: 70px; } .spin-kick .torso { transform: rotate(20deg); } .spin-kick .back-leg { transform: rotate(140deg); } .spin-kick .back-leg .lower { transform: rotate(0deg); }
-        .dragon-punch { --shift: 90px; } .dragon-punch .torso { transform: rotate(-10deg); } .dragon-punch .front-arm { transform: rotate(180deg); } .dragon-punch .front-arm .lower { transform: rotate(0deg); } .dragon-punch .front-leg { transform: rotate(60deg); } 
-        .shadow-kick { --shift: 150px; } .shadow-kick .torso { transform: rotate(20deg); } .shadow-kick .front-leg { transform: rotate(90deg); } .shadow-kick .front-leg .lower { transform: rotate(0deg); } .shadow-kick .back-leg { transform: rotate(-60deg); } .shadow-kick .front-arm { transform: rotate(-40deg); }
+        /* --- REMASTERED ACTION POSES --- */
+        .palm { --shift: 80px; } .palm .torso { transform: rotate(25deg); } .palm .front-arm { transform: rotate(110deg); } .palm .front-arm .lower { transform: rotate(0deg); } .palm .back-arm { transform: rotate(-60deg); }
+        .crane { --shift: 70px; } .crane .torso { transform: rotate(-15deg); } .crane .front-leg { transform: rotate(110deg); } .crane .front-leg .lower { transform: rotate(-80deg); } .crane .front-arm { transform: rotate(180deg); }
+        .uppercut { --shift: 60px; } .uppercut .torso { transform: rotate(-20deg); } .uppercut .front-arm { transform: rotate(180deg); } .uppercut .front-arm .lower { transform: rotate(0deg); } .uppercut .front-leg { transform: rotate(40deg); }
+        .spin-kick { --shift: 80px; } .spin-kick .torso { transform: rotate(30deg); } .spin-kick .back-leg { transform: rotate(150deg); } .spin-kick .back-leg .lower { transform: rotate(0deg); } .spin-kick .front-arm { transform: rotate(-40deg); }
         
-        .omega-burst { --shift: 150px; } .omega-burst .torso { transform: rotate(60deg); } .omega-burst .front-arm { transform: rotate(160deg); } .omega-burst .front-arm .lower { transform: rotate(-20deg); } .omega-burst .front-leg { transform: rotate(-20deg); } .omega-burst .back-leg { transform: rotate(-60deg); }
-        .titan-smash { --shift: 60px; } .titan-smash .torso { transform: rotate(10deg); } .titan-smash .front-arm { transform: rotate(200deg); } .titan-smash .front-arm .lower { transform: rotate(0deg); } .titan-smash .front-leg { transform: rotate(70deg); } .titan-smash .back-leg { transform: rotate(-10deg); }
-        .phantom-strike { --shift: 250px; } .phantom-strike .torso { transform: rotate(70deg); } .phantom-strike .front-arm { transform: rotate(90deg); } .phantom-strike .front-leg { transform: rotate(10deg); } .phantom-strike .back-leg { transform: rotate(-60deg); } .phantom-strike .front-leg .lower { transform: rotate(0deg); }
+        .dragon-punch { --shift: 100px; } .dragon-punch .torso { transform: rotate(-15deg); } .dragon-punch .front-arm { transform: rotate(190deg); } .dragon-punch .front-arm .lower { transform: rotate(0deg); } .dragon-punch .front-leg { transform: rotate(70deg); } .dragon-punch .back-leg { transform: rotate(-30deg); }
+        .shadow-kick { --shift: 160px; } .shadow-kick .torso { transform: rotate(25deg); } .shadow-kick .front-leg { transform: rotate(100deg); } .shadow-kick .front-leg .lower { transform: rotate(0deg); } .shadow-kick .back-leg { transform: rotate(-70deg); } .shadow-kick .front-arm { transform: rotate(-50deg); }
+        
+        .hook { --shift: 70px; } .hook .torso { transform: rotate(20deg); } .hook .back-arm { transform: rotate(110deg); } .hook .back-arm .lower { transform: rotate(-30deg); } .hook .front-arm { transform: rotate(30deg); }
+        .sweep { --shift: 50px; } .sweep .torso { transform: rotate(-40deg); } .sweep .front-leg { transform: rotate(130deg); } .sweep .front-leg .lower { transform: rotate(0deg); } .sweep .back-leg { transform: rotate(-80deg); }
+        .tornado-kick { --shift: 100px; } .tornado-kick .torso { transform: rotate(360deg); } .tornado-kick .back-leg { transform: rotate(160deg); } .tornado-kick .front-leg { transform: rotate(-40deg); } .tornado-kick .front-arm { transform: rotate(180deg); }
+        .meteor-strike { --shift: 60px; } .meteor-strike .torso { transform: rotate(60deg); } .meteor-strike .front-arm { transform: rotate(220deg); } .meteor-strike .front-arm .lower { transform: rotate(0deg); } .meteor-strike .back-arm { transform: rotate(180deg); }
+        .palm-flurry { --shift: 90px; } .palm-flurry .torso { transform: rotate(15deg); } .palm-flurry .front-arm { transform: rotate(110deg); } .palm-flurry .back-arm { transform: rotate(100deg); } .palm-flurry .front-leg { transform: rotate(40deg); }
+
+        .omega-burst { --shift: 160px; } .omega-burst .torso { transform: rotate(70deg); } .omega-burst .front-arm { transform: rotate(160deg); } .omega-burst .front-arm .lower { transform: rotate(-10deg); } .omega-burst .front-leg { transform: rotate(-30deg); } .omega-burst .back-leg { transform: rotate(-70deg); }
+        .titan-smash { --shift: 0px; } .titan-smash .torso { transform: rotate(180deg); } .titan-smash .front-arm { transform: rotate(200deg); } .titan-smash .front-arm .lower { transform: rotate(0deg); } .titan-smash .front-leg { transform: rotate(70deg); } .titan-smash .back-leg { transform: rotate(-10deg); }
+        .phantom-strike { --shift: 260px; } .phantom-strike .torso { transform: rotate(80deg); } .phantom-strike .front-arm { transform: rotate(90deg); } .phantom-strike .front-leg { transform: rotate(10deg); } .phantom-strike .back-leg { transform: rotate(-70deg); } .phantom-strike .front-leg .lower { transform: rotate(0deg); }
 
         .throw { --shift: 20px; } .throw .torso { transform: rotate(30deg); } .throw .front-arm { transform: rotate(140deg); } .throw .front-arm .lower { transform: rotate(0deg); }
         .block { --shift: -10px; } .block .torso { transform: rotate(-5deg); } .block .front-arm { transform: rotate(140deg); } .block .front-arm .lower { transform: rotate(-120deg); } .block .back-arm { transform: rotate(110deg); } .block .back-arm .lower { transform: rotate(-100deg); }
         .dodge { --shift: -80px; } .dodge .torso { transform: rotate(-45deg); } .dodge .front-leg { transform: rotate(45deg); } .dodge .front-arm { transform: rotate(120deg); } 
-        .hit { --shift: -20px; filter: drop-shadow(0 0 10px white) brightness(1.5); } .hit .torso { transform: rotate(-30deg); } .hit .head { transform: rotate(-40deg); }
-        .ko { filter: grayscale(1); transform: scaleX(var(--facing, 1)) rotate(-90deg) translateX(-50px); }
+        .hit { --shift: -30px; filter: drop-shadow(0 0 10px white) brightness(1.5); } .hit .torso { transform: rotate(-40deg); } .hit .head { transform: rotate(-50deg); }
+        
+        .ko { animation: death-shatter 1.5s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important; pointer-events: none; }
+        @keyframes death-shatter {
+            0% { filter: brightness(2) drop-shadow(0 0 10px #fff); transform: scaleX(var(--facing, 1)) rotate(-10deg); opacity: 1; }
+            20% { filter: brightness(4) drop-shadow(0 0 30px #ff4757); transform: scaleX(var(--facing, 1)) rotate(-90deg) translateY(20px); opacity: 1; }
+            100% { filter: brightness(0) blur(10px); transform: scaleX(var(--facing, 1)) rotate(-90deg) translateY(50px) scale(0.2); opacity: 0; }
+        }
+
         .charge { --shift: 0; } .charge .torso { transform: rotate(10deg); } .charge .front-arm { transform: rotate(-20deg); } .charge .front-arm .lower { transform: rotate(-30deg); } .charge .back-arm { transform: rotate(20deg); } .charge .back-arm .lower { transform: rotate(-30deg); } .charge .front-leg { transform: rotate(30deg); } .charge .front-leg .lower { transform: rotate(-30deg); } .charge .back-leg { transform: rotate(-30deg); } .charge .back-leg .lower { transform: rotate(30deg); }
     </style>
 </head>
@@ -227,6 +257,8 @@
             <div id="drone" class="drone"></div>
 
             <div class="stickman p1" id="fighter1">
+                <div class="player-indicator">▼ YOU</div>
+                
                 <div class="bars-container">
                     <div class="bar-bg"><div class="hp-bar" id="hp-bar-1"></div><div class="hp-text" id="hp-text-1">100</div></div>
                     <div class="bar-bg" style="height:4px;"><div class="mp-bar" id="mp-bar-1"></div></div>
@@ -267,34 +299,40 @@
             <h1>DOJO UPGRADES</h1>
             <p style="color: #f1c40f; font-size: 1.2rem; margin-bottom: 10px;">💰 Coins: <span id="shop-coins">0</span></p>
             
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <button class="buy-btn" style="background:#3498db; color:white; width: 48%; margin-top:0;" onclick="saveProgress()">💾 SAVE PROGRESS</button>
+                <button class="buy-btn" style="background:#e74c3c; color:white; width: 48%; margin-top:0;" onclick="resetProgress()">🗑️ RESET SAVE</button>
+            </div>
+
             <div class="ultimate-selector">
-                <h3 style="margin: 0 0 5px 0; color: #fff;">Select Ultimate Skill:</h3>
-                <select id="ult-select" onchange="changeUltimate()">
-                    <option value="omega-burst">Omega Burst (Execution Flurry)</option>
-                    <option value="titan-smash">Titan Smash (Meteor Crash)</option>
-                    <option value="phantom-strike">Phantom Strike (Omni-Slash)</option>
+                <h3 style="margin: 0 0 5px 0; color: #fff;">Select Class Role:</h3>
+                <p style="font-size: 0.75rem; color: #aaa; margin: 0 0 5px 0;">Each role has unique Skills, Ultimates & Fatalities!</p>
+                <select id="role-select" onchange="changeRole()">
+                    <option value="balanced">⚖️ Balanced (Dragon Punch, 100-Crack Fist)</option>
+                    <option value="assassin">🗡️ Assassin (+Spd, +Crit, Dimension Slash)</option>
+                    <option value="mage">🧙‍♂️ Mage (+Mana, Fire Magic, Incineration)</option>
+                    <option value="witch">🦇 Witch (Auto-Lifesteal, Soul Harvest)</option>
+                    <option value="tank">🛡️ Tank (+HP, Super Armor, Meteor Crash)</option>
+                    <option value="archer">🏹 Archer (Auto-Shoot, Sniper Execution)</option>
                 </select>
             </div>
 
             <div class="toggle-row">
                 <label style="cursor:pointer;">
                     <input type="checkbox" id="manual-toggle" onchange="updateUI()"> 🎮 MANUAL CONTROL MODE<br>
-                    <span style="font-size:0.75rem; color:#888;">(A/D=Move | J=Punch | K=Throw | L=Ult | S=Charge | W=Block)</span>
+                    <span style="font-size:0.75rem; color:#888;">(A/D=Move | J=Punch | K=Throw | L=Ult | S=Charge | W=Parry Block)</span>
                 </label>
             </div>
 
             <div class="shop-grid">
-                <div class="shop-item"><div><h3>Max Health</h3><p>Current: <span id="stat-hp">100</span></p></div><button class="buy-btn" id="buy-hp" onclick="buyUpgrade('hp')">Buy (50)</button></div>
-                <div class="shop-item"><div><h3>Damage</h3><p>Current: +<span id="stat-dmg">0</span></p></div><button class="buy-btn" id="buy-dmg" onclick="buyUpgrade('dmg')">Buy (100)</button></div>
-                
-                <div class="shop-item cosmetic"><div><h3 style="color:#e67e22">Straw Hat</h3><p>Ronin Drip</p></div><button class="buy-btn" id="buy-straw" onclick="buyUpgrade('straw')">Buy (200)</button></div>
-                <div class="shop-item cosmetic"><div><h3 style="color:#f1c40f">King's Crown</h3><p>Royal Drip</p></div><button class="buy-btn" id="buy-crown" onclick="buyUpgrade('crown')">Buy (200)</button></div>
-                
-                <div class="shop-item relic"><div><h3 style="color:#e74c3c">Vampire Fangs</h3><p>Heal on Hit</p></div><button class="buy-btn" id="buy-vamp" onclick="buyUpgrade('vamp')">Buy (400)</button></div>
-                <div class="shop-item relic"><div><h3 style="color:#2ecc71">Thorn Armor</h3><p>Reflect DMG</p></div><button class="buy-btn" id="buy-thorns" onclick="buyUpgrade('thorns')">Buy (400)</button></div>
-
-                <div class="shop-item" style="border-color:#ff4757;"><div><h3 style="color:#ff4757">Fire Magic</h3><p>Burn DMG</p></div><button class="buy-btn" id="buy-fire" onclick="buyUpgrade('fire')">Buy (300)</button></div>
-                <div class="shop-item" style="border-color:#18dcff;"><div><h3 style="color:#18dcff">Ice Magic</h3><p>Slow Enemy</p></div><button class="buy-btn" id="buy-ice" onclick="buyUpgrade('ice')">Buy (300)</button></div>
+                <div class="shop-item"><div><h3>Max Health</h3><p>Current: <span id="stat-hp">100</span></p></div><button class="buy-btn" id="buy-hp" onclick="buyUpgrade('hp')">Buy (30)</button></div>
+                <div class="shop-item"><div><h3>Damage</h3><p>Current: +<span id="stat-dmg">0</span></p></div><button class="buy-btn" id="buy-dmg" onclick="buyUpgrade('dmg')">Buy (50)</button></div>
+                <div class="shop-item"><div><h3>Dodge</h3><p>Current: <span id="stat-dodge">20</span>%</p></div><button class="buy-btn" id="buy-dodge" onclick="buyUpgrade('dodge')">Buy (100)</button></div>
+                <div class="shop-item utility"><div><h3 style="color:#f39c12">Critical Hit</h3><p>Chance: <span id="stat-crit">5</span>%</p></div><button class="buy-btn" id="buy-crit" onclick="buyUpgrade('crit')">Buy (100)</button></div>
+                <div class="shop-item utility"><div><h3 style="color:#3498db">Mana Regen</h3><p>Auto: +<span id="stat-mana">0</span>/s</p></div><button class="buy-btn" id="buy-mana" onclick="buyUpgrade('mana')">Buy (100)</button></div>
+                <div class="shop-item"><div><h3>Battle Drone</h3><p>Shoots lasers</p></div><button class="buy-btn" id="buy-drone" onclick="buyUpgrade('drone')">Buy (200)</button></div>
+                <div class="shop-item cosmetic"><div><h3 style="color:#e67e22">Straw Hat</h3><p>Ronin Drip</p></div><button class="buy-btn" id="buy-straw" onclick="buyUpgrade('straw')">Buy (150)</button></div>
+                <div class="shop-item cosmetic"><div><h3 style="color:#f1c40f">King's Crown</h3><p>Royal Drip</p></div><button class="buy-btn" id="buy-crown" onclick="buyUpgrade('crown')">Buy (150)</button></div>
             </div>
 
             <button class="next-btn" id="next-stage-btn" onclick="closeShopAndStart()">FIGHT NEXT ENEMY</button>
@@ -310,53 +348,102 @@
         }
         window.addEventListener('resize', resizeStage); resizeStage();
 
-        // --- RPG PROGRESSION ---
+        // --- RPG PROGRESSION & ROLES ---
         let playerStats = {
-            coins: 0, stage: 1, maxHp: 100, baseDmgBonus: 0, dodgeChance: 0.20,
-            hasDrone: false, element: 'none', hat: 'none', manualMode: false, ultimate: 'omega-burst',
+            coins: 0, stage: 1, maxHp: 100, baseDmgBonus: 0, dodgeChance: 0.20, critChance: 0.05, manaRegen: 0,
+            hasDrone: false, hat: 'none', manualMode: false, role: 'balanced',
             relics: { vamp: false, thorns: false },
-            costs: { hp: 50, dmg: 100, straw: 200, crown: 200, fire: 300, ice: 300, vamp: 400, thorns: 400 }
+            costs: { hp: 30, dmg: 50, dodge: 100, crit: 100, mana: 100, drone: 200, straw: 150, crown: 150 }
+        };
+
+        const roleMoves = {
+            'balanced': {
+                skills: [{ id: 'dragon-punch', name: 'DRAGON PUNCH', limb: '.front-arm .lower', dmg: 35, cost: 40, isSkill: true, jump: 20 }, { id: 'spin-kick', name: 'SPIN KICK', limb: '.back-leg .lower', dmg: 25, cost: 25, isSkill: true, jump: 0 }],
+                ultimate: { id: 'omega-burst', name: 'OMEGA BURST!', limb: '.front-arm .lower', dmg: 70, cost: 50, isSkill: true, isUltimate: true, jump: 12 }
+            },
+            'assassin': {
+                skills: [{ id: 'shadow-kick', name: 'SHADOW KICK', limb: '.front-leg .lower', dmg: 30, cost: 35, isSkill: true, jump: 15 }, { id: 'phantom-strike', name: 'PHANTOM STEP', limb: '.front-leg .lower', dmg: 25, cost: 25, isSkill: true, jump: 0 }],
+                ultimate: { id: 'phantom-strike', name: 'DIMENSION SLASH!', limb: '.front-arm .lower', dmg: 75, cost: 50, isSkill: true, isUltimate: true, jump: 0 }
+            },
+            'mage': {
+                skills: [{ id: 'palm-flurry', name: 'FIRE PALM', limb: '.front-arm .lower', dmg: 28, cost: 30, isSkill: true, jump: 0 }, { id: 'meteor-strike', name: 'METEOR PUNCH', limb: '.front-arm .lower', dmg: 32, cost: 35, isSkill: true, jump: 22 }],
+                ultimate: { id: 'palm-flurry', name: 'INFERNO BLAST!', limb: '.front-arm .lower', dmg: 60, cost: 50, isSkill: true, isUltimate: true, jump: 0, fireProj: true } 
+            },
+            'witch': {
+                skills: [{ id: 'sweep', name: 'DARK SWEEP', limb: '.front-leg .lower', dmg: 20, cost: 20, isSkill: true, jump: 0 }, { id: 'hook', name: 'SOUL STEAL', limb: '.back-arm .lower', dmg: 25, cost: 30, isSkill: true, jump: 0 }],
+                ultimate: { id: 'hook', name: 'BLOOD MOON!', limb: '.front-arm .lower', dmg: 55, cost: 50, isSkill: true, isUltimate: true, jump: 20, vamp: true }
+            },
+            'tank': {
+                skills: [{ id: 'uppercut', name: 'HEAVY UPPERCUT', limb: '.front-arm .lower', dmg: 35, cost: 35, isSkill: true, jump: 15 }, { id: 'hook', name: 'MEGATON HOOK', limb: '.back-arm .lower', dmg: 30, cost: 30, isSkill: true, jump: 0 }],
+                ultimate: { id: 'titan-smash', name: 'EARTHQUAKE SLAM!', limb: '.front-arm .lower', dmg: 80, cost: 50, isSkill: true, isUltimate: true, jump: 35 }
+            },
+            'archer': {
+                skills: [{ id: 'tornado-kick', name: 'WIND KICK', limb: '.back-leg .lower', dmg: 28, cost: 30, isSkill: true, jump: 18 }, { id: 'dodge', name: 'EVASIVE SHOT', limb: '.front-arm .lower', dmg: 15, cost: 20, isSkill: true, jump: 0, archerShoot: true }],
+                ultimate: { id: 'crane', name: 'ARROW STORM!', limb: '.front-arm .lower', dmg: 30, cost: 50, isSkill: true, isUltimate: true, jump: 15, archerStorm: true }
+            }
+        };
+
+        const loadProgress = () => {
+            const saved = localStorage.getItem('stickmanRpgSave');
+            if (saved) {
+                try {
+                    playerStats = { ...playerStats, ...JSON.parse(saved) };
+                    document.getElementById('role-select').value = playerStats.role || 'balanced';
+                    document.getElementById('manual-toggle').checked = playerStats.manualMode;
+                    if (playerStats.hat === 'straw') document.getElementById('p1-hat').className = 'hat hat-straw';
+                    if (playerStats.hat === 'crown') document.getElementById('p1-hat').className = 'hat hat-crown';
+                } catch (e) { console.error("Save load failed."); }
+            }
+        };
+
+        const saveProgress = () => {
+            localStorage.setItem('stickmanRpgSave', JSON.stringify(playerStats));
+            const btn = document.querySelector('button[onclick="saveProgress()"]');
+            if(btn) { const oldText = btn.innerText; btn.innerText = "✅ SAVED!"; setTimeout(() => btn.innerText = oldText, 1500); }
+        };
+
+        const resetProgress = () => {
+            if (confirm("Are you sure you want to reset your progress? This cannot be undone.")) { localStorage.removeItem('stickmanRpgSave'); location.reload(); }
         };
 
         const updateUI = () => {
-            document.getElementById('top-coins').innerText = playerStats.coins;
-            document.getElementById('shop-coins').innerText = playerStats.coins;
-            document.getElementById('stage-number').innerText = playerStats.stage;
-            document.getElementById('stat-hp').innerText = playerStats.maxHp;
-            document.getElementById('stat-dmg').innerText = playerStats.baseDmgBonus;
+            document.getElementById('top-coins').innerText = playerStats.coins; document.getElementById('shop-coins').innerText = playerStats.coins;
+            document.getElementById('stage-number').innerText = playerStats.stage; document.getElementById('stat-hp').innerText = playerStats.maxHp;
+            document.getElementById('stat-dmg').innerText = playerStats.baseDmgBonus; document.getElementById('stat-dodge').innerText = Math.round(playerStats.dodgeChance * 100);
+            document.getElementById('stat-crit').innerText = Math.round(playerStats.critChance * 100); document.getElementById('stat-mana').innerText = playerStats.manaRegen;
             
-            ['hp', 'dmg', 'straw', 'crown', 'fire', 'ice', 'vamp', 'thorns'].forEach(type => {
+            ['hp', 'dmg', 'dodge', 'crit', 'mana', 'drone', 'straw', 'crown'].forEach(type => {
                 let btn = document.getElementById(`buy-${type}`);
                 if (btn) { btn.innerText = `Buy (${playerStats.costs[type]})`; btn.disabled = playerStats.coins < playerStats.costs[type]; }
             });
 
-            if (playerStats.relics.vamp) { document.getElementById('buy-vamp').innerText = "OWNED"; document.getElementById('buy-vamp').disabled = true; }
-            if (playerStats.relics.thorns) { document.getElementById('buy-thorns').innerText = "OWNED"; document.getElementById('buy-thorns').disabled = true; }
-            if (playerStats.element !== 'none') {
-                document.getElementById('buy-fire').disabled = true; document.getElementById('buy-ice').disabled = true;
-                document.getElementById(`buy-${playerStats.element}`).innerText = "EQUIPPED";
-            }
+            if (playerStats.dodgeChance >= 0.6) { document.getElementById('buy-dodge').innerText = "MAXED"; document.getElementById('buy-dodge').disabled = true; }
+            if (playerStats.critChance >= 0.5) { document.getElementById('buy-crit').innerText = "MAXED"; document.getElementById('buy-crit').disabled = true; }
+            if (playerStats.hasDrone) { document.getElementById('buy-drone').innerText = "OWNED"; document.getElementById('buy-drone').disabled = true; }
             if (playerStats.hat !== 'none') {
                 document.getElementById('buy-straw').disabled = true; document.getElementById('buy-crown').disabled = true;
-                document.getElementById(`buy-${playerStats.hat}`).innerText = "EQUIPPED";
             }
             
+            document.getElementById('role-select').value = playerStats.role || 'balanced';
             playerStats.manualMode = document.getElementById('manual-toggle').checked;
+            
             if (playerStats.manualMode && window.innerWidth < 820 && gameActive) document.getElementById('mobile-controls').style.display = 'flex';
             else document.getElementById('mobile-controls').style.display = 'none';
+
+            localStorage.setItem('stickmanRpgSave', JSON.stringify(playerStats));
         };
 
-        const changeUltimate = () => { playerStats.ultimate = document.getElementById('ult-select').value; };
+        const changeRole = () => { playerStats.role = document.getElementById('role-select').value; updateUI(); };
 
         const buyUpgrade = (type) => {
             if (playerStats.coins >= playerStats.costs[type]) {
                 playerStats.coins -= playerStats.costs[type];
                 if (type === 'hp') { playerStats.maxHp += 20; playerStats.costs.hp = Math.floor(playerStats.costs.hp * 1.5); }
                 if (type === 'dmg') { playerStats.baseDmgBonus += 5; playerStats.costs.dmg = Math.floor(playerStats.costs.dmg * 1.6); }
-                if (type === 'vamp') playerStats.relics.vamp = true;
-                if (type === 'thorns') playerStats.relics.thorns = true;
-                if (type === 'fire') { playerStats.element = 'fire'; f1.el.classList.add('elem-fire'); }
-                if (type === 'ice') { playerStats.element = 'ice'; f1.el.classList.add('elem-ice'); }
+                if (type === 'dodge') { playerStats.dodgeChance += 0.05; playerStats.costs.dodge = Math.floor(playerStats.costs.dodge * 1.8); }
+                if (type === 'crit') { playerStats.critChance += 0.05; playerStats.costs.crit = Math.floor(playerStats.costs.crit * 1.8); }
+                if (type === 'mana') { playerStats.manaRegen += 2; playerStats.costs.mana = Math.floor(playerStats.costs.mana * 1.8); }
+                if (type === 'drone') playerStats.hasDrone = true;
                 if (type === 'straw') { playerStats.hat = 'straw'; document.getElementById('p1-hat').className = 'hat hat-straw'; }
                 if (type === 'crown') { playerStats.hat = 'crown'; document.getElementById('p1-hat').className = 'hat hat-crown'; }
                 updateUI(); playSound('heal');
@@ -394,37 +481,34 @@
             else if (type === 'heal') { osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.setValueAtTime(600, now+0.1); osc.frequency.setValueAtTime(800, now+0.2); gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.3); osc.start(now); osc.stop(now + 0.3); }
             else if (type === 'smite') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(50, now + 0.4); gain.gain.setValueAtTime(1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4); osc.start(now); osc.stop(now + 0.4); }
             else if (type === 'clang') { osc.type = 'square'; osc.frequency.setValueAtTime(900, now); osc.frequency.exponentialRampToValueAtTime(200, now + 0.5); gain.gain.setValueAtTime(1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5); osc.start(now); osc.stop(now + 0.5); } 
+            else if (type === 'slice') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.2); gain.gain.setValueAtTime(0.5, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2); osc.start(now); osc.stop(now + 0.2); } 
         };
 
         const p1 = document.getElementById('fighter1'); const p2 = document.getElementById('fighter2');
         const skillDisplay = document.getElementById('skill-display'); const mainBody = document.getElementById('main-body');
         const stageArea = document.getElementById('stage-area'); const propsLayer = document.getElementById('props-layer'); const spark = document.getElementById('spark');
         
-        let f1 = { id: 'p1', el: p1, hpBar: document.getElementById('hp-bar-1'), mpBar: document.getElementById('mp-bar-1'), maxHp: 100, hp: 100, mp: 50, canHit: false, dmg: 0, isUltimate: false, baseX: 150, y: 0, vy: 0, hasBox: false, tempBonusDmg: 0, combo: 0, comboText: document.getElementById('combo-p1'), color: '#00d2ff', isPlayer: true, status: 'none', statusTimer: 0, superArmor: false, isBlocking: false, blockTime: 0 };
-        let f2 = { id: 'p2', el: p2, hpBar: document.getElementById('hp-bar-2'), mpBar: document.getElementById('mp-bar-2'), maxHp: 100, hp: 100, mp: 50, canHit: false, dmg: 0, isUltimate: false, baseX: 150, y: 0, vy: 0, hasBox: false, tempBonusDmg: 0, combo: 0, comboText: document.getElementById('combo-p2'), color: '#ff0055', isPlayer: false, status: 'none', statusTimer: 0, superArmor: false, isBlocking: false, blockTime: 0 };
+        let f1 = { id: 'p1', el: p1, hpBar: document.getElementById('hp-bar-1'), mpBar: document.getElementById('mp-bar-1'), maxHp: 100, hp: 100, mp: 50, canHit: false, dmg: 0, isCrit: false, isUltimate: false, baseX: 150, y: 0, vy: 0, hasBox: false, tempBonusDmg: 0, combo: 0, comboText: document.getElementById('combo-p1'), color: '#00d2ff', isPlayer: true, status: 'none', statusTimer: 0, superArmor: false, isBlocking: false, blockTime: 0, manaAccumulator: 0 };
+        let f2 = { id: 'p2', el: p2, hpBar: document.getElementById('hp-bar-2'), mpBar: document.getElementById('mp-bar-2'), maxHp: 100, hp: 100, mp: 50, canHit: false, dmg: 0, isCrit: false, isUltimate: false, baseX: 150, y: 0, vy: 0, hasBox: false, tempBonusDmg: 0, combo: 0, comboText: document.getElementById('combo-p2'), color: '#ff0055', isPlayer: false, status: 'none', statusTimer: 0, superArmor: false, isBlocking: false, blockTime: 0, manaAccumulator: 0 };
         
         let aiLoopTimer; let spawnerTimer; let droneTimer; let physicsFrame; let isSlowMo = false; let isBossStage = false; let enemyType = 'normal';
         let activeProps = []; let thrownProjectiles = []; let gravityParticles = []; let comboTimers = { p1: null, p2: null };
         let manualCooldown = false; let moveCooldown = false; let hitStopFrames = 0; let hazardTimer = null; let holdLeft = false; let holdRight = false;
         const GRAVITY = -1.2; 
 
-        const basics = [{ id: 'palm', limb: '.front-arm .lower', dmg: 8, cost: 0, jump: 0 }, { id: 'crane', limb: '.front-leg .lower', dmg: 10, cost: 0, jump: 0 }, { id: 'uppercut', limb: '.front-arm .lower', dmg: 12, cost: 0, jump: 15 }, { id: 'spin-kick', limb: '.back-leg .lower', dmg: 14, cost: 0, jump: 0 }];
-        const skills = [{ id: 'dragon-punch', name: 'DRAGON PUNCH', limb: '.front-arm .lower', dmg: 35, cost: 40, isSkill: true, jump: 20 }, { id: 'shadow-kick', name: 'SHADOW KICK', limb: '.front-leg .lower', dmg: 30, cost: 35, isSkill: true, jump: 15 }];
-        const ultimates = {
-            'omega-burst': { id: 'omega-burst', name: 'OMEGA BURST!', limb: '.front-arm .lower', dmg: 70, cost: 50, isSkill: true, isUltimate: true, jump: 12 },
-            'titan-smash': { id: 'titan-smash', name: 'TITAN SMASH!', limb: '.front-arm .lower', dmg: 60, cost: 50, isSkill: true, isUltimate: true, jump: 35 }, 
-            'phantom-strike': { id: 'phantom-strike', name: 'PHANTOM STRIKE!', limb: '.front-leg .lower', dmg: 65, cost: 50, isSkill: true, isUltimate: true, jump: 0 } 
-        };
+        const basics_pool = [
+            { id: 'palm', limb: '.front-arm .lower', dmg: 8, cost: 0, jump: 0 }, { id: 'crane', limb: '.front-leg .lower', dmg: 10, cost: 0, jump: 0 }, 
+            { id: 'uppercut', limb: '.front-arm .lower', dmg: 12, cost: 0, jump: 15 }, { id: 'spin-kick', limb: '.back-leg .lower', dmg: 14, cost: 0, jump: 0 },
+            { id: 'hook', limb: '.back-arm .lower', dmg: 11, cost: 0, jump: 0 }, { id: 'sweep', limb: '.front-leg .lower', dmg: 9, cost: 0, jump: 0 }
+        ];
 
-        const removeStates = (fighter) => fighter.classList.remove('palm', 'crane', 'uppercut', 'spin-kick', 'dragon-punch', 'shadow-kick', 'omega-burst', 'titan-smash', 'phantom-strike', 'dodge', 'block', 'hit', 'charge', 'charging', 'throw', 'fatality-strikes');
+        const removeStates = (fighter) => fighter.classList.remove('palm', 'crane', 'uppercut', 'spin-kick', 'dragon-punch', 'shadow-kick', 'omega-burst', 'titan-smash', 'phantom-strike', 'dodge', 'block', 'hit', 'charge', 'charging', 'throw', 'fatality-strikes', 'hook', 'sweep', 'tornado-kick', 'meteor-strike', 'palm-flurry', 'meteor-drop');
         const updateMana = (f, amt) => { f.mp = Math.max(0, Math.min(100, f.mp + amt)); f.mpBar.style.width = f.mp + '%'; };
-        
         const updateHealthBar = (f) => {
             let p = (f.hp / f.maxHp) * 100; f.hpBar.style.width = p + '%';
             if (p > 50) f.hpBar.style.background = '#2ecc71'; else if (p > 30) f.hpBar.style.background = '#f1c40f'; else f.hpBar.style.background = '#e74c3c'; 
-            document.getElementById(`hp-text-${f.id === 'p1' ? '1' : '2'}`).innerText = Math.floor(f.hp);
+            document.getElementById(`hp-text-${f.id === 'p1' ? '1' : '2'}`).innerText = f.hp <= 0 ? "0" : Math.floor(f.hp);
         };
-        
         const moveFighter = (f, dist) => {
             f.baseX += dist; if (f.baseX < 30) f.baseX = 30;
             if (f === f1 && f1.baseX + f2.baseX > 710) f1.baseX = 710 - f2.baseX;
@@ -432,10 +516,12 @@
             f.el.style[f === f1 ? 'left' : 'right'] = f.baseX + 'px';
         };
 
-        function spawnDamageText(x, y, dmg, color = '#ff4757') {
+        function spawnDamageText(x, y, textValue, color = '#ff4757') {
             const txt = document.createElement('div'); txt.className = 'dmg-text';
-            txt.innerText = '-' + Math.floor(dmg); txt.style.color = color;
+            txt.innerText = textValue.toString().includes('+') ? textValue : '-' + textValue; 
+            txt.style.color = color;
             txt.style.left = x + 'px'; txt.style.top = y + 'px';
+            if (textValue.toString().includes('CRIT')) txt.style.transform = 'scale(1.5)';
             propsLayer.appendChild(txt); setTimeout(() => txt.remove(), 800);
         }
 
@@ -447,7 +533,33 @@
             }
         };
 
-        // --- GOD MODE ---
+        // --- NEW: SPAWN PROPS AND GIFTS ---
+        const spawnProp = () => {
+            if (!gameActive) return;
+            let type = Math.random();
+            let propType = 'box'; let className = 'box-prop';
+            
+            if (type > 0.85) { propType = 'potion'; className = 'potion-prop'; }
+            else if (type > 0.70) { propType = 'sword'; className = 'sword-prop'; }
+            else if (type > 0.55) { propType = 'gift'; className = 'gift-prop'; } 
+
+            const propEl = document.createElement('div'); propEl.className = 'prop ' + className;
+            let xPos = Math.random() * 600 + 100;
+            propEl.style.left = xPos + 'px'; propEl.style.top = '-50px';
+            propsLayer.appendChild(propEl);
+            
+            let targetY = 350; 
+            
+            let dropInt = setInterval(() => {
+                if(!gameActive) { clearInterval(dropInt); propEl.remove(); return; }
+                let currentTop = parseInt(propEl.style.top);
+                if (currentTop < targetY) { propEl.style.top = (currentTop + 6) + 'px'; } 
+                else { clearInterval(dropInt); activeProps.push({ el: propEl, type: propType, x: xPos, y: targetY }); }
+            }, 20);
+
+            spawnerTimer = setTimeout(spawnProp, Math.random() * 4000 + 4000);
+        };
+
         const godDropPotion = () => {
             if (!gameActive || playerStats.coins < 20) return;
             playerStats.coins -= 20; updateUI();
@@ -455,6 +567,7 @@
             propEl.style.left = f1.baseX + 'px'; propEl.style.top = '-50px'; propsLayer.appendChild(propEl);
             setTimeout(() => { propEl.style.top = '350px'; }, 50); activeProps.push({ el: propEl, type: 'potion', x: f1.baseX, y: 350 });
         };
+        
         const godSmite = () => {
             if (!gameActive || playerStats.coins < 50) return;
             playerStats.coins -= 50; updateUI();
@@ -503,7 +616,7 @@
         };
 
         const executeMove = (fObj, move) => {
-            removeStates(fObj.el); fObj.canHit = false; fObj.isUltimate = false; fObj.isBlocking = false;
+            removeStates(fObj.el); fObj.canHit = false; fObj.isUltimate = false; fObj.isBlocking = false; fObj.isCrit = false;
             if (move.id === 'block') { fObj.el.classList.add('block'); fObj.isBlocking = true; fObj.blockTime = performance.now(); return; }
             if (move.id === 'dodge') { fObj.el.classList.add('dodge'); moveFighter(fObj, -40); updateMana(fObj, 15); fObj.combo = 0; return; }
             if (move.id === 'charge') { fObj.el.classList.add('charge', 'charging'); updateMana(fObj, 25); playSound('charge'); return; }
@@ -513,16 +626,52 @@
             if (move.jump > 0 && fObj.y === 0) { fObj.vy = move.jump; playSound('jump'); }
 
             fObj.el.classList.add(move.id); fObj.activeHitbox = fObj.el.querySelector(move.limb);
+            
+            let baseAttackDmg = move.dmg || 0;
+            let activeCritChance = fObj.isPlayer ? playerStats.critChance + (playerStats.role === 'assassin' ? 0.20 : 0) : 0.05;
+            if (Math.random() < activeCritChance && !move.isUltimate) { fObj.isCrit = true; baseAttackDmg *= 2; }
+
             let statBonus = fObj.isPlayer ? playerStats.baseDmgBonus : (isBossStage ? playerStats.stage * 5 : playerStats.stage * 2);
             if (!fObj.isPlayer && enemyType === 'tank') statBonus += 10; 
-            fObj.dmg = (move.dmg || 0) + fObj.tempBonusDmg + statBonus; fObj.canHit = true;
+            
+            fObj.dmg = baseAttackDmg + fObj.tempBonusDmg + statBonus; fObj.canHit = true;
             
             if (move.isUltimate) { fObj.isUltimate = true; isSlowMo = true; mainBody.classList.add('slow-mo'); moveFighter(fObj, 100); }
-            if (move.isSkill) {
+            if (move.isSkill || move.isUltimate) {
                 announceSkill(move.name); skillDisplay.innerText = move.name;
                 skillDisplay.style.color = move.isUltimate ? "#f1c40f" : (fObj === f1 ? "#00d2ff" : "#ff4757");
                 skillDisplay.style.textShadow = move.isUltimate ? "0 0 20px #e74c3c, 0 5px 0 #fff" : "0 0 20px #e74c3c, 0 5px 0 #c0392b";
                 skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), move.isUltimate ? 1500 : 800);
+            }
+
+            if (fObj.isPlayer && playerStats.role === 'archer' && !move.isSkill && !move.isUltimate) {
+                setTimeout(() => { if (gameActive && fObj.hp > 0) {
+                    playSound('jump');
+                    const proj = document.createElement('div'); proj.className = 'particle'; proj.style.background = '#2ecc71'; proj.style.boxShadow = '0 0 10px #2ecc71';
+                    proj.style.left = (f1.baseX + 20) + 'px'; proj.style.top = (350 - f1.y - 60) + 'px'; propsLayer.appendChild(proj);
+                    thrownProjectiles.push({ el: proj, x: f1.baseX + 20, y: 350 - f1.y - 60, velX: 20, owner: f1, dmg: 8 + playerStats.baseDmgBonus, isLaser: true });
+                } }, 100);
+            }
+            
+            if (move.fireProj) {
+                setTimeout(() => {
+                    for(let i=0; i<3; i++) {
+                        let proj = document.createElement('div'); proj.className = 'particle'; proj.style.background = '#ff4757'; proj.style.boxShadow = '0 0 15px #ff4757'; proj.style.width='15px'; proj.style.height='15px';
+                        proj.style.left = (fObj.baseX + 40) + 'px'; proj.style.top = (350 - fObj.y - 60 + (i*20)) + 'px'; propsLayer.appendChild(proj);
+                        thrownProjectiles.push({ el: proj, x: fObj.baseX + 40, y: 350 - fObj.y - 60 + (i*20), velX: fObj===f1?15:-15, owner: fObj, dmg: 20, isLaser: false });
+                    }
+                }, 300);
+            }
+            if (move.archerStorm) {
+                setTimeout(() => {
+                    for(let i=0; i<5; i++) {
+                        setTimeout(() => {
+                            playSound('jump'); let proj = document.createElement('div'); proj.className = 'particle'; proj.style.background = '#2ecc71'; proj.style.boxShadow = '0 0 10px #2ecc71';
+                            proj.style.left = (fObj.baseX + 20) + 'px'; proj.style.top = (350 - fObj.y - 60 + (Math.random()*40-20)) + 'px'; propsLayer.appendChild(proj);
+                            thrownProjectiles.push({ el: proj, x: fObj.baseX + 20, y: 350 - fObj.y - 60, velX: fObj===f1?25:-25, owner: fObj, dmg: 12, isLaser: true });
+                        }, i * 100);
+                    }
+                }, 200);
             }
         };
 
@@ -532,7 +681,7 @@
 
             let hpPercent = (fObj.hp / fObj.maxHp) * 100;
             if (hpPercent <= 40 && activeProps.length > 0) {
-                let p = activeProps.find(p => p.type === 'potion');
+                let p = activeProps.find(p => p.type === 'potion' || p.type === 'gift');
                 if (p) {
                     let d = p.x - (fObj === f1 ? fObj.baseX : 800 - fObj.baseX);
                     if (Math.abs(d) > 20) { moveFighter(fObj, fObj===f1?(d>0?80:-80):(d>0?-80:80)); fObj.el.classList.add('dodge'); return; }
@@ -550,9 +699,10 @@
                 else if (r < 0.3) executeMove(fObj, {id:'block'}); 
                 else if (r < 0.8) { 
                     let move;
-                    if (hpPercent <= 30 && fObj.mp >= 50 && Math.random() > 0.2) { let ultKey = fObj.isPlayer ? playerStats.ultimate : 'omega-burst'; move = ultimates[ultKey]; }
-                    else if (Math.random() > 0.7) { const s = skills[Math.floor(Math.random() * skills.length)]; move = (fObj.mp >= s.cost) ? s : basics[Math.floor(Math.random() * basics.length)]; } 
-                    else move = basics[Math.floor(Math.random() * basics.length)]; 
+                    let activeRole = fObj.isPlayer ? playerStats.role : (enemyType === 'boss' ? 'tank' : (enemyType === 'ninja' ? 'assassin' : 'balanced'));
+                    if (hpPercent <= 30 && fObj.mp >= 50 && Math.random() > 0.2) move = roleMoves[activeRole].ultimate;
+                    else if (Math.random() > 0.6) { const s = roleMoves[activeRole].skills; move = (fObj.mp >= s[0].cost) ? s[Math.floor(Math.random() * s.length)] : basics_pool[Math.floor(Math.random() * basics_pool.length)]; } 
+                    else move = basics_pool[Math.floor(Math.random() * basics_pool.length)]; 
                     executeMove(fObj, move);
                 } else executeMove(fObj, {id:'dodge'});
             }
@@ -564,18 +714,26 @@
             const k = e.key.toLowerCase();
             if (['a', 'd'].includes(k)) {
                 if (moveCooldown) return;
+                let mCd = (playerStats.role === 'assassin') ? 80 : (playerStats.role === 'tank' ? 250 : 150);
                 if (k === 'a') moveFighter(f1, -60); if (k === 'd') moveFighter(f1, 60);
-                moveCooldown = true; setTimeout(() => moveCooldown = false, 150); return;
+                moveCooldown = true; setTimeout(() => moveCooldown = false, mCd); return;
             }
             if (manualCooldown) return;
             let acted = false;
             if (k === 'w') { executeMove(f1, {id:'block'}); acted = true; }
             if (k === 's') { executeMove(f1, {id: Math.random()>0.5?'dodge':'charge'}); acted = true; }
-            if (k === 'j') { executeMove(f1, basics[Math.floor(Math.random() * basics.length)]); acted = true; }
+            if (k === 'j') { 
+                if (Math.random() > 0.6) {
+                    let s = roleMoves[playerStats.role].skills;
+                    let move = s[Math.floor(Math.random() * s.length)];
+                    if (f1.mp >= move.cost) executeMove(f1, move); else executeMove(f1, basics_pool[Math.floor(Math.random() * basics_pool.length)]);
+                } else executeMove(f1, basics_pool[Math.floor(Math.random() * basics_pool.length)]); 
+                acted = true; 
+            }
             if (k === 'k' && f1.hasBox) { executeMove(f1, {id:'throw'}); acted = true; }
             if (k === 'l') { 
-                if (f1.hp <= 30 && f1.mp >= 50) executeMove(f1, ultimates[playerStats.ultimate]);
-                else { const s = skills[Math.floor(Math.random() * skills.length)]; if(f1.mp >= s.cost) executeMove(f1, s); }
+                if (f1.hp <= 30 && f1.mp >= 50) executeMove(f1, roleMoves[playerStats.role].ultimate);
+                else { let s = roleMoves[playerStats.role].skills[0]; if(f1.mp >= s.cost) executeMove(f1, s); }
                 acted = true;
             }
             if (acted) { manualCooldown = true; setTimeout(() => manualCooldown = false, 350); }
@@ -594,12 +752,16 @@
         bindTouch('m-right', () => holdRight = true, () => holdRight = false);
         bindTouch('m-block', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0) { executeMove(f1, {id:'block'}); manualCooldown=true; setTimeout(()=>manualCooldown=false,350); }});
         bindTouch('m-charge', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0) { executeMove(f1, {id: Math.random()>0.5?'dodge':'charge'}); manualCooldown=true; setTimeout(()=>manualCooldown=false,350); }});
-        bindTouch('m-attack', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0) { executeMove(f1, basics[Math.floor(Math.random() * basics.length)]); manualCooldown=true; setTimeout(()=>manualCooldown=false,350); }});
+        bindTouch('m-attack', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0) { 
+            let move = basics_pool[Math.floor(Math.random() * basics_pool.length)];
+            if(Math.random()>0.6) { let s = roleMoves[playerStats.role].skills; let sm = s[Math.floor(Math.random()*s.length)]; if(f1.mp>=sm.cost) move=sm; }
+            executeMove(f1, move); manualCooldown=true; setTimeout(()=>manualCooldown=false,350); 
+        }});
         bindTouch('m-throw', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && f1.hasBox) { executeMove(f1, {id:'throw'}); manualCooldown=true; setTimeout(()=>manualCooldown=false,350); }});
         bindTouch('m-ult', () => { 
             if(!gameActive || !playerStats.manualMode || manualCooldown || f1.hp<=0) return;
-            if (f1.hp <= 30 && f1.mp >= 50) executeMove(f1, ultimates[playerStats.ultimate]);
-            else { const s = skills[Math.floor(Math.random() * skills.length)]; if(f1.mp >= s.cost) executeMove(f1, s); }
+            if (f1.hp <= 30 && f1.mp >= 50) executeMove(f1, roleMoves[playerStats.role].ultimate);
+            else { let s = roleMoves[playerStats.role].skills[0]; if(f1.mp >= s.cost) executeMove(f1, s); }
             manualCooldown=true; setTimeout(()=>manualCooldown=false, 350);
         });
 
@@ -612,16 +774,10 @@
             aiLoopTimer = setTimeout(runAILoop, delay);
         }
 
-        // --- MAGNETIC ULTIMATE FIX ---
         function checkCollision(attacker, hitBox, defender, pad = 35) { 
             let p = pad * scaleFactor; 
-            if (attacker.isUltimate) {
-                let dist = Math.abs(attacker.baseX - defender.baseX);
-                if (dist < 300) return true; // Direct hit if near!
-            }
-            const headBox = defender.el.querySelector('.head').getBoundingClientRect(); 
-            const torsoBox = defender.el.querySelector('.torso').getBoundingClientRect();
-            
+            if (attacker.isUltimate) { let dist = Math.abs(attacker.baseX - defender.baseX); if (dist < 300) return true; }
+            const headBox = defender.el.querySelector('.head').getBoundingClientRect(); const torsoBox = defender.el.querySelector('.torso').getBoundingClientRect();
             let isHit = !(hitBox.right + p < headBox.left || hitBox.left - p > headBox.right || hitBox.bottom + p < headBox.top || hitBox.top - p > headBox.bottom) || 
                         !(hitBox.right + p < torsoBox.left || hitBox.left - p > torsoBox.right || hitBox.bottom + p < torsoBox.top || hitBox.top - p > torsoBox.bottom); 
             return isHit;
@@ -638,80 +794,84 @@
             playSound('heavy'); announceSkill("FATALITY");
             const fatText = document.createElement('div'); fatText.className = 'fatality-text show-fatality'; fatText.innerText = "FATALITY"; mainBody.appendChild(fatText);
             playerStats.coins += (isBossStage ? 300 : 100) + (playerStats.stage * 20); updateUI();
-            
             setTimeout(() => {
                 mainBody.classList.remove('fatality-mode'); fatText.remove(); defender.el.style.display = 'flex';
                 defender.hp = 0; endMatch(attacker.isPlayer);
             }, 3000);
         }
 
-        // --- NEW: DYNAMIC FATALITY SYSTEM ---
         function triggerFatality(attacker, defender) {
             gameActive = false; isSlowMo = false;
-            mainBody.classList.remove('slow-mo'); mainBody.classList.add('fatality-mode');
-            removeStates(attacker.el); removeStates(defender.el); defender.el.classList.add('hit');
+            announceSkill("FINISH HIM"); 
+            skillDisplay.innerText = "FINISH HIM!"; skillDisplay.style.color = "#ff0000"; skillDisplay.style.textShadow = "0 0 20px #ff0000, 0 5px 0 #fff"; skillDisplay.classList.add('show-skill');
+            mainBody.classList.add('slow-mo');
+            
+            setTimeout(() => {
+                skillDisplay.classList.remove('show-skill'); mainBody.classList.remove('slow-mo'); mainBody.classList.add('fatality-mode');
+                removeStates(attacker.el); removeStates(defender.el); defender.el.classList.add('hit');
 
-            let ultType = attacker.isPlayer ? playerStats.ultimate : 'omega-burst';
+                let role = attacker.isPlayer ? playerStats.role : 'balanced';
+                let defRealX = defender === f1 ? defender.baseX : 800 - defender.baseX;
 
-            if (ultType === 'titan-smash') {
-                // TITAN SMASH FATALITY: Jumps off screen, crashes down
-                attacker.baseX = 800 - defender.baseX; 
-                attacker.y = 400; // Fly high
-                attacker.el.style.left = attacker.baseX + 'px'; 
-                attacker.el.style.bottom = attacker.y + 'px';
-                attacker.el.classList.add('titan-smash');
-                
-                setTimeout(() => {
-                    attacker.y = 0; attacker.el.style.bottom = '0px';
-                    playSound('heavy'); playSound('hit');
-                    mainBody.classList.add('shake-screen'); setTimeout(() => mainBody.classList.remove('shake-screen'), 400);
-                    spawnGravityParticles(800 - defender.baseX, 50, '#ff0000', true); 
-                    for(let i=0; i<3; i++) spawnGravityParticles(800 - defender.baseX, 50, '#f1c40f', true);
-                    defender.el.style.display = 'none';
-                    finishFatality(attacker, defender);
-                }, 1000);
-
-            } else if (ultType === 'phantom-strike') {
-                // PHANTOM STRIKE FATALITY: Omni-Slash Teleports
-                attacker.el.classList.add('phantom-strike');
-                let slashes = 0;
-                let defRealX = 800 - defender.baseX;
-
-                let slashInterval = setInterval(() => {
-                    playSound('dodge');
-                    // Teleport left and right of enemy
-                    attacker.baseX = defRealX + (slashes % 2 === 0 ? -60 : 60);
-                    attacker.el.style.left = attacker.baseX + 'px';
-                    slashes++;
-                    
-                    if (slashes > 6) {
-                        clearInterval(slashInterval);
-                        attacker.el.classList.remove('phantom-strike');
-                        attacker.baseX = defRealX - 80; attacker.el.style.left = attacker.baseX + 'px'; // Stand behind
-                        setTimeout(() => {
-                            playSound('clang'); spawnGravityParticles(defRealX, 100, '#ff0000', true);
-                            defender.el.style.display = 'none';
-                            finishFatality(attacker, defender);
-                        }, 600);
-                    }
-                }, 150);
-
-            } else {
-                // OMEGA BURST FATALITY: The 15-Punch Flurry (Classic)
-                attacker.baseX = 800 - defender.baseX - 60;
-                attacker.el.style.left = attacker.baseX + 'px';
-                
-                setTimeout(() => {
-                    attacker.el.classList.add('fatality-strikes');
-                    let t = 0; for(let i=0; i<15; i++) { setTimeout(() => playSound('hit'), t); t += 100; }
+                if (role === 'tank') {
+                    attacker.baseX = defRealX; attacker.y = 500; attacker.el.style.left = attacker.baseX + 'px'; attacker.el.style.bottom = attacker.y + 'px'; attacker.el.classList.add('titan-smash');
                     setTimeout(() => {
-                        attacker.el.classList.remove('fatality-strikes'); attacker.el.classList.add('uppercut'); 
-                        defender.el.style.display = 'none'; 
-                        spawnGravityParticles(800 - defender.baseX, 200, '#ff0000', true); 
-                        finishFatality(attacker, defender);
+                        attacker.el.classList.add('meteor-drop'); attacker.y = 0; attacker.el.style.bottom = '0px'; 
+                        playSound('heavy'); playSound('hit'); mainBody.classList.add('heavy-shake'); setTimeout(() => mainBody.classList.remove('heavy-shake'), 600);
+                        spawnGravityParticles(defRealX, 50, '#ff0000', true); for(let i=0; i<4; i++) spawnGravityParticles(defRealX, 50, '#f1c40f', true); 
+                        defender.el.style.display = 'none'; setTimeout(() => finishFatality(attacker, defender), 800);
+                    }, 1200);
+                } else if (role === 'assassin') {
+                    attacker.el.classList.add('phantom-strike'); let slashes = 0; 
+                    let slashInterval = setInterval(() => {
+                        playSound('slice'); attacker.baseX = defRealX + (slashes % 2 === 0 ? -100 : 100); attacker.el.style.left = attacker.baseX + 'px'; slashes++;
+                        let slash = document.createElement('div'); slash.className = 'slash-mark';
+                        slash.style.left = (defRealX - 125 + Math.random()*50) + 'px'; slash.style.top = (100 + Math.random()*150) + 'px';
+                        slash.style.setProperty('--rot', `${Math.random()*360}deg`); mainBody.appendChild(slash); setTimeout(()=>slash.remove(), 500);
+                        if (slashes > 8) {
+                            clearInterval(slashInterval); attacker.el.classList.remove('phantom-strike'); attacker.baseX = defRealX - 80; attacker.el.style.left = attacker.baseX + 'px';
+                            setTimeout(() => { playSound('clang'); spawnGravityParticles(defRealX, 100, '#ff0000', true); spawnGravityParticles(defRealX, 100, '#ff0000', true); defender.el.style.display = 'none'; finishFatality(attacker, defender); }, 800);
+                        }
+                    }, 120);
+                } else if (role === 'mage') {
+                    attacker.baseX = defRealX > 400 ? defRealX - 150 : defRealX + 150; attacker.el.style.left = attacker.baseX + 'px';
+                    attacker.el.classList.add('palm-flurry'); playSound('charge');
+                    let fInt = setInterval(() => { spawnGravityParticles(defRealX, 50+Math.random()*100, '#ff4757', true); playSound('hit'); }, 100);
+                    setTimeout(() => {
+                        clearInterval(fInt); playSound('heavy'); mainBody.classList.add('shake-screen');
+                        spawnGravityParticles(defRealX, 100, '#ff4757', true); defender.el.style.display = 'none'; finishFatality(attacker, defender);
                     }, 1500);
-                }, 500);
-            }
+                } else if (role === 'witch') {
+                    attacker.baseX = defRealX > 400 ? defRealX - 100 : defRealX + 100; attacker.el.style.left = attacker.baseX + 'px';
+                    attacker.el.classList.add('crane'); defender.y = 100; defender.el.style.bottom = '100px'; defender.el.style.filter = 'hue-rotate(270deg) brightness(2)';
+                    playSound('heal');
+                    let sInt = setInterval(() => { spawnGravityParticles(defRealX, 150, '#9b59b6', false); }, 150);
+                    setTimeout(() => {
+                        clearInterval(sInt); playSound('smite'); defender.el.style.display = 'none'; finishFatality(attacker, defender);
+                    }, 1500);
+                } else if (role === 'archer') {
+                    attacker.baseX = attacker.isPlayer ? 50 : 750; attacker.el.style.left = attacker.baseX + 'px';
+                    attacker.el.classList.add('palm'); playSound('charge');
+                    let laser = document.createElement('div'); laser.style.cssText = `position:absolute; width:800px; height:4px; background:#2ecc71; top:${350 - attacker.y - 60}px; left:0; z-index:200; opacity:0.5; box-shadow:0 0 10px #2ecc71;`;
+                    propsLayer.appendChild(laser);
+                    setTimeout(() => {
+                        laser.style.opacity = 1; laser.style.height = '15px'; playSound('clang'); playSound('heavy');
+                        mainBody.classList.add('heavy-shake'); setTimeout(()=>mainBody.classList.remove('heavy-shake'), 400);
+                        spawnGravityParticles(defRealX, 100, '#2ecc71', true); spawnGravityParticles(defRealX, 100, '#2ecc71', true); defender.el.style.display = 'none';
+                        setTimeout(() => { laser.remove(); finishFatality(attacker, defender); }, 500);
+                    }, 1000);
+                } else {
+                    attacker.baseX = defRealX - 60; attacker.el.style.left = attacker.baseX + 'px';
+                    setTimeout(() => {
+                        attacker.el.classList.add('fatality-strikes'); let t = 0; for(let i=0; i<20; i++) { setTimeout(() => { playSound('hit'); spawnGravityParticles(defRealX, 100+Math.random()*100, '#f1c40f', false); }, t); t += 80; }
+                        setTimeout(() => {
+                            attacker.el.classList.remove('fatality-strikes'); attacker.el.classList.add('uppercut'); 
+                            defender.el.style.display = 'none'; spawnGravityParticles(defRealX, 200, '#ff0000', true); spawnGravityParticles(defRealX, 200, '#ff0000', true); 
+                            finishFatality(attacker, defender);
+                        }, 1800);
+                    }, 500);
+                }
+            }, 1000); 
         }
 
         function triggerDamage(attacker, defender, isProj, flatDmg = null) {
@@ -719,7 +879,6 @@
             finalDmg = isNaN(finalDmg) ? 15 : finalDmg; 
             const isUlt = attacker.isUltimate && !isProj;
 
-            // AUTO FATALITY CHECK! (Triggers on ANY player attack if enemy HP drops to 15% or lower)
             if (attacker.isPlayer && !defender.isPlayer && (defender.hp - finalDmg <= defender.maxHp * 0.15)) {
                 triggerFatality(attacker, defender); return true;
             }
@@ -733,23 +892,38 @@
 
                 if (!defender.superArmor || isUlt) { removeStates(defender.el); defender.el.classList.add('hit'); defender.combo = 0; }
 
+                let inflictsFire = playerStats.element === 'fire' || (attacker.isPlayer && playerStats.role === 'mage');
+                let inflictsIce = playerStats.element === 'ice';
+                let vamps = playerStats.relics.vamp || (attacker.isPlayer && playerStats.role === 'witch');
+                let thornsActive = playerStats.relics.thorns || (defender.isPlayer && playerStats.role === 'witch');
+
                 if (attacker.isPlayer && !isProj) {
-                    if (playerStats.element === 'fire' && Math.random() < 0.4) { defender.status = 'on-fire'; defender.statusTimer = 60; defender.el.classList.add('on-fire'); }
-                    if (playerStats.element === 'ice' && Math.random() < 0.4) { defender.status = 'frozen'; defender.statusTimer = 60; defender.el.classList.add('frozen'); }
-                    if (playerStats.relics.vamp) { attacker.hp += Math.floor(finalDmg * 0.3); if(attacker.hp>attacker.maxHp)attacker.hp=attacker.maxHp; updateHealthBar(attacker); }
+                    if (inflictsFire && Math.random() < 0.4) { defender.status = 'on-fire'; defender.statusTimer = 60; defender.el.classList.add('on-fire'); }
+                    if (inflictsIce && Math.random() < 0.4) { defender.status = 'frozen'; defender.statusTimer = 60; defender.el.classList.add('frozen'); }
+                    if (vamps) { attacker.hp += Math.floor(finalDmg * 0.3); if(attacker.hp>attacker.maxHp)attacker.hp=attacker.maxHp; updateHealthBar(attacker); }
                 }
-                if (defender.isPlayer && playerStats.relics.thorns && !isProj) { 
+                if (thornsActive && !isProj && !attacker.isPlayer) { 
                     attacker.hp -= 5; updateHealthBar(attacker); spawnDamageText(attacker === f1 ? attacker.baseX : 800 - attacker.baseX, 350 - attacker.y - 70, 5, '#2ecc71');
                     if(attacker.hp<=0) { endMatch(true); return true; } 
                 }
             }
             
-            defender.hp -= finalDmg; if (defender.hp < 0) defender.hp = 0;
-            updateHealthBar(defender);
+            defender.hp -= finalDmg; if (defender.hp < 0) defender.hp = 0; updateHealthBar(defender);
+            
             let realX = defender === f1 ? defender.baseX : 800 - defender.baseX;
-            spawnDamageText(realX, 350 - defender.y - 70, finalDmg, isUlt ? '#f1c40f' : '#ff4757');
+            let dmgColor = isUlt ? '#f1c40f' : '#ff4757';
+            let dmgText = finalDmg;
+            if (attacker.isCrit) { dmgColor = '#9b59b6'; dmgText = finalDmg + ' CRIT!'; playSound('heavy'); }
+            spawnDamageText(realX, 350 - defender.y - 70, dmgText, dmgColor);
 
-            if (attacker.isPlayer) { playerStats.coins += Math.floor(finalDmg / 5); updateUI(); }
+            if (attacker.isPlayer) { 
+                let earned = Math.floor(finalDmg / 2);
+                if (earned > 0) {
+                    playerStats.coins += earned; 
+                    updateUI(); 
+                    spawnDamageText(realX + 30, 350 - defender.y - 50, `+${earned} 💰`, '#f1c40f');
+                }
+            }
             
             if (isUlt && !defender.isBlocking) {
                 isSlowMo = false; mainBody.classList.remove('slow-mo'); mainBody.classList.add('shake-screen'); stageArea.classList.add('stage-flash');
@@ -768,17 +942,29 @@
         function endMatch(playerWon) {
             gameActive = false; isSlowMo = false; mainBody.classList.remove('slow-mo'); 
             clearTimeout(aiLoopTimer); clearTimeout(spawnerTimer); clearInterval(droneTimer); clearTimeout(hazardTimer);
-            document.querySelectorAll('.hazard-warning, .hazard-spikes').forEach(e => e.remove());
+            document.querySelectorAll('.hazard-warning, .hazard-spikes, .slash-mark').forEach(e => e.remove());
             holdLeft = false; holdRight = false; updateUI(); 
             
             let loser = playerWon ? f2 : f1;
-            setTimeout(() => { loser.el.classList.add('ko'); }, 200);
+            setTimeout(() => { 
+                loser.el.classList.add('ko'); 
+                let realX = loser === f1 ? loser.baseX : 800 - loser.baseX;
+                spawnGravityParticles(realX, 100, loser.color, true); 
+                spawnGravityParticles(realX, 100, '#fff', false); 
+                playSound('heavy');
+            }, 200);
+            
             announceSkill(playerWon ? "YOU WIN" : "YOU LOSE"); playSound('heavy');
             skillDisplay.innerText = playerWon ? "VICTORY!" : "DEFEAT"; 
             skillDisplay.style.color = playerWon ? "#2ecc71" : "#e74c3c";
             skillDisplay.classList.add('show-skill');
 
-            if (playerWon) { playerStats.coins += (isBossStage ? 150 : 50) + (playerStats.stage * 10); playSound('coin'); playerStats.stage++; }
+            if (playerWon) { 
+                playerStats.coins += (isBossStage ? 150 : 50) + (playerStats.stage * 10); 
+                playSound('coin'); playerStats.stage++; 
+            } else {
+                playerStats.coins += 20 + (playerStats.stage * 5); playSound('coin');
+            }
 
             setTimeout(() => {
                 skillDisplay.classList.remove('show-skill'); document.getElementById('shop-overlay').style.display = 'flex';
@@ -787,15 +973,29 @@
         }
 
         function physicsLoop() {
+            let dt = isSlowMo ? 0.2 : 1.0; 
+
+            for(let i = gravityParticles.length - 1; i >= 0; i--) {
+                let p = gravityParticles[i]; p.vy += GRAVITY * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= (0.03 * dt);
+                if (p.y < 0) { p.y = 0; p.vy *= -0.5; p.vx *= 0.8; }
+                p.el.style.left = p.x + 'px'; p.el.style.top = (400 - p.y) + 'px'; p.el.style.opacity = p.life;
+                if (p.life <= 0) { p.el.remove(); gravityParticles.splice(i, 1); }
+            }
+
             if (!gameActive) { physicsFrame = requestAnimationFrame(physicsLoop); return; }
             if (hitStopFrames > 0) { hitStopFrames--; physicsFrame = requestAnimationFrame(physicsLoop); return; }
 
             if (playerStats.manualMode && f1.hp > 0 && !moveCooldown) {
-                if (holdLeft) { moveFighter(f1, -60); moveCooldown = true; setTimeout(() => moveCooldown = false, 150); }
-                if (holdRight) { moveFighter(f1, 60); moveCooldown = true; setTimeout(() => moveCooldown = false, 150); }
+                let mCd = (playerStats.role === 'assassin') ? 80 : (playerStats.role === 'tank' ? 250 : 150);
+                if (holdLeft) { moveFighter(f1, -60); moveCooldown = true; setTimeout(() => moveCooldown = false, mCd); }
+                if (holdRight) { moveFighter(f1, 60); moveCooldown = true; setTimeout(() => moveCooldown = false, mCd); }
             }
 
-            let dt = isSlowMo ? 0.2 : 1.0; 
+            let activeRegen = playerStats.manaRegen + (playerStats.role === 'mage' ? 3 : 0);
+            if (f1.hp > 0 && activeRegen > 0) {
+                f1.manaAccumulator = (f1.manaAccumulator || 0) + dt;
+                if (f1.manaAccumulator > 60) { updateMana(f1, activeRegen); f1.manaAccumulator = 0; }
+            }
 
             [f1, f2].forEach(f => {
                 if (f.statusTimer > 0) {
@@ -816,13 +1016,6 @@
                 drone.style.left = (f1.baseX - 40) + 'px'; drone.style.bottom = (f1.y + 60) + 'px';
             }
 
-            for(let i = gravityParticles.length - 1; i >= 0; i--) {
-                let p = gravityParticles[i]; p.vy += GRAVITY * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= (0.03 * dt);
-                if (p.y < 0) { p.y = 0; p.vy *= -0.5; p.vx *= 0.8; }
-                p.el.style.left = p.x + 'px'; p.el.style.top = (400 - p.y) + 'px'; p.el.style.opacity = p.life;
-                if (p.life <= 0) { p.el.remove(); gravityParticles.splice(i, 1); }
-            }
-
             [f1, f2].forEach(attacker => {
                 let defender = attacker === f1 ? f2 : f1;
                 if (!attacker.canHit) return;
@@ -830,6 +1023,7 @@
 
                 if (checkCollision(attacker, hitBox, defender, 35)) { 
                     let dChance = defender.isPlayer ? playerStats.dodgeChance : (enemyType === 'ninja' ? 0.3 : (isBossStage ? 0.1 : 0.10 + (playerStats.stage * 0.02)));
+                    if (defender.isPlayer && playerStats.role === 'assassin') dChance += 0.10;
                     if (defender.status === 'frozen') dChance /= 2; 
                     
                     if (Math.random() < dChance && !defender.isBlocking && !attacker.isUltimate) { 
@@ -862,11 +1056,16 @@
                         if (prop.type === 'sword' && !fighter.hasSword) { fighter.hasSword = true; fighter.tempBonusDmg = 10; fighter.el.classList.add('has-sword'); prop.el.remove(); activeProps.splice(i, 1); playSound('dodge'); } 
                         else if (prop.type === 'box' && !fighter.hasBox) { fighter.hasBox = true; prop.el.remove(); activeProps.splice(i, 1); }
                         else if (prop.type === 'potion') { fighter.hp += 40; if(fighter.hp>fighter.maxHp)fighter.hp=fighter.maxHp; updateHealthBar(fighter); playSound('heal'); prop.el.remove(); activeProps.splice(i, 1); }
+                        else if (prop.type === 'gift' && fighter.isPlayer) { 
+                            let bonusCoins = Math.floor(Math.random() * 20) + 10;
+                            playerStats.coins += bonusCoins; updateUI(); playSound('coin');
+                            spawnDamageText(fighter.baseX, 350 - fighter.y - 80, `+${bonusCoins} 💰`, '#f1c40f');
+                            prop.el.remove(); activeProps.splice(i, 1);
+                        }
                     }
                 });
             });
 
-            if (isSlowMo && !f1.canHit && !f2.canHit) { isSlowMo = false; mainBody.classList.remove('slow-mo'); }
             physicsFrame = requestAnimationFrame(physicsLoop);
         }
 
@@ -881,19 +1080,28 @@
             f2.el.className = 'stickman p2'; 
             f2.superArmor = false;
 
-            if (enemyType === 'boss') { stageArea.classList.add('boss-bg'); f2.el.classList.add('boss-mode'); f2.maxHp = 200 + (playerStats.stage * 30); f2.superArmor = true; } 
-            else { stageArea.classList.remove('boss-bg'); f2.maxHp = 80 + (playerStats.stage * 15); }
+            if (enemyType === 'boss') { stageArea.classList.add('boss-bg'); f2.el.classList.add('boss-mode'); f2.maxHp = 150 + (playerStats.stage * 25); f2.superArmor = true; } 
+            else { stageArea.classList.remove('boss-bg'); f2.maxHp = 80 + (playerStats.stage * 10); }
 
-            if (enemyType === 'ninja') f2.el.classList.add('enemy-ninja');
-            if (enemyType === 'tank') { f2.el.classList.add('enemy-tank'); f2.superArmor = true; }
+            if (enemyType === 'ninja') { stageArea.classList.add('bg-ninja'); f2.el.classList.add('enemy-ninja'); }
+            else if (enemyType === 'tank') { stageArea.classList.add('bg-tank'); f2.el.classList.add('enemy-tank'); f2.superArmor = true; }
+            else if (enemyType === 'normal') { stageArea.classList.add('bg-normal'); }
 
-            f1.maxHp = playerStats.maxHp; 
+            let activeMaxHp = playerStats.maxHp + (playerStats.role === 'tank' ? 100 : (playerStats.role === 'assassin' ? -30 : 0));
+            if(activeMaxHp < 10) activeMaxHp = 10;
+            f1.maxHp = activeMaxHp; 
+            f1.superArmor = (playerStats.role === 'tank');
+
             [f1, f2].forEach(f => {
-                f.hp = f.maxHp; f.mp = 50; f.baseX = 150; f.y = 0; f.vy = 0; f.hasSword = false; f.hasBox = false; f.tempBonusDmg = 0; f.combo = 0; f.status = 'none'; f.statusTimer = 0; f.isBlocking = false;
+                f.hp = f.maxHp; f.mp = 50; f.baseX = 150; f.y = 0; f.vy = 0; f.hasSword = false; f.hasBox = false; f.tempBonusDmg = 0; f.combo = 0; f.status = 'none'; f.statusTimer = 0; f.isBlocking = false; f.manaAccumulator = 0;
                 updateHealthBar(f); f.mpBar.style.width = '50%';
-                f.el.classList.remove('ko', 'has-sword', 'on-fire', 'frozen'); removeStates(f.el); f.el.style.bottom = '0px'; f.el.style[f === f1 ? 'left' : 'right'] = '150px'; f.comboText.classList.remove('show-combo');
-                if (f.isPlayer && playerStats.element === 'fire') f.el.classList.add('elem-fire');
-                if (f.isPlayer && playerStats.element === 'ice') f.el.classList.add('elem-ice');
+                f.el.classList.remove('ko', 'has-sword', 'on-fire', 'frozen', 'role-assassin', 'role-mage', 'role-witch', 'role-tank', 'role-archer'); 
+                removeStates(f.el); f.el.style.bottom = '0px'; f.el.style[f === f1 ? 'left' : 'right'] = '150px'; f.comboText.classList.remove('show-combo');
+                
+                if (f.isPlayer) {
+                    if (playerStats.role !== 'balanced') f.el.classList.add(`role-${playerStats.role}`);
+                    else { if (playerStats.element === 'fire') f.el.classList.add('elem-fire'); if (playerStats.element === 'ice') f.el.classList.add('elem-ice'); }
+                }
             });
             
             clearTimeout(comboTimers.p1); clearTimeout(comboTimers.p2);
@@ -904,17 +1112,24 @@
             if (enemyType === 'ninja') stageName = "NINJA ASSASSIN!";
             if (enemyType === 'tank') stageName = "ARMORED TANK!";
 
+            if (playerStats.stage === 1) {
+                setTimeout(() => {
+                    skillDisplay.innerText = "TUTORIAL: HIT ENEMY TO GET COINS!"; skillDisplay.style.color = "#f1c40f"; skillDisplay.classList.add('show-skill');
+                    setTimeout(() => skillDisplay.classList.remove('show-skill'), 2000);
+                }, 2000);
+            }
+
             announceSkill(stageName + " FIGHT!"); playSound('start'); 
             skillDisplay.innerText = stageName; skillDisplay.style.color = "#e74c3c"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 1500);
 
             gameActive = true; hitStopFrames = 0; manualCooldown = false; holdLeft = false; holdRight = false;
             runAILoop(); 
-            spawnerTimer = setTimeout(spawnProp, 2000); 
+            spawnerTimer = setTimeout(spawnProp, 4000); 
             if (playerStats.stage >= 2) hazardTimer = setTimeout(spawnHazard, 6000);
             if (playerStats.hasDrone) droneTimer = setInterval(fireDroneLaser, 4000);
         };
 
-        updateUI(); physicsLoop(); 
+        loadProgress(); updateUI(); physicsLoop(); 
     </script>
 </body>
 </html>

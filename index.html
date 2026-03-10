@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Stickman RPG: 3D God Mode</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
     <style>
-        body { margin: 0; background: #0b0c10; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; font-family: 'Arial Black', sans-serif; color: white; user-select: none; touch-action: none; transition: filter 0.05s; }
+        body { margin: 0; background: #0b0c10; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; font-family: 'Arial Black', sans-serif; color: white; user-select: none; touch-action: none; transition: filter 0.05s, background 0.2s; }
 
         /* --- AUTO UPGRADE TOAST --- */
         #auto-toast { position: absolute; top: 10px; left: 50%; transform: translateX(-50%) translateY(-150%); background: rgba(46, 204, 113, 0.95); border: 2px solid #27ae60; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 1rem; z-index: 2000; opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); text-shadow: 1px 1px 2px #000; font-style: italic; min-width: 300px; }
@@ -33,9 +34,25 @@
         .mp-bar { position: absolute; left: 0; height: 100%; width: 100%; background: linear-gradient(to bottom, #00f2fe 0%, #4facfe 50%, #0099cc 100%); transition: width 0.2s ease; box-shadow: inset 0 2px 5px rgba(255,255,255,0.6), inset 0 -2px 5px rgba(0,0,0,0.4), 0 0 10px #00d2ff; }
         .god-bar { position: absolute; left: 0; height: 100%; width: 0%; background: linear-gradient(to bottom, #fff 0%, #f1c40f 50%, #d35400 100%); transition: width 0.2s ease; box-shadow: 0 0 15px #f1c40f; }
 
+        @keyframes god-ready-pulse { 0% { box-shadow: 0 0 15px #f1c40f; filter: brightness(1); } 50% { box-shadow: 0 0 30px #fff, 0 0 20px #f1c40f; filter: brightness(1.5); } 100% { box-shadow: 0 0 15px #f1c40f; filter: brightness(1); } }
+        .god-bar.ready { animation: god-ready-pulse 0.5s infinite; }
+
+        /* Epic Boss Health Bar */
+        #combat-hud.boss-active .hud-side.right .bar-bg { height: 35px; border: 3px solid #e74c3c; box-shadow: 0 0 20px rgba(231, 76, 60, 0.8), inset 0 0 10px rgba(0,0,0,0.8); }
+        #combat-hud.boss-active .hud-side.right .hp-bar { background: linear-gradient(to bottom, #ff4757 0%, #c0392b 50%, #8b0000 100%) !important; }
+        #combat-hud.boss-active .hud-side.right .hp-text { font-size: 18px; font-style: italic; }
+
+        /* Danger Vignette & Rage Glow */
+        #danger-vignette { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 450; opacity: 0; box-shadow: inset 0 0 120px rgba(231, 76, 60, 0); transition: opacity 0.5s; }
+        .danger-active { opacity: 1 !important; animation: pulse-danger 0.8s infinite alternate ease-in-out; }
+        @keyframes pulse-danger { 0% { box-shadow: inset 0 0 80px rgba(231, 76, 60, 0.6); } 100% { box-shadow: inset 0 0 150px rgba(231, 76, 60, 0.9); } }
+        @keyframes rage-pulse { 0% { filter: drop-shadow(0 0 5px #ff0000) contrast(1.2); } 100% { filter: drop-shadow(0 0 25px #ff0000) contrast(1.5) saturate(2); } }
+        .rage-mode { animation: rage-pulse 0.4s infinite alternate; }
+        .boss-enraged { filter: drop-shadow(0 0 30px #e74c3c) brightness(1.5) saturate(3) !important; }
+
         /* --- STAGE & ENVIRONMENT --- */
         #game-wrapper { position: relative; width: 100%; flex-grow: 1; display: flex; justify-content: center; align-items: center; }
-        .stage { position: absolute; width: 800px; height: 400px; border-bottom: 4px solid #1f2833; display: flex; align-items: flex-end; justify-content: center; transition: background 1s, border 0.5s; transform-origin: center center; }
+        .stage { position: absolute; width: 800px; height: 400px; border-bottom: 4px solid #1f2833; display: flex; align-items: flex-end; justify-content: center; transition: background 1s, border 0.5s, transform 0.1s ease-out; transform-origin: center center; }
         
         .bg-dojo { background: linear-gradient(to bottom, #1a1a2e, #16213e, #0f3460); border-bottom-color: #1f2833; }
         .bg-forest { background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364); border-bottom-color: #1b3320; }
@@ -63,35 +80,29 @@
 
         /* --- FATALITY MODE CSS (3D Remastered) --- */
         body.fatality-mode { background: #000 !important; }
-        body.fatality-mode .stage { background: #000 !important; border-bottom-color: transparent !important; }
+        body.fatality-mode .stage { background: transparent !important; border-bottom-color: transparent !important; }
         body.fatality-mode .moon, body.fatality-mode .dojo-silhouettes, body.fatality-mode .fog, 
         body.fatality-mode .top-bar, body.fatality-mode #combat-hud, body.fatality-mode .drone, 
-        body.fatality-mode .prop, body.fatality-mode #mobile-controls { opacity: 0 !important; transition: opacity 0.2s; pointer-events: none; }
+        body.fatality-mode .prop, body.fatality-mode #mobile-controls, body.fatality-mode #in-fight-controls { opacity: 0 !important; transition: opacity 0.2s; pointer-events: none; }
         
         body.fatality-mode .stickman { filter: brightness(200%) grayscale(100%) drop-shadow(0 0 30px white) !important; z-index: 1000; transition: transform 0.05s, left 0.05s, bottom 0.05s !important; }
         
         .fatality-text { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%) scale(0.1); font-size: 6rem; color: #e74c3c; text-shadow: 0 0 30px #c0392b, 0 5px 0 #fff; opacity: 0; z-index: 1001; font-style: italic; pointer-events: none; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .show-fatality { opacity: 1 !important; transform: translate(-50%, -50%) scale(1) !important; }
 
-        .slash-mark { position: absolute; width: 350px; height: 12px; background: linear-gradient(90deg, transparent, #fff, transparent); box-shadow: 0 0 20px #00d2ff, 0 0 40px #00d2ff, inset 0 0 10px #fff; border-radius: 50%; z-index: 1005; opacity: 1; animation: slash-fade 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards; transform-origin: center; pointer-events: none; }
-        @keyframes slash-fade { 0% { transform: scaleX(0) rotate(var(--rot)); opacity: 1; } 50% { transform: scaleX(1) rotate(var(--rot)); opacity: 1; } 100% { transform: scaleX(1.5) rotate(var(--rot)); opacity: 0; } }
+        .slash-mark { position: absolute; height: 4px; background: #fff; border-radius: 50%; z-index: 1005; opacity: 1; animation: slash-fade 0.3s cubic-bezier(0.1, 0.9, 0.2, 1) forwards; transform-origin: center; pointer-events: none; }
+        @keyframes slash-fade { 0% { transform: scaleX(0) rotate(var(--rot)); opacity: 1; } 50% { transform: scaleX(1) rotate(var(--rot)); opacity: 1; } 100% { transform: scaleX(1) rotate(var(--rot)); opacity: 0; } }
         
         .meteor-drop { filter: brightness(300%) sepia(1) hue-rotate(-50deg) saturate(10) drop-shadow(0 0 50px red) !important; transform: scale(1.8) rotate(180deg) !important; }
         
-        @keyframes fatality-flurry {
-            0%, 100% { transform: scaleX(var(--facing, 1)) translateX(0); }
-            25% { transform: scaleX(var(--facing, 1)) translateX(80px) translateY(-50px) scale(1.2); }
-            50% { transform: scaleX(calc(var(--facing, 1) * -1)) translateX(-80px) translateY(50px) scale(1.2); }
-            75% { transform: scaleX(var(--facing, 1)) translateX(40px) translateY(-80px) scale(1.2); }
-        }
+        @keyframes fatality-flurry { 0%, 100% { transform: scaleX(var(--facing, 1)) translateX(0); } 25% { transform: scaleX(var(--facing, 1)) translateX(80px) translateY(-50px) scale(1.2); } 50% { transform: scaleX(calc(var(--facing, 1) * -1)) translateX(-80px) translateY(50px) scale(1.2); } 75% { transform: scaleX(var(--facing, 1)) translateX(40px) translateY(-80px) scale(1.2); } }
         .fatality-strikes { animation: fatality-flurry calc(0.12s / var(--atk-spd, 1)) infinite; filter: blur(2px) drop-shadow(0 0 30px #f1c40f) !important; }
 
-        /* --- EPIC BOSS MECHANICS (BULLET HELL) --- */
+        /* --- EPIC BOSS MECHANICS & HAZARDS --- */
         .boss-warning { position: absolute; bottom: 0; width: 150px; height: 20px; background: rgba(255,0,0,0.3); border: 2px solid red; z-index: 5; animation: warn-flash 0.15s infinite; border-radius: 5px; pointer-events: none; }
         .boss-warning.blast { height: 400px; background: linear-gradient(to top, rgba(255,0,0,0.9), rgba(255,255,0,0.5), transparent); animation: none; box-shadow: 0 0 50px red; border: none; }
         @keyframes warn-flash { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
-        /* --- STAGE HAZARDS --- */
         .hazard-warning { position: absolute; bottom: 0; width: 60px; height: 10px; background: rgba(231, 76, 60, 0.5); border: 1px solid red; z-index: 1; animation: flash-warning 0.2s infinite; }
         @keyframes flash-warning { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
         .hazard-spikes { position: absolute; bottom: 0; width: 60px; height: 50px; background: repeating-linear-gradient(45deg, transparent, transparent 5px, #95a5a6 5px, #7f8c8d 10px); clip-path: polygon(0% 100%, 10% 0%, 20% 100%, 30% 0%, 40% 100%, 50% 0%, 60% 100%, 70% 0%, 80% 100%, 90% 0%, 100% 100%); z-index: 6; animation: spike-stab 0.1s ease-out; }
@@ -104,32 +115,51 @@
         .shake-screen { animation: shake 0.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
         .heavy-shake { animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
 
-        /* --- LIMIT BREAK --- */
+        /* --- LIMIT BREAK & BEAMS --- */
         .limit-break { filter: drop-shadow(0 0 20px #ff0000) brightness(1.5) saturate(3) !important; }
-
-        /* --- MASSIVE BEAM ULTIMATE --- */
         .energy-beam { position: absolute; height: 60px; top: 220px; z-index: 200; opacity: 0; pointer-events: none; filter: drop-shadow(0 0 20px var(--beam-color)) brightness(1.5); }
         .beam-core { width: 100%; height: 100%; background: linear-gradient(to bottom, transparent, #fff 40%, #fff 60%, transparent); border-radius: 30px; animation: beam-pulse 0.1s infinite alternate; }
         @keyframes beam-pulse { 0% { transform: scaleY(0.8); opacity: 0.8; } 100% { transform: scaleY(1.2); opacity: 1; } }
 
-        /* --- TOP UI & GOD MODE --- */
+        /* --- TOP UI --- */
         .top-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; box-sizing: border-box; z-index: 200; flex-wrap: wrap; gap: 10px; transition: opacity 0.5s; }
-        .stats-display { font-size: 1.2rem; color: #f1c40f; text-shadow: 0 2px 5px #000; display: flex; align-items: center; gap: 15px; }
+        .stats-display { font-size: 1.1rem; color: #f1c40f; text-shadow: 0 2px 5px #000; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;}
         .prestige-display { color: #f39c12; font-weight: bold; text-shadow: 0 0 10px #f39c12; }
-        .stage-display { font-size: 1.2rem; color: #fff; text-shadow: 0 2px 5px #000; }
-        .god-mode-controls { display: flex; gap: 10px; flex-wrap: wrap; }
-        button.action-btn { background: #45a29e; color: #fff; border: none; padding: 8px 12px; font-weight: bold; cursor: pointer; border-radius: 5px; box-shadow: 0 4px 0 #1f2833; transition: all 0.1s; font-size: 0.9rem; }
-        button.action-btn:active { transform: translateY(4px); box-shadow: none; }
-        button.god-btn { background: #9b59b6; box-shadow: 0 4px 0 #8e44ad; display: none; }
-        #audio-btn { background: #e74c3c; box-shadow: 0 4px 0 #c0392b; animation: pulse-btn 1.5s infinite; }
-        @keyframes pulse-btn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .stage-display { font-size: 1.2rem; color: #fff; text-shadow: 0 2px 5px #000; text-align: center;}
+        .weakness-hint { font-size: 0.9rem; color: #66fcf1; text-shadow: 0 0 5px #000; margin-left: 10px; font-style: italic; }
 
-        /* --- THE DOJO SHOP UI --- */
-        #shop-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 12, 16, 0.95); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px); padding: 10px; box-sizing: border-box; }
+        /* --- IN-FIGHT BUTTONS --- */
+        #in-fight-controls { position: absolute; bottom: 90px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
+        #flee-btn, #manual-god-btn, #quick-potion-btn { background: #1f2833; color: #fff; border: 2px solid #45a29e; padding: 10px 15px; font-family: 'Arial Black', sans-serif; font-size: 0.9rem; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: all 0.2s; font-style: italic; }
+        #flee-btn { border-color: #e74c3c; color: #e74c3c; }
+        #manual-god-btn { border-color: #f1c40f; color: #f1c40f; text-shadow: 0 0 5px #f1c40f; box-shadow: 0 0 15px rgba(241, 196, 15, 0.4); }
+        #quick-potion-btn { border-color: #2ecc71; color: #2ecc71; text-shadow: 0 0 5px #2ecc71; box-shadow: 0 0 15px rgba(46, 204, 113, 0.4); }
+        #in-fight-controls button:active { transform: translateY(4px); box-shadow: none; }
+        #in-fight-controls button:disabled { filter: grayscale(100%) brightness(0.5); cursor: not-allowed; box-shadow: none; text-shadow: none; }
+        @keyframes btn-ready { 0% { transform: scale(1); box-shadow: 0 0 15px rgba(241, 196, 15, 0.4); } 50% { transform: scale(1.1); box-shadow: 0 0 25px rgba(241, 196, 15, 0.8), inset 0 0 10px #f1c40f; } 100% { transform: scale(1); box-shadow: 0 0 15px rgba(241, 196, 15, 0.4); } }
+        #manual-god-btn.ready-to-click { animation: btn-ready 0.6s infinite; border-color: #fff; color: #fff; }
+
+        /* --- MANUAL FATALITY PROMPT --- */
+        #fatality-prompt { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; flex-direction: column; align-items: center; display: none; }
+        #fatality-btn { background: #e74c3c; color: #fff; border: 4px solid #fff; font-size: 3rem; font-family: 'Arial Black', sans-serif; font-style: italic; padding: 20px 40px; cursor: pointer; text-shadow: 0 5px 10px #000; box-shadow: 0 0 30px #e74c3c; border-radius: 15px; animation: pulse-danger 0.5s infinite alternate; transition: transform 0.1s; }
+        #fatality-btn:active { transform: scale(0.95); }
+        .fatality-timer-container { width: 100%; height: 10px; background: #333; margin-top: 15px; border-radius: 5px; overflow: hidden; box-shadow: 0 0 10px #000; }
+        #fatality-timer-bar { width: 100%; height: 100%; background: #f1c40f; }
+
+        /* --- REMASTERED DOJO SHOP UI (TABS) --- */
+        #shop-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 12, 16, 0.98); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(8px); padding: 10px; box-sizing: border-box; }
         .shop-panel { background: #1f2833; padding: 20px; border-radius: 15px; border: 2px solid #66fcf1; box-shadow: 0 0 30px rgba(102, 252, 241, 0.2); width: 100%; max-width: 800px; text-align: center; max-height: 95vh; overflow-y: auto; position: relative; }
-        .shop-panel h1 { color: #66fcf1; margin-top: 0; text-transform: uppercase; letter-spacing: 2px; font-size: 1.5rem; }
+        
+        /* Shop Tabs */
+        .shop-tabs { display: flex; justify-content: space-between; border-bottom: 2px solid #45a29e; margin-bottom: 15px; }
+        .tab-btn { background: transparent; color: #aaa; border: none; padding: 10px 15px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: all 0.2s; border-bottom: 4px solid transparent; }
+        .tab-btn.active { color: #66fcf1; border-bottom-color: #66fcf1; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
         .ultimate-selector { background: #0b0c10; padding: 10px; border-radius: 8px; border: 1px solid #f1c40f; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
         .ultimate-selector select { background: #1f2833; color: #f1c40f; border: 1px solid #f1c40f; padding: 8px; font-size: 0.9rem; font-family: 'Arial Black', sans-serif; border-radius: 5px; width: 100%; cursor: pointer; outline: none; margin-top: 5px; }
+        
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         @media (max-width: 600px) { .shop-grid { grid-template-columns: 1fr 1fr; } }
         .shop-item { background: #0b0c10; padding: 10px; border-radius: 8px; border-left: 4px solid #45a29e; text-align: left; display: flex; flex-direction: column; justify-content: space-between; }
@@ -139,13 +169,16 @@
         .shop-item.gacha { border-left-color: #ff00ff; background: linear-gradient(135deg, #202, #404); }
         .shop-item p { margin: 0; font-size: 0.75rem; color: #c5c6c7; }
         .shop-item h3 { margin: 0 0 5px 0; color: #fff; font-size: 0.9rem; }
+        
         .buy-btn { background: #f1c40f; color: #000; border: none; padding: 5px; font-weight: bold; border-radius: 3px; cursor: pointer; margin-top: 5px; }
         .buy-btn:disabled { background: #555; color: #888; cursor: not-allowed; }
         .toggle-row { margin: 10px 0; display: flex; justify-content: space-around; background: #0b0c10; padding: 10px; border-radius: 8px; color: #66fcf1; font-size: 0.9rem; border: 1px solid #45a29e; }
         .next-btn { background: #2ecc71; color: #000; border: none; padding: 12px; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; width: 100%; box-shadow: 0 5px 0 #27ae60; }
+        .main-action-btns { display: flex; justify-content: space-between; margin-bottom: 10px; gap: 5px; flex-wrap: wrap; }
+        .main-action-btns button { flex: 1; margin-top: 0; padding: 8px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; color: white; }
 
-        /* --- INVENTORY UI --- */
-        #inventory-view { display: none; width: 100%; flex-direction: column; gap: 15px; }
+        /* --- GOD TREE & INVENTORY UI --- */
+        #inventory-view, #tree-view { display: none; width: 100%; flex-direction: column; gap: 15px; }
         .inv-section { text-align: left; background: #0b0c10; padding: 15px; border-radius: 8px; border: 1px solid #45a29e; }
         .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .inv-item { background: #1f2833; padding: 10px; border-radius: 5px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; color: #ccc; }
@@ -158,6 +191,7 @@
         .d-pad, .action-pad { display: flex; gap: 10px; pointer-events: auto; align-items: center; }
         .ctrl-btn { width: 55px; height: 55px; background: rgba(255, 255, 255, 0.15); border: 2px solid rgba(255, 255, 255, 0.4); border-radius: 50%; color: white; font-size: 22px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.3); transition: transform 0.1s, background 0.1s; }
         .ctrl-btn:active { transform: translateY(4px); box-shadow: none; background: rgba(255, 255, 255, 0.4); }
+        .ctrl-btn.on-cooldown { filter: grayscale(100%) brightness(0.5); pointer-events: none; }
         .mini-btn { width: 45px; height: 45px; font-size: 18px; }
         .btn-col { display: flex; flex-direction: column; gap: 8px; }
         .atk-btn { background: rgba(46, 204, 113, 0.2); border-color: rgba(46, 204, 113, 0.6); }
@@ -172,36 +206,39 @@
         .show-skill { transform: translate(-50%, -50%) scale(1.2) !important; opacity: 1 !important; }
 
         /* --- 3D PARTICLES & DROPS --- */
-        .dmg-text { position: absolute; color: #ff4757; font-size: 28px; font-weight: 900; text-shadow: 0 2px 5px black, 0 0 10px rgba(255,0,0,0.8); z-index: 200; pointer-events: none; animation: floatUp 0.8s ease-out forwards; }
+        .dmg-text { position: absolute; color: #ff4757; font-size: 28px; font-weight: 900; text-shadow: 0 2px 5px black, 0 0 10px rgba(255,0,0,0.8); z-index: 200; pointer-events: none; animation: floatUp 0.8s ease-out forwards; white-space: nowrap;}
         @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-60px) scale(1.3); opacity: 0; } }
         .particle { position: absolute; width: 12px; height: 12px; border-radius: 50%; z-index: 150; pointer-events: none; box-shadow: inset -3px -3px 6px rgba(0,0,0,0.6), 0 5px 10px rgba(0,0,0,0.5); }
         .hit-spark { position: absolute; width: 80px; height: 80px; background: radial-gradient(circle, #fff 10%, #f1c40f 40%, rgba(241,196,15,0) 80%); border-radius: 50%; transform: translate(-50%, -50%) scale(0); opacity: 0; z-index: 50; transition: all 0.1s ease-out; pointer-events: none; }
         .show-spark { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
         .mega-spark { background: radial-gradient(circle, #fff 10%, #e74c3c 40%, rgba(231,76,60,0) 80%) !important; transform: translate(-50%, -50%) scale(5) !important; box-shadow: 0 0 50px #e74c3c; }
-
-        /* LOOT DROP BANNER */
-        .loot-banner { position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; color: #f1c40f; text-shadow: 0 0 20px #d35400, 0 5px 0 #000; font-weight: 900; z-index: 600; opacity: 0; pointer-events: none; animation: none; }
+        .loot-banner { position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; color: #f1c40f; text-shadow: 0 0 20px #d35400, 0 5px 0 #000; font-weight: 900; z-index: 600; opacity: 0; pointer-events: none; animation: none; text-align:center;}
         @keyframes lootPop { 0% { opacity: 0; transform: translate(-50%, -30%) scale(0.5); } 10% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 20% { transform: translate(-50%, -50%) scale(1); } 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -80%) scale(0.8); } }
 
         /* 3D Volumetric Auras */
         .god-aura::after { content: ''; position: absolute; bottom: -10px; left: -40px; width: 120px; height: 140px; background: radial-gradient(ellipse at center, rgba(241,196,15,0.6) 0%, rgba(243,156,18,0.2) 50%, transparent 70%); border-radius: 50%; z-index: -2; animation: aura-3d-pulse calc(1.5s / var(--atk-spd, 1)) infinite alternate ease-in-out; mix-blend-mode: screen; pointer-events: none; }
         .aura-galaxy::after { content: ''; position: absolute; bottom: -20px; left: -60px; width: 160px; height: 180px; background: radial-gradient(ellipse at center, rgba(155,89,182,0.8) 0%, rgba(0,210,255,0.4) 40%, transparent 70%); border-radius: 50%; z-index: -2; animation: galaxy-spin 3s infinite linear; mix-blend-mode: screen; pointer-events: none; border: 2px dashed rgba(255,255,255,0.2); }
+        .aura-inferno::after { content: ''; position: absolute; bottom: -10px; left: -40px; width: 120px; height: 140px; background: radial-gradient(ellipse at center, rgba(255,71,87,0.8) 0%, rgba(255,165,2,0.4) 40%, transparent 70%); border-radius: 50%; z-index: -2; animation: aura-3d-pulse calc(1s / var(--atk-spd, 1)) infinite alternate; mix-blend-mode: screen; pointer-events: none; }
+        .aura-thunder::after { content: ''; position: absolute; bottom: -20px; left: -50px; width: 140px; height: 160px; background: radial-gradient(ellipse at center, rgba(0,210,255,0.8) 0%, rgba(241,196,15,0.4) 40%, transparent 70%); border-radius: 50%; z-index: -2; animation: flash-warning 0.2s infinite; mix-blend-mode: screen; pointer-events: none; border: 2px solid rgba(0,210,255,0.5); }
+        .aura-void::after { content: ''; position: absolute; bottom: -20px; left: -60px; width: 160px; height: 180px; background: radial-gradient(ellipse at center, rgba(0,0,0,0.9) 0%, rgba(155,89,182,0.5) 40%, transparent 70%); border-radius: 50%; z-index: -2; animation: galaxy-spin 2s infinite reverse linear; pointer-events: none; box-shadow: 0 0 20px #9b59b6 inset; }
+        
         @keyframes aura-3d-pulse { 0% { transform: scale(1) translateY(0); opacity: 0.8; } 100% { transform: scale(1.2) translateY(-10px); opacity: 1; box-shadow: 0 0 30px #f1c40f, inset 0 0 20px #fff; } }
         @keyframes galaxy-spin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1); } }
 
         /* PERMANENT MYTHIC WEAPONS (3D) */
         .weapon-katana { position: absolute; bottom: -5px; left: 2px; width: 6px; height: 100px; background: linear-gradient(to right, #ddd, #fff, #999); box-shadow: 0 0 15px #00d2ff; transform-origin: bottom center; transform: rotate(-25deg); border-radius: 3px 3px 0 0; z-index: -1; }
         .weapon-katana::before { content:''; position: absolute; bottom: -10px; left: -2px; width: 10px; height: 20px; background: #333; border: 1px solid #111; }
-        
         .weapon-greatsword { position: absolute; bottom: -10px; left: 0px; width: 14px; height: 130px; background: linear-gradient(to right, #ff4757, #ff7f50, #8b0000); box-shadow: 0 0 20px #ff4757; transform-origin: bottom center; transform: rotate(-15deg); clip-path: polygon(50% 0, 100% 20%, 100% 100%, 0 100%, 0 20%); z-index: -1; }
         .weapon-greatsword::before { content:''; position: absolute; bottom: -15px; left: -5px; width: 24px; height: 10px; background: #111; box-shadow: inset 0 2px 5px #555; }
-        
         .weapon-staff { position: absolute; bottom: -20px; left: 2px; width: 8px; height: 140px; background: linear-gradient(to right, #8e44ad, #9b59b6, #4a235a); box-shadow: inset 2px 2px 5px rgba(255,255,255,0.3); transform-origin: bottom center; transform: rotate(-10deg); border-radius: 4px; z-index: -1; }
         .weapon-staff::before { content:''; position: absolute; top: -15px; left: -6px; width: 20px; height: 20px; background: radial-gradient(circle, #fff, #00d2ff); border-radius: 50%; box-shadow: 0 0 20px #00d2ff; animation: pulse-btn 1s infinite alternate; }
-
         .weapon-dualdaggers { position: absolute; bottom: 0px; left: 0px; width: 8px; height: 60px; background: linear-gradient(to right, #2ecc71, #fff, #27ae60); box-shadow: 0 0 15px #2ecc71; transform-origin: bottom center; transform: rotate(180deg); border-radius: 0 0 4px 4px; clip-path: polygon(50% 100%, 100% 80%, 100% 0, 0 0, 0 80%); z-index: -1; }
         .weapon-scythe { position: absolute; bottom: -20px; left: 4px; width: 6px; height: 160px; background: #222; transform-origin: bottom center; transform: rotate(-15deg); z-index: -1; }
         .weapon-scythe::after { content:''; position: absolute; top: 0; left: -60px; width: 70px; height: 15px; background: linear-gradient(to bottom, #9b59b6, #fff); clip-path: polygon(100% 0, 100% 100%, 0 50%); box-shadow: 0 0 20px #9b59b6; }
+        .weapon-trident { position: absolute; bottom: -10px; left: 2px; width: 6px; height: 140px; background: linear-gradient(to right, #00d2ff, #004466); box-shadow: 0 0 15px #00d2ff; transform-origin: bottom center; transform: rotate(-15deg); z-index: -1; }
+        .weapon-trident::after { content:''; position: absolute; top: -10px; left: -10px; width: 26px; height: 20px; border-top: 4px solid #00d2ff; border-left: 4px solid transparent; border-right: 4px solid transparent; border-radius: 50% 50% 0 0; }
+        .weapon-titanhammer { position: absolute; bottom: -20px; left: 2px; width: 10px; height: 120px; background: #555; transform-origin: bottom center; transform: rotate(-10deg); z-index: -1; }
+        .weapon-titanhammer::after { content:''; position: absolute; top: -15px; left: -20px; width: 50px; height: 30px; background: linear-gradient(135deg, #777, #333); border-radius: 5px; box-shadow: 0 0 10px #000; }
 
         /* Props 3D Polish */
         .gift-prop { width: 35px; height: 35px; background: linear-gradient(135deg, #ff7979, #e74c3c); border: 2px solid #f1c40f; box-shadow: inset 3px 3px 6px rgba(255,255,255,0.5), 5px 5px 10px rgba(0,0,0,0.6), 0 0 15px #f1c40f; border-radius: 6px; display: flex; justify-content: center; align-items: center; cursor: pointer; animation: pulse-btn 1s infinite; }
@@ -210,10 +247,8 @@
         .box-prop { width: 30px; height: 30px; background: linear-gradient(135deg, #af7ac5, #8e44ad); border: 2px solid #5b2c6f; box-shadow: inset 2px 2px 5px rgba(255,255,255,0.3), 5px 5px 10px rgba(0,0,0,0.6); border-radius: 4px; }
         .potion-prop { width: 16px; height: 22px; background: linear-gradient(to right, #ff7979, #e74c3c, #c0392b); border-radius: 50% 50% 5px 5px; border: 2px solid #900; box-shadow: inset -2px -2px 5px rgba(0,0,0,0.5), 5px 5px 10px rgba(0,0,0,0.5), 0 0 10px #e74c3c; }
         .potion-prop::before { content:''; position:absolute; top:-6px; left:4px; width:4px; height:6px; background:linear-gradient(to right, #fff, #bdc3c7); border-radius: 2px; }
-        
         .thrown-box { position: absolute; width: 30px; height: 30px; background: linear-gradient(135deg, #af7ac5, #8e44ad); border: 2px solid #5b2c6f; z-index: 10; border-radius: 4px; box-shadow: inset 2px 2px 5px rgba(255,255,255,0.3), 0 0 15px #9b59b6; animation: spin 0.4s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg) rotateX(45deg) rotateY(45deg); } }
-        
         .drone { position: absolute; width: 20px; height: 20px; background: radial-gradient(circle at 30% 30%, #fff 0%, #00d2ff 50%, #004466 100%) !important; border-radius: 50%; box-shadow: 0 5px 10px rgba(0,0,0,0.6), 0 0 15px #00d2ff; z-index: 20; transition: left 0.3s, bottom 0.3s; animation: float 2s infinite ease-in-out; display: none; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
@@ -222,28 +257,16 @@
         @keyframes flap-3d { 0% { transform: rotateY(0deg) rotateZ(10deg); } 100% { transform: rotateY(60deg) rotateZ(-10deg); } }
         .halo { position: absolute; top: -25px; left: 2px; width: 30px; height: 10px; border: 4px solid transparent; border-radius: 50%; background: linear-gradient(white, white) padding-box, linear-gradient(to right, #f1c40f, #fff, #f1c40f) border-box; box-shadow: 0 5px 15px rgba(241,196,15,0.6), inset 0 2px 5px rgba(255,255,255,0.8); transform: rotateX(70deg); animation: halo-float calc(2s / var(--atk-spd, 1)) infinite ease-in-out; display: none; }
         @keyframes halo-float { 0%, 100% { transform: rotateX(70deg) translateY(0); } 50% { transform: rotateX(70deg) translateY(-5px); } }
-        
         #pets-container { position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; }
         .pet { position: absolute; width: 24px; height: 24px; border-radius: 50%; bottom: 0; transition: left 0.2s linear, bottom 0.2s; box-shadow: 0 5px 10px rgba(0,0,0,0.6), inset -5px -5px 10px rgba(0,0,0,0.5); }
         .pet::before { content: '👀'; font-size: 12px; position: absolute; top: 4px; left: 3px; z-index: 2; text-shadow: none; }
         .pet-attack { animation: petJump calc(0.5s / var(--atk-spd, 1)) ease-out; }
         @keyframes petJump { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-40px) scale(1.1); } }
 
-        /* 3D Elemental Overrides */
-        .elem-fire .front-arm .lower, .elem-fire .back-arm .lower { background: linear-gradient(90deg, #fff, #ff7f50, #8b0000) !important; box-shadow: 0 0 15px #ff4757 !important; }
-        .elem-ice .front-arm .lower, .elem-ice .back-arm .lower { background: linear-gradient(90deg, #fff, #7efff5, #004466) !important; box-shadow: 0 0 15px #18dcff !important; }
-        .on-fire { filter: sepia(1) hue-rotate(-50deg) saturate(3) !important; }
-        .frozen { filter: hue-rotate(180deg) saturate(2) brightness(1.5) !important; }
-
         /* --- SKELETON WITH ROLES & ENEMIES (REMASTERED 3D) --- */
         .stickman { position: absolute; display: flex; flex-direction: column; align-items: center; transform-origin: bottom center; z-index: 10; transform: scaleX(var(--facing, 1)) translateX(var(--shift, 0)); transition: transform calc(0.15s / var(--atk-spd, 1)) cubic-bezier(0.25, 1, 0.5, 1), left calc(0.15s / var(--atk-spd, 1)) ease-out, right calc(0.15s / var(--atk-spd, 1)) ease-out, filter 0.1s; }
-        
-        /* Shadow Clone */
         .clone { opacity: 0.4; filter: hue-rotate(180deg) blur(1px) drop-shadow(0 0 10px #00d2ff); z-index: 9; pointer-events: none; }
-        
-        /* 3D Floor Shadow */
         .stickman::before { content: ''; position: absolute; bottom: 0; width: 50px; height: 10px; background: rgba(0,0,0,0.8); border-radius: 50%; filter: blur(4px); z-index: -1; transform: translateY(calc(var(--y) * 1px)) scale(calc(1 - var(--y) / 200)); transition: opacity 0.5s; }
-        
         .player-indicator { position: absolute; top: -50px; font-size: 14px; font-weight: bold; color: #f1c40f; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 6px; border: 2px solid #f1c40f; animation: bounce-indicator 1s infinite; white-space: nowrap; z-index: 20; box-shadow: 0 5px 10px rgba(0,0,0,0.5), 0 0 10px #f1c40f; }
         @keyframes bounce-indicator { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
@@ -255,6 +278,8 @@
         .enemy-giant { filter: saturate(0) brightness(0.8) drop-shadow(0 0 5px #fff); transform: scaleX(calc(var(--facing, -1) * 1.8)) scaleY(1.8) translateX(var(--shift, 0)) !important; }
         .enemy-assassin { filter: hue-rotate(-100deg) brightness(1.5); transform: scaleX(calc(var(--facing, -1) * 0.9)) scaleY(0.9) translateX(var(--shift, 0)) !important; }
         .enemy-berserker { filter: hue-rotate(330deg) saturate(3) drop-shadow(0 0 10px red); transform: scaleX(calc(var(--facing, -1) * 1.2)) scaleY(1.1) translateX(var(--shift, 0)) !important; }
+        .enemy-goblin { filter: hue-rotate(90deg) drop-shadow(0 0 5px #2ecc71); transform: scaleX(calc(var(--facing, -1) * 0.7)) scaleY(0.7) translateX(var(--shift, 0)) !important; }
+        .enemy-slime { filter: hue-rotate(120deg) opacity(0.8) drop-shadow(0 0 10px #27ae60); transform: scaleX(calc(var(--facing, -1) * 1.3)) scaleY(0.6) translateX(var(--shift, 0)) !important; }
         .boss-mode { transform: scale(calc(var(--facing, -1) * 1.5), 1.5) translateX(var(--shift, 0)) !important; filter: brightness(0.6) sepia(1) hue-rotate(-50deg) saturate(5) drop-shadow(0 0 10px red); }
 
         /* Player Role Filters */
@@ -263,22 +288,17 @@
         .role-mage { filter: hue-rotate(90deg) drop-shadow(0 0 5px #00d2ff); }
         .role-witch { filter: hue-rotate(270deg) drop-shadow(0 0 5px #9b59b6); }
         .role-archer { filter: hue-rotate(150deg) drop-shadow(0 0 5px #2ecc71); }
+        .role-paladin { filter: hue-rotate(60deg) drop-shadow(0 0 10px #f1c40f) brightness(1.2); }
 
         /* Faux 3D Base Elements */
         .p1 { --facing: 1; left: 150px; bottom: 0; --skin-color: #00d2ff; --dark-skin: #004477; --aura-color: #00d2ff; --y: 0; }
         .p2 { --facing: -1; right: 150px; bottom: 0; --skin-color: #ff0055; --dark-skin: #770022; --aura-color: #ff0055; --y: 0; }
-
-        /* 3D Sphere Head */
         .head { width: 35px; height: 35px; border-radius: 50%; position: relative; z-index: 3; box-sizing: border-box; transform-origin: bottom center; transition: all calc(0.2s / var(--atk-spd, 1)) ease; background: radial-gradient(circle at 35% 35%, #ffffff 0%, var(--skin-color) 35%, var(--dark-skin) 85%, #000000 100%); box-shadow: 0 6px 10px rgba(0,0,0,0.6), inset -2px -2px 6px rgba(0,0,0,0.4); border: none; }
-        
-        /* 3D Cylinder Body Parts */
         .torso { width: 10px; height: 70px; position: relative; z-index: 2; transform-origin: bottom center; transition: transform calc(0.15s / var(--atk-spd, 1)) cubic-bezier(0.175, 0.885, 0.32, 1.275); background: linear-gradient(to right, #ffffff 0%, var(--skin-color) 30%, var(--dark-skin) 80%, #000000 100%); border-radius: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
         .limb { position: absolute; width: 10px; border-radius: 5px; transform-origin: top center; transition: transform calc(0.15s / var(--atk-spd, 1)) cubic-bezier(0.34, 1.56, 0.64, 1); background: linear-gradient(to right, #ffffff 0%, var(--skin-color) 30%, var(--dark-skin) 80%, #000000 100%); box-shadow: 2px 2px 5px rgba(0,0,0,0.4); left: 0; }
         .lower { position: absolute; width: 10px; background: linear-gradient(to right, #ffffff 0%, var(--skin-color) 30%, var(--dark-skin) 80%, #000000 100%); border-radius: 5px; top: calc(100% - 5px); left: 0; transform-origin: top center; transition: transform calc(0.15s / var(--atk-spd, 1)) ease; box-shadow: 2px 2px 5px rgba(0,0,0,0.4); }
-
         .arm { height: 40px; top: 10px; z-index: 3; } .leg { height: 50px; top: 65px; z-index: 1; }
         .arm .lower { height: 35px; } .leg .lower { height: 45px; }
-
         .front-arm { transform: rotate(70deg); } .front-arm .lower { transform: rotate(-90deg); }
         .back-arm { transform: rotate(-30deg); } .back-arm .lower { transform: rotate(-90deg); }
         .front-leg { transform: rotate(20deg); } .front-leg .lower { transform: rotate(10deg); }
@@ -289,56 +309,49 @@
         .crane { --shift: 70px; } .crane .torso { transform: rotate(-15deg); } .crane .front-leg { transform: rotate(110deg); } .crane .front-leg .lower { transform: rotate(-80deg); } .crane .front-arm { transform: rotate(180deg); }
         .uppercut { --shift: 60px; } .uppercut .torso { transform: rotate(-20deg); } .uppercut .front-arm { transform: rotate(180deg); } .uppercut .front-arm .lower { transform: rotate(0deg); } .uppercut .front-leg { transform: rotate(40deg); }
         .spin-kick { --shift: 80px; } .spin-kick .torso { transform: rotate(30deg); } .spin-kick .back-leg { transform: rotate(150deg); } .spin-kick .back-leg .lower { transform: rotate(0deg); } .spin-kick .front-arm { transform: rotate(-40deg); }
-        
         .dragon-punch { --shift: 100px; } .dragon-punch .torso { transform: rotate(-15deg); } .dragon-punch .front-arm { transform: rotate(190deg); } .dragon-punch .front-arm .lower { transform: rotate(0deg); } .dragon-punch .front-leg { transform: rotate(70deg); } .dragon-punch .back-leg { transform: rotate(-30deg); }
         .shadow-kick { --shift: 160px; } .shadow-kick .torso { transform: rotate(25deg); } .shadow-kick .front-leg { transform: rotate(100deg); } .shadow-kick .front-leg .lower { transform: rotate(0deg); } .shadow-kick .back-leg { transform: rotate(-70deg); } .shadow-kick .front-arm { transform: rotate(-50deg); }
-        
         .hook { --shift: 70px; } .hook .torso { transform: rotate(20deg); } .hook .back-arm { transform: rotate(110deg); } .hook .back-arm .lower { transform: rotate(-30deg); } .hook .front-arm { transform: rotate(30deg); }
         .sweep { --shift: 50px; } .sweep .torso { transform: rotate(-40deg); } .sweep .front-leg { transform: rotate(130deg); } .sweep .front-leg .lower { transform: rotate(0deg); } .sweep .back-leg { transform: rotate(-80deg); }
         .tornado-kick { --shift: 120px; } .tornado-kick .torso { transform: rotate(360deg); } .tornado-kick .back-leg { transform: rotate(160deg); } .tornado-kick .front-leg { transform: rotate(-40deg); } .tornado-kick .front-arm { transform: rotate(180deg); }
         .meteor-strike { --shift: 60px; } .meteor-strike .torso { transform: rotate(60deg); } .meteor-strike .front-arm { transform: rotate(220deg); } .meteor-strike .front-arm .lower { transform: rotate(0deg); } .meteor-strike .back-arm { transform: rotate(180deg); }
         .palm-flurry { --shift: 90px; } .palm-flurry .torso { transform: rotate(15deg); } .palm-flurry .front-arm { transform: rotate(110deg); } .palm-flurry .back-arm { transform: rotate(100deg); } .palm-flurry .front-leg { transform: rotate(40deg); }
         .bull-rush { --shift: 200px; } .bull-rush .torso { transform: rotate(45deg); } .bull-rush .front-arm { transform: rotate(20deg); } .bull-rush .back-arm { transform: rotate(60deg); }
-
         .omega-burst { --shift: 160px; } .omega-burst .torso { transform: rotate(70deg); } .omega-burst .front-arm { transform: rotate(160deg); } .omega-burst .front-arm .lower { transform: rotate(-10deg); } .omega-burst .front-leg { transform: rotate(-30deg); } .omega-burst .back-leg { transform: rotate(-70deg); }
         .titan-smash { --shift: 0px; } .titan-smash .torso { transform: rotate(180deg); } .titan-smash .front-arm { transform: rotate(200deg); } .titan-smash .front-arm .lower { transform: rotate(0deg); } .titan-smash .front-leg { transform: rotate(70deg); } .titan-smash .back-leg { transform: rotate(-10deg); }
         .phantom-strike { --shift: 260px; } .phantom-strike .torso { transform: rotate(80deg); } .phantom-strike .front-arm { transform: rotate(90deg); } .phantom-strike .front-leg { transform: rotate(10deg); } .phantom-strike .back-leg { transform: rotate(-70deg); } .phantom-strike .front-leg .lower { transform: rotate(0deg); }
-
         .throw { --shift: 20px; } .throw .torso { transform: rotate(30deg); } .throw .front-arm { transform: rotate(140deg); } .throw .front-arm .lower { transform: rotate(0deg); }
         .block { --shift: -10px; } .block .torso { transform: rotate(-5deg); } .block .front-arm { transform: rotate(140deg); } .block .front-arm .lower { transform: rotate(-120deg); } .block .back-arm { transform: rotate(110deg); } .block .back-arm .lower { transform: rotate(-100deg); }
         .dodge { --shift: -80px; } .dodge .torso { transform: rotate(-45deg); } .dodge .front-leg { transform: rotate(45deg); } .dodge .front-arm { transform: rotate(120deg); } 
         .hit { --shift: -30px; filter: drop-shadow(0 0 10px white) brightness(1.5); } .hit .torso { transform: rotate(-40deg); } .hit .head { transform: rotate(-50deg); }
-        
         .ko { animation: death-shatter 1.5s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important; pointer-events: none; }
-        @keyframes death-shatter {
-            0% { filter: brightness(2) drop-shadow(0 0 10px #fff); transform: scaleX(var(--facing, 1)) rotate(-10deg); opacity: 1; }
-            20% { filter: brightness(4) drop-shadow(0 0 30px #ff4757); transform: scaleX(var(--facing, 1)) rotate(-90deg) translateY(20px); opacity: 1; }
-            100% { filter: brightness(0) blur(10px); transform: scaleX(var(--facing, 1)) rotate(-90deg) translateY(50px) scale(0.2); opacity: 0; }
-        }
-
+        @keyframes death-shatter { 0% { filter: brightness(2) drop-shadow(0 0 10px #fff); transform: scaleX(var(--facing, 1)) rotate(-10deg); opacity: 1; } 20% { filter: brightness(4) drop-shadow(0 0 30px #ff4757); transform: scaleX(var(--facing, 1)) rotate(-90deg) translateY(20px); opacity: 1; } 100% { filter: brightness(0) blur(10px); transform: scaleX(var(--facing, 1)) rotate(-90deg) translateY(50px) scale(0.2); opacity: 0; } }
         .charge { --shift: 0; } .charge .torso { transform: rotate(10deg); } .charge .front-arm { transform: rotate(-20deg); } .charge .front-arm .lower { transform: rotate(-30deg); } .charge .back-arm { transform: rotate(20deg); } .charge .back-arm .lower { transform: rotate(-30deg); } .charge .front-leg { transform: rotate(30deg); } .charge .front-leg .lower { transform: rotate(-30deg); } .charge .back-leg { transform: rotate(-30deg); } .charge .back-leg .lower { transform: rotate(30deg); }
     </style>
 </head>
 <body id="main-body">
+    <div id="danger-vignette"></div>
     <div id="auto-toast">⚙️ Auto-Upgraded Stats!</div>
 
     <div class="top-bar">
         <div class="stats-display">
             <span>💰 Coins: <span id="top-coins">0</span></span>
             <span class="prestige-display" style="display:none;" id="prestige-tracker">🌟 Prestige: <span id="top-prestige">0</span></span>
-            <span><label style="cursor:pointer; font-size: 0.9rem; color:#fff; text-shadow: none;"><input type="checkbox" id="hud-auto-next" onchange="toggleAutoNext(this)"> ⏭️ Auto-Next</label></span>
+            <span id="abyss-tracker" style="display:none; color:#9b59b6; font-weight:bold; text-shadow:0 0 10px #8e44ad;">🌌 Abyss Kills: <span id="top-abyss">0</span></span>
+            <span><label style="cursor:pointer; font-size: 0.9rem; color:#fff; text-shadow: none;"><input type="checkbox" id="hud-auto-next" onchange="toggleAutoNext(this)"> ⏭️ Auto</label></span>
         </div>
-        <div class="stage-display">STAGE <span id="stage-number">1</span></div>
+        <div class="stage-display">
+            <span id="stage-number-container">STAGE <span id="stage-number">1</span></span>
+            <div id="weakness-hint" class="weakness-hint"></div>
+        </div>
         <div class="god-mode-controls">
-            <button id="drop-potion-btn" class="action-btn god-btn" onclick="godDropPotion()">Drop Potion (20)</button>
-            <button id="smite-btn" class="action-btn god-btn" onclick="godSmite()">⚡ SMITE (50)</button>
-            <button id="audio-btn" class="action-btn">🔊 START BATTLE</button>
+            <button id="audio-btn" class="action-btn" style="background:#e74c3c; box-shadow: 0 4px 0 #c0392b; animation: pulse-btn 1.5s infinite;">🔊 START BATTLE</button>
         </div>
     </div>
 
     <div id="combat-hud">
         <div class="hud-side">
-            <div class="hud-name">SydaR</div>
+            <div class="hud-name" id="p1-name-display">SydaR</div>
             <div class="bar-bg"><div class="hp-bar" id="hp-bar-1"></div><div class="hp-text" id="hp-text-1">100</div></div>
             <div class="bar-bg" style="height:8px; margin-top:2px;"><div class="mp-bar" id="mp-bar-1"></div></div>
             <div class="bar-bg" style="height:4px; margin-top:2px; background:#333; border-color:#000;"><div class="god-bar" id="god-bar-1"></div></div>
@@ -348,6 +361,19 @@
             <div class="hud-name" id="enemy-name-display">ENEMY</div>
             <div class="bar-bg"><div class="hp-bar" id="hp-bar-2"></div><div class="hp-text" id="hp-text-2">100</div></div>
             <div class="bar-bg" style="height:8px; margin-top:2px;"><div class="mp-bar" id="mp-bar-2"></div></div>
+        </div>
+    </div>
+    
+    <div id="in-fight-controls" style="display: none;">
+        <button id="flee-btn" onclick="fleeFight()">🏃 Retreat</button>
+        <button id="quick-potion-btn" onclick="useQuickPotion()">🧪 Potion (100)</button>
+        <button id="manual-god-btn" onclick="triggerManualGodMode()" disabled>⏳ ZA WARUDO</button>
+    </div>
+
+    <div id="fatality-prompt">
+        <button id="fatality-btn">FATALITY</button>
+        <div class="fatality-timer-container">
+            <div id="fatality-timer-bar"></div>
         </div>
     </div>
 
@@ -426,84 +452,117 @@
             <h1>DOJO UPGRADES</h1>
             <p style="color: #f1c40f; font-size: 1.2rem; margin-bottom: 10px;">💰 Coins: <span id="shop-coins">0</span></p>
             
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; gap: 5px;">
-                <button class="buy-btn" style="background:#3498db; color:white; flex: 1; margin-top:0;" onclick="saveProgress()">💾 SAVE</button>
-                <button class="buy-btn" style="background:#e67e22; color:white; flex: 1; margin-top:0;" onclick="toggleInventory(true)">🎒 INVENTORY</button>
-                <button class="buy-btn" style="background:#2ecc71; color:black; flex: 1; margin-top:0;" onclick="resetStageToOne()">🔄 STAGE 1</button>
-                <button class="buy-btn" style="background:#e74c3c; color:white; flex: 1; margin-top:0;" onclick="resetProgress()">🗑️ RESET</button>
+            <div class="main-action-btns">
+                <button style="background:#3498db;" onclick="saveProgress()">💾 SAVE</button>
+                <button style="background:#e67e22;" onclick="toggleInventory(true)">🎒 INVENTORY</button>
+                <button style="background:#f1c40f; color:#000;" onclick="toggleTree(true)">🌳 GOD TREE</button>
+                <button style="background:#8e44ad;" onclick="startAbyss()">🌌 THE ABYSS</button>
             </div>
 
             <div class="ultimate-selector">
-                <h3 style="margin: 0 0 5px 0; color: #fff;">Select Class Role:</h3>
-                <p style="font-size: 0.75rem; color: #aaa; margin: 0 0 5px 0;">Each role has unique Skills, Ultimates & Fatalities!</p>
                 <select id="role-select" onchange="changeRole()">
-                    <option value="balanced">⚖️ Balanced (Martial Arts, Kamehameha Beam)</option>
-                    <option value="assassin">🗡️ Assassin (High Spd, Crit, Omnislash)</option>
-                    <option value="mage">🧙‍♂️ Mage (High Mana, Spells, Meteor Swarm)</option>
-                    <option value="witch">🦇 Witch (Scythe, Blood Magic, Abyssal Gaze)</option>
-                    <option value="tank">🛡️ Tank (High HP, Super Armor, Earthquake)</option>
-                    <option value="archer">🏹 Archer (Evasion, Projectiles, Arrow Rain)</option>
+                    <option value="balanced">⚖️ Balanced (Physical, Kamehameha)</option>
+                    <option value="assassin">🗡️ Assassin (Physical/Dark, Omnislash)</option>
+                    <option value="mage">🧙‍♂️ Mage (Fire/Ice, Meteor Swarm)</option>
+                    <option value="witch">🦇 Witch (Dark, Abyssal Gaze)</option>
+                    <option value="tank">🛡️ Tank (Earth, Earthquake)</option>
+                    <option value="archer">🏹 Archer (Wind, Arrow Rain)</option>
+                    <option value="paladin" id="paladin-opt" style="display:none;">⚔️ Paladin (Holy, Heavenly Judgment)</option>
                 </select>
             </div>
 
             <div class="toggle-row">
-                <label style="cursor:pointer; margin-right: 15px;">
-                    <input type="checkbox" id="auto-next-toggle" onchange="toggleAutoNext(this)"> ⏭️ AUTO NEXT STAGE
-                </label>
-                <label style="cursor:pointer;">
-                    <input type="checkbox" id="manual-toggle" onchange="toggleManualMode(this)"> 🎮 MANUAL CONTROL
-                </label>
+                <label style="cursor:pointer; margin-right: 15px;"><input type="checkbox" id="auto-next-toggle" onchange="toggleAutoNext(this)"> ⏭️ AUTO NEXT STAGE</label>
+                <label style="cursor:pointer;"><input type="checkbox" id="manual-toggle" onchange="toggleManualMode(this)"> 🎮 MANUAL CONTROL</label>
             </div>
 
-            <div class="shop-grid">
-                <div class="shop-item"><div><h3>Max Health</h3><p>Current: <span id="stat-hp">100</span></p></div><button class="buy-btn" id="buy-hp" onclick="buyUpgrade('hp')">Buy (30)</button></div>
-                <div class="shop-item"><div><h3>Damage</h3><p>Current: +<span id="stat-dmg">0</span></p></div><button class="buy-btn" id="buy-dmg" onclick="buyUpgrade('dmg')">Buy (50)</button></div>
-                <div class="shop-item"><div><h3>Dodge</h3><p>Current: <span id="stat-dodge">20</span>%</p></div><button class="buy-btn" id="buy-dodge" onclick="buyUpgrade('dodge')">Buy (100)</button></div>
-                <div class="shop-item utility"><div><h3 style="color:#f39c12">Critical Hit</h3><p>Chance: <span id="stat-crit">5</span>%</p></div><button class="buy-btn" id="buy-crit" onclick="buyUpgrade('crit')">Buy (100)</button></div>
-                <div class="shop-item utility"><div><h3 style="color:#3498db">Mana Regen</h3><p>Auto: +<span id="stat-mana">0</span>/s</p></div><button class="buy-btn" id="buy-mana" onclick="buyUpgrade('mana')">Buy (100)</button></div>
-                <div class="shop-item utility"><div><h3 style="color:#e74c3c">Attack Speed</h3><p>Multiplier: <span id="stat-atkspd">1.0</span>x</p></div><button class="buy-btn" id="buy-atkspd" onclick="buyUpgrade('atkspd')">Buy (150)</button></div>
-                
-                <div class="shop-item relic"><div><h3 style="color:#ff4757">Vampirism Aura</h3><p>Heal 15% of your DMG</p></div><button class="buy-btn" id="buy-vamp" onclick="buyUpgrade('vamp')">Buy (300)</button></div>
-                <div class="shop-item relic"><div><h3 style="color:#2ecc71">Thorns Aura</h3><p>Reflect 15% DMG back</p></div><button class="buy-btn" id="buy-thorns" onclick="buyUpgrade('thorns')">Buy (300)</button></div>
-                <div class="shop-item relic"><div><h3 style="color:#f1c40f">Second Wind</h3><p>Revive w/ 30% HP once</p></div><button class="buy-btn" id="buy-secondWind" onclick="buyUpgrade('secondWind')">Buy (500)</button></div>
-                
-                <div class="shop-item magic" style="grid-column: span 3; display: flex; justify-content: space-between; align-items: center;">
-                    <div><h3 style="color:#00d2ff">Shadow Clone Jutsu</h3><p>Echoes all attacks! (x2 DMG)</p></div>
-                    <button class="buy-btn" style="background:#00d2ff" id="buy-clone" onclick="buyUpgrade('clone')">Buy (2000)</button>
-                </div>
+            <div class="shop-tabs">
+                <button class="tab-btn active" id="btn-tab-stats" onclick="switchShopTab('tab-stats')">Upgrades</button>
+                <button class="tab-btn" id="btn-tab-magic" onclick="switchShopTab('tab-magic')">Magic & Relics</button>
+                <button class="tab-btn" id="btn-tab-gacha" onclick="switchShopTab('tab-gacha')">Gacha & Pets</button>
+            </div>
 
-                <div class="shop-item gacha" style="grid-column: span 3; display: flex; justify-content: space-between; align-items: center;">
-                    <div><h3 style="color:#f1c40f">MYTHIC GACHA (Loot Box)</h3><p>Pull for God-Tier Weapons & Auras!</p></div>
-                    <button class="buy-btn" style="background:#ff00ff; color: #fff;" onclick="pullGacha()">Pull (1000)</button>
+            <div id="tab-stats" class="tab-content active">
+                <div class="shop-grid">
+                    <div class="shop-item"><div><h3>Max Health</h3><p>Current: <span id="stat-hp">100</span></p></div><button class="buy-btn" id="buy-hp" onclick="buyUpgrade('hp')">Buy (30)</button></div>
+                    <div class="shop-item"><div><h3>Damage</h3><p>Current: +<span id="stat-dmg">0</span></p></div><button class="buy-btn" id="buy-dmg" onclick="buyUpgrade('dmg')">Buy (50)</button></div>
+                    <div class="shop-item"><div><h3>Dodge</h3><p>Current: <span id="stat-dodge">20</span>%</p></div><button class="buy-btn" id="buy-dodge" onclick="buyUpgrade('dodge')">Buy (100)</button></div>
+                    <div class="shop-item utility"><div><h3 style="color:#f39c12">Critical Hit</h3><p>Chance: <span id="stat-crit">5</span>%</p></div><button class="buy-btn" id="buy-crit" onclick="buyUpgrade('crit')">Buy (100)</button></div>
+                    <div class="shop-item utility"><div><h3 style="color:#3498db">Mana Regen</h3><p>Auto: +<span id="stat-mana">0</span>/s</p></div><button class="buy-btn" id="buy-mana" onclick="buyUpgrade('mana')">Buy (100)</button></div>
+                    <div class="shop-item utility"><div><h3 style="color:#e74c3c">Attack Speed</h3><p>Multiplier: <span id="stat-atkspd">1.0</span>x</p></div><button class="buy-btn" id="buy-atkspd" onclick="buyUpgrade('atkspd')">Buy (150)</button></div>
                 </div>
-                
-                <div class="shop-item cosmetic" style="border-left-color: #f39c12; grid-column: span 3;">
-                    <div style="display:flex; justify-content: space-between; align-items: center;">
-                        <div><h3 style="color:#f39c12">God Pet Squad</h3><p>Fighters: <span id="stat-pet-count">0</span>/5</p></div>
-                        <button class="buy-btn" id="buy-pet" onclick="buyUpgrade('pet')">Buy (500)</button>
+            </div>
+
+            <div id="tab-magic" class="tab-content">
+                <div class="shop-grid">
+                    <div class="shop-item relic"><div><h3 style="color:#ff4757">Vampirism Aura</h3><p>Heal 15% of your DMG</p></div><button class="buy-btn" id="buy-vamp" onclick="buyUpgrade('vamp')">Buy (300)</button></div>
+                    <div class="shop-item relic"><div><h3 style="color:#2ecc71">Thorns Aura</h3><p>Reflect 15% DMG back</p></div><button class="buy-btn" id="buy-thorns" onclick="buyUpgrade('thorns')">Buy (300)</button></div>
+                    <div class="shop-item relic"><div><h3 style="color:#f1c40f">Second Wind</h3><p>Revive w/ 30% HP once</p></div><button class="buy-btn" id="buy-secondWind" onclick="buyUpgrade('secondWind')">Buy (500)</button></div>
+                    <div class="shop-item magic" style="grid-column: span 3; display: flex; justify-content: space-between; align-items: center;">
+                        <div><h3 style="color:#00d2ff">Shadow Clone Jutsu</h3><p>Echoes all attacks! (x2 DMG)</p></div>
+                        <button class="buy-btn" style="background:#00d2ff; color:#fff;" id="buy-clone" onclick="buyUpgrade('clone')">Buy (2000)</button>
                     </div>
                 </div>
             </div>
 
-            <button class="next-btn" id="prestige-btn" onclick="doPrestige()" style="background:#f39c12; box-shadow: 0 5px 0 #d35400; display:none; margin-top: 15px;">🌟 PRESTIGE (Reset & Gain God Multiplier)</button>
+            <div id="tab-gacha" class="tab-content">
+                <div class="shop-grid">
+                    <div class="shop-item gacha" style="grid-column: span 3; display: flex; justify-content: space-between; align-items: center;">
+                        <div><h3 style="color:#f1c40f">MYTHIC GACHA (Loot Box)</h3><p>Pull for God-Tier Weapons & Auras!</p></div>
+                        <button class="buy-btn" id="buy-gacha" style="background:#ff00ff; color: #fff;" onclick="pullGacha()">Pull (1000)</button>
+                    </div>
+                    <div class="shop-item cosmetic" style="border-left-color: #f39c12; grid-column: span 3;">
+                        <div style="display:flex; justify-content: space-between; align-items: center;">
+                            <div><h3 style="color:#f39c12">God Pet Squad</h3><p>Fighters: <span id="stat-pet-count">0</span>/5</p></div>
+                            <button class="buy-btn" id="buy-pet" onclick="buyUpgrade('pet')">Buy (500)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="next-btn" id="prestige-btn" onclick="doPrestige()" style="background:#f39c12; box-shadow: 0 5px 0 #d35400; display:none; margin-top: 15px;">🌟 TIME LEAP (Rewind 10 Stages, Gain Stats & Souls!)</button>
             <button class="next-btn" id="next-stage-btn" onclick="closeShopAndStart()">FIGHT NEXT ENEMY</button>
         </div>
         
-        <div class="shop-panel" id="inventory-view" style="display:none; max-width: 600px;">
+        <div class="shop-panel" id="inventory-view">
             <h1 style="color: #e67e22;">🎒 INVENTORY</h1>
-            <p style="color: #aaa; margin-bottom: 20px;">Equip your unlocked Boss Drops and Mythic Gacha Pulls.</p>
+            <p style="color: #aaa; margin-bottom: 20px;">Equip your unlocked Boss Drops and Mythic Gacha Pulls to counter Element Weaknesses!</p>
             
             <div class="inv-section">
                 <h3 style="color:#fff; margin-top:0;">🗡️ WEAPONS</h3>
                 <div class="inv-grid" id="inv-weapons"></div>
             </div>
-            
             <div class="inv-section" style="margin-top:15px;">
                 <h3 style="color:#fff; margin-top:0;">✨ AURAS</h3>
                 <div class="inv-grid" id="inv-auras"></div>
             </div>
-
             <button class="next-btn" onclick="toggleInventory(false)" style="background:#3498db; box-shadow: 0 5px 0 #2980b9;">BACK TO SHOP</button>
+        </div>
+
+        <div class="shop-panel" id="tree-view">
+            <h1 style="color: #f1c40f;">🌳 GOD SKILL TREE</h1>
+            <p style="color: #fff; font-size:1.2rem; margin-bottom: 20px;">✨ God Souls: <span id="tree-souls">0</span></p>
+            <p style="color: #aaa; font-size: 0.8rem;">Gain God Souls by using Time Leap! (1 Soul every 5 Stages).</p>
+            
+            <div class="inv-section">
+                <div class="inv-item">
+                    <div><h4 style="color:#f1c40f">Loyal Companion</h4><p style="margin:0;font-size:0.8rem;">Start every run with 1 Free Pet.</p></div>
+                    <button class="buy-btn" id="perk-pet" onclick="buyPerk('freePet', 1)">Unlock (1)</button>
+                </div>
+                <div class="inv-item" style="margin-top:10px;">
+                    <div><h4 style="color:#2ecc71">Witch Time</h4><p style="margin:0;font-size:0.8rem;">Perfect Dodges heal you for 10% HP.</p></div>
+                    <button class="buy-btn" id="perk-heal" onclick="buyPerk('healDodge', 3)">Unlock (3)</button>
+                </div>
+                <div class="inv-item" style="margin-top:10px;">
+                    <div><h4 style="color:#ff00ff">Gacha Luck</h4><p style="margin:0;font-size:0.8rem;">Mythic Gacha cost reduced by 20%.</p></div>
+                    <button class="buy-btn" id="perk-gacha" onclick="buyPerk('cheapGacha', 5)">Unlock (5)</button>
+                </div>
+                <div class="inv-item" style="margin-top:10px;">
+                    <div><h4 style="color:#fff">Secret Class: Paladin</h4><p style="margin:0;font-size:0.8rem;">Unlocks the powerful Holy Paladin role.</p></div>
+                    <button class="buy-btn" id="perk-paladin" onclick="buyPerk('paladin', 10)">Unlock (10)</button>
+                </div>
+            </div>
+            <button class="next-btn" onclick="toggleTree(false)" style="background:#3498db; box-shadow: 0 5px 0 #2980b9;">BACK TO SHOP</button>
         </div>
     </div>
 
@@ -511,8 +570,8 @@
         let scaleFactor = 1;
         function resizeStage() {
             const stage = document.getElementById('stage-area');
-            if (window.innerWidth < 820) { scaleFactor = window.innerWidth / 820; stage.style.transform = `scale(${scaleFactor})`; } 
-            else { scaleFactor = 1; stage.style.transform = 'none'; }
+            if (window.innerWidth < 820) { scaleFactor = window.innerWidth / 820; } 
+            else { scaleFactor = 1; }
         }
         window.addEventListener('resize', resizeStage); resizeStage();
 
@@ -522,8 +581,15 @@
             hasDrone: false, petCount: 0, prestige: 0, manualMode: false, role: 'balanced', autoNext: false, weapon: 'none', aura: 'none', hasClone: false,
             unlockedWeapons: [], unlockedAuras: [],
             relics: { vamp: false, thorns: false, secondWind: false },
-            costs: { hp: 30, dmg: 50, dodge: 100, crit: 100, mana: 100, atkspd: 150, drone: 200, pet: 500, vamp: 300, thorns: 300, secondWind: 500, clone: 2000 }
+            costs: { hp: 30, dmg: 50, dodge: 100, crit: 100, mana: 100, atkspd: 150, drone: 200, pet: 500, vamp: 300, thorns: 300, secondWind: 500, clone: 2000 },
+            godSouls: 0,
+            perks: { freePet: false, healDodge: false, cheapGacha: false, paladin: false }
         };
+
+        let inAbyss = false;
+        let abyssKills = 0;
+        let defenderWeakness = 'none';
+        let isFatalityPromptActive = false;
 
         const upgradeNames = { hp: 'Max HP', dmg: 'Damage', dodge: 'Dodge', crit: 'Crit Chance', mana: 'Mana Regen', atkspd: 'Attack Speed', vamp: 'Vampirism', thorns: 'Thorns', secondWind: 'Second Wind', clone: 'Shadow Clone', pet: 'God Pet' };
         
@@ -533,7 +599,8 @@
             'mage':     ['pet', 'vamp', 'mana', 'dmg', 'atkspd', 'crit', 'dodge', 'hp', 'secondWind', 'thorns'],
             'witch':    ['pet', 'vamp', 'dmg', 'hp', 'mana', 'atkspd', 'crit', 'dodge', 'secondWind', 'thorns'],
             'tank':     ['pet', 'vamp', 'hp', 'thorns', 'dodge', 'dmg', 'atkspd', 'crit', 'mana', 'secondWind'],
-            'archer':   ['pet', 'vamp', 'atkspd', 'crit', 'dmg', 'dodge', 'mana', 'hp', 'secondWind', 'thorns']
+            'archer':   ['pet', 'vamp', 'atkspd', 'crit', 'dmg', 'dodge', 'mana', 'hp', 'secondWind', 'thorns'],
+            'paladin':  ['pet', 'vamp', 'dmg', 'atkspd', 'hp', 'crit', 'dodge', 'mana', 'secondWind', 'thorns']
         };
 
         const showAutoToast = (msg) => {
@@ -577,7 +644,6 @@
             }
         };
 
-        // FULLY REMASTERED HITBOXES & DISTANCES
         const basics_pool = [
             { id: 'palm', name: 'PALM STRIKE', limb: '.front-arm .lower', dmg: 8, cost: 0, jump: 0, shift: 80, range: 180, hitDelay: 100 }, 
             { id: 'crane', name: 'CRANE KICK', limb: '.front-leg .lower', dmg: 10, cost: 0, jump: 0, shift: 70, range: 180, hitDelay: 120 }, 
@@ -604,10 +670,10 @@
             },
             'mage': {
                 skills: [
-                    { id: 'palm', name: 'FIREBALL', limb: '.front-arm .lower', dmg: 28, cost: 30, isSkill: true, jump: 0, shift: 0, range: 800, hitDelay: 100, archerShoot: true, projColor: '#ff4757' }, 
+                    { id: 'palm', name: 'FIREBALL', limb: '.front-arm .lower', dmg: 28, cost: 30, isSkill: true, jump: 0, shift: 0, range: 800, hitDelay: 100, archerShoot: true, projColor: '#ff4757', isFire: true }, 
                     { id: 'sweep', name: 'FROST NOVA', limb: '.front-leg .lower', dmg: 32, cost: 35, isSkill: true, jump: 0, shift: 50, range: 200, hitDelay: 150, isIce: true }
                 ],
-                ultimate: { id: 'crane', name: 'METEOR SWARM!', limb: '.front-arm .lower', dmg: 60, cost: 50, isSkill: true, isUltimate: true, jump: 0, shift: 0, range: 800, fireProj: true, hitDelay: 200 } 
+                ultimate: { id: 'crane', name: 'METEOR SWARM!', limb: '.front-arm .lower', dmg: 60, cost: 50, isSkill: true, isUltimate: true, jump: 0, shift: 0, range: 800, fireProj: true, hitDelay: 200, isFire: true } 
             },
             'witch': {
                 skills: [
@@ -629,11 +695,18 @@
                     { id: 'dodge', name: 'EVASIVE SHOT', limb: '.front-arm .lower', dmg: 15, cost: 20, isSkill: true, jump: 0, shift: -80, range: 800, archerShoot: true, projColor: '#2ecc71', hitDelay: 100 }
                 ],
                 ultimate: { id: 'crane', name: 'ARROW RAIN!', limb: '.front-arm .lower', dmg: 30, cost: 50, isSkill: true, isUltimate: true, jump: 15, shift: 0, range: 800, archerStorm: true, hitDelay: 200 }
+            },
+            'paladin': {
+                skills: [
+                    { id: 'palm', name: 'HOLY SMITE', limb: '.front-arm .lower', dmg: 35, cost: 30, isSkill: true, jump: 0, shift: 100, range: 200, hitDelay: 100 }, 
+                    { id: 'block', name: 'DIVINE SHIELD', limb: '.front-arm .lower', dmg: 10, cost: 20, isSkill: true, jump: 0, shift: 0, range: 100, hitDelay: 100 }
+                ],
+                ultimate: { id: 'omega-burst', name: 'HEAVENLY JUDGMENT!', limb: '.front-arm .lower', dmg: 65, cost: 50, isSkill: true, isUltimate: true, jump: 20, shift: 0, range: 800, beamProj: '#f1c40f', hitDelay: 200 }
             }
         };
 
-        const allWeapons = { 'katana': 'Katana', 'greatsword': 'Greatsword', 'staff': 'Magic Staff', 'dualdaggers': 'Dual Daggers', 'scythe': 'Reaper Scythe' };
-        const allAuras = { 'galaxy': 'Galaxy Aura' };
+        const allWeapons = { 'katana': 'Katana', 'greatsword': 'Greatsword', 'staff': 'Magic Staff', 'dualdaggers': 'Dual Daggers', 'scythe': 'Reaper Scythe', 'trident': 'Ocean Trident', 'titanhammer': 'Titan Hammer' };
+        const allAuras = { 'galaxy': 'Galaxy Aura', 'inferno': 'Inferno Aura', 'thunder': 'Thunder Aura', 'void': 'Void Aura' };
 
         const loadProgress = () => {
             const saved = localStorage.getItem('stickmanRpgSave');
@@ -643,8 +716,10 @@
                     if (parsedSave && typeof parsedSave === 'object') {
                         if (parsedSave.costs) parsedSave.costs = { ...playerStats.costs, ...parsedSave.costs };
                         if (parsedSave.relics) parsedSave.relics = { ...playerStats.relics, ...parsedSave.relics };
+                        if (parsedSave.perks) parsedSave.perks = { ...playerStats.perks, ...parsedSave.perks };
                         if (parsedSave.hasPet === true && parsedSave.petCount === undefined) parsedSave.petCount = 1;
                         if (parsedSave.atkSpd === undefined) parsedSave.atkSpd = 1.0;
+                        if (parsedSave.godSouls === undefined) parsedSave.godSouls = 0;
                         if (parsedSave.autoNext === undefined) parsedSave.autoNext = false;
                         if (parsedSave.weapon === undefined) parsedSave.weapon = 'none';
                         if (parsedSave.aura === undefined) parsedSave.aura = 'none';
@@ -652,13 +727,7 @@
                         
                         parsedSave.unlockedWeapons = parsedSave.unlockedWeapons || [];
                         parsedSave.unlockedAuras = parsedSave.unlockedAuras || [];
-                        if(parsedSave.mythics && Array.isArray(parsedSave.mythics)) {
-                            parsedSave.mythics.forEach(m => {
-                                if(['dualdaggers','scythe'].includes(m) && !parsedSave.unlockedWeapons.includes(m)) parsedSave.unlockedWeapons.push(m);
-                                if(['galaxy'].includes(m) && !parsedSave.unlockedAuras.includes(m)) parsedSave.unlockedAuras.push(m);
-                            });
-                        }
-
+                        
                         playerStats = { ...playerStats, ...parsedSave };
                     }
                     
@@ -690,10 +759,19 @@
 
         const doPrestige = () => {
             if(playerStats.stage < 10) return;
-            if (confirm(`Prestiging will reset your Stage, Coins, and Upgrades, but permanently multiplies ALL your Base Stats by x${(playerStats.prestige || 0) + 2} and unlocks God Cosmetics! (You KEEP your Inventory!) Proceed?`)) {
+            
+            let newStage = Math.max(1, playerStats.stage - 10);
+            
+            if (confirm(`TIME LEAP! You will rewind to Stage ${newStage} and lose current upgrades, but your Base Stats will multiply by x${(playerStats.prestige || 0) + 2}. You will also gain God Souls and starting coins. Proceed?`)) {
+                
+                let soulsEarned = Math.floor(playerStats.stage / 5);
+                let startingCoins = playerStats.stage * 150; 
+
                 playerStats.prestige = (playerStats.prestige || 0) + 1;
-                playerStats.stage = 1;
-                playerStats.coins = 0;
+                playerStats.godSouls += soulsEarned;
+                playerStats.stage = newStage; 
+                playerStats.coins += startingCoins; 
+                
                 playerStats.maxHp = 100;
                 playerStats.baseDmgBonus = 0;
                 playerStats.dodgeChance = 0.20;
@@ -703,9 +781,20 @@
                 playerStats.petCount = 0; 
                 playerStats.relics = { vamp: false, thorns: false, secondWind: false };
                 playerStats.hasClone = false;
+                
                 playerStats.costs = { hp: 30, dmg: 50, dodge: 100, crit: 100, mana: 100, atkspd: 150, drone: 200, vamp: 300, thorns: 300, secondWind: 500, pet: 500, clone: 2000 };
+                
                 saveProgress();
+                alert(`You rewound time to Stage ${newStage}! \n\n+${soulsEarned} God Souls\n+${startingCoins} Starting Coins to rebuild your strength!`);
                 location.reload();
+            }
+        };
+        
+        const startAbyss = () => {
+            if(confirm("Enter The Abyss? Enemies spawn endlessly and grow 10% stronger each kill. Survive 10 rounds for a guaranteed Mythic Gacha pull!")) {
+                inAbyss = true;
+                abyssKills = 0;
+                closeShopAndStart();
             }
         };
 
@@ -722,22 +811,34 @@
             saveProgress();
         };
 
-        const pullGacha = () => {
-            if(playerStats.coins >= 1000) {
-                playerStats.coins -= 1000;
-                const pool = ['dualdaggers', 'scythe', 'galaxy'];
+        const switchShopTab = (tabId) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('btn-' + tabId).classList.add('active');
+        };
+
+        const pullGacha = (isFree = false) => {
+            let cost = playerStats.perks.cheapGacha ? 800 : 1000;
+            if(isFree || playerStats.coins >= cost) {
+                if(!isFree) playerStats.coins -= cost;
+                
+                const pool = ['dualdaggers', 'scythe', 'trident', 'titanhammer', 'galaxy', 'inferno', 'thunder', 'void'];
                 const drop = pool[Math.floor(Math.random() * pool.length)];
                 
-                if (drop === 'dualdaggers' || drop === 'scythe') {
+                let isAura = ['galaxy', 'inferno', 'thunder', 'void'].includes(drop);
+                
+                if (!isAura) {
                     if (!playerStats.unlockedWeapons.includes(drop)) playerStats.unlockedWeapons.push(drop);
                     playerStats.weapon = drop;
-                }
-                if (drop === 'galaxy') {
+                } else {
                     if (!playerStats.unlockedAuras.includes(drop)) playerStats.unlockedAuras.push(drop);
                     playerStats.aura = drop;
                 }
                 
-                document.getElementById('loot-alert').innerText = `🎰 MYTHIC DROP: ${drop.toUpperCase()}! 🎰`;
+                let dropName = isAura ? allAuras[drop] : allWeapons[drop];
+                
+                document.getElementById('loot-alert').innerText = `🎰 MYTHIC DROP: ${dropName.toUpperCase()}! 🎰`;
                 document.getElementById('loot-alert').style.animation = 'none';
                 void document.getElementById('loot-alert').offsetWidth; 
                 document.getElementById('loot-alert').style.animation = 'lootPop 4s ease-in forwards';
@@ -749,7 +850,25 @@
         const toggleInventory = (show) => {
             document.getElementById('main-shop-view').style.display = show ? 'none' : 'block';
             document.getElementById('inventory-view').style.display = show ? 'flex' : 'none';
+            document.getElementById('tree-view').style.display = 'none';
             if(show) renderInventory();
+        };
+        
+        const toggleTree = (show) => {
+            document.getElementById('main-shop-view').style.display = show ? 'none' : 'block';
+            document.getElementById('tree-view').style.display = show ? 'flex' : 'none';
+            document.getElementById('inventory-view').style.display = 'none';
+            if(show) updateUI();
+        };
+
+        const buyPerk = (perkId, cost) => {
+            if(playerStats.godSouls >= cost && !playerStats.perks[perkId]) {
+                playerStats.godSouls -= cost;
+                playerStats.perks[perkId] = true;
+                playSound('smite');
+                saveProgress();
+                updateUI();
+            }
         };
 
         const equipWeapon = (w) => { playerStats.weapon = w; saveProgress(); renderInventory(); };
@@ -817,10 +936,12 @@
             if (playerStats.stage >= 10) {
                 const pBtn = document.getElementById('prestige-btn');
                 pBtn.style.display = 'block';
-                pBtn.innerText = `🌟 PRESTIGE (Reset to gain x${(playerStats.prestige || 0) + 2} Base Multiplier)`;
             } else {
                 document.getElementById('prestige-btn').style.display = 'none';
             }
+
+            // Gacha Button Update
+            document.getElementById('buy-gacha').innerText = `Pull (${playerStats.perks.cheapGacha ? 800 : 1000})`;
 
             ['hp', 'dmg', 'dodge', 'crit', 'mana', 'atkspd', 'vamp', 'thorns', 'secondWind', 'pet', 'clone'].forEach(type => {
                 let btn = document.getElementById(`buy-${type}`);
@@ -844,6 +965,19 @@
                 document.getElementById('buy-pet').disabled = true; 
             }
             
+            // Skill Tree UI
+            document.getElementById('tree-souls').innerText = playerStats.godSouls;
+            ['pet', 'heal', 'gacha', 'paladin'].forEach(p => {
+                let idMap = { 'pet': 'freePet', 'heal': 'healDodge', 'gacha': 'cheapGacha', 'paladin': 'paladin'};
+                if(playerStats.perks[idMap[p]]) {
+                    document.getElementById(`perk-${p}`).innerText = "UNLOCKED";
+                    document.getElementById(`perk-${p}`).disabled = true;
+                    document.getElementById(`perk-${p}`).style.background = "#2ecc71";
+                }
+            });
+
+            if(playerStats.perks.paladin) document.getElementById('paladin-opt').style.display = 'block';
+
             document.getElementById('role-select').value = playerStats.role || 'balanced';
             
             if (playerStats.manualMode && window.innerWidth < 820 && gameActive) document.getElementById('mobile-controls').style.display = 'flex';
@@ -886,8 +1020,32 @@
             }
         };
 
-        // --- AUDIO ENGINE (Remastered Sync & Clarity & BGM) ---
+        // --- NEW AUDIO ENGINE (HOWLER.JS BGM + VOICEVOX TTS FALLBACK) ---
         let audioCtx; let voiceEnabled = false; let gameActive = false; let isTimeStopped = false;
+        
+        // Step 1: Create a 'bgm' folder in your project directory
+        // Step 2: Download MP3s from DOVA-SYNDROME and rename them to match these.
+        // NOTE: Howler will NOT crash the game if you haven't downloaded these yet! It just stays silent.
+        const bgm = {
+            normal: new Howl({ src: ['bgm/battle_theme.mp3'], loop: true, volume: 0.4 }),
+            boss: new Howl({ src: ['bgm/boss_theme.mp3'], loop: true, volume: 0.5 }),
+            abyss: new Howl({ src: ['bgm/abyss_theme.mp3'], loop: true, volume: 0.4 })
+        };
+
+        // Step 1: Create a 'voices' folder in your project directory
+        // Step 2: Use Voicevox to generate these lines and name the files accordingly.
+        const voiceFiles = {
+            "ZA WARUDO!": "voices/za_warudo.mp3",
+            "TIME RESUMES": "voices/time_resumes.mp3",
+            "FINISH HIM!": "voices/finish_him.mp3",
+            "FATALITY": "voices/fatality.mp3",
+            "YOU WIN": "voices/you_win.mp3",
+            "YOU LOSE": "voices/you_lose.mp3",
+            "ENRAGE!": "voices/enrage.mp3",
+            "LIMIT BREAK!": "voices/limit_break.mp3",
+            "SECOND WIND!": "voices/second_wind.mp3",
+            // Add your skill moves here if you generate them in Voicevox! e.g., "KAMEHAMEHA!": "voices/kamehameha.mp3"
+        };
         
         const initAudio = () => {
             try {
@@ -896,36 +1054,15 @@
                     if(AudioContext) audioCtx = new AudioContext();
                 }
                 if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-                playBGM();
             } catch(e) {}
             
             voiceEnabled = true;
             try { if ('speechSynthesis' in window) { let g = new SpeechSynthesisUtterance(''); g.volume = 0; window.speechSynthesis.speak(g); } } catch(e) {}
             
             document.getElementById('audio-btn').style.display = 'none'; 
-            document.querySelectorAll('.god-btn').forEach(b => b.style.display = 'block'); 
             startGame();
         };
         document.getElementById('audio-btn').addEventListener('click', initAudio);
-
-        const playBGM = () => {
-            let notes = [130.81, 155.56, 174.61, 196.00]; 
-            let step = 0;
-            setInterval(() => {
-                if(!gameActive || isTimeStopped || !audioCtx) return;
-                try {
-                    let osc = audioCtx.createOscillator();
-                    let gain = audioCtx.createGain();
-                    osc.type = 'square';
-                    osc.frequency.value = notes[step % notes.length] / (isBossStage ? 2 : 1);
-                    osc.connect(gain); gain.connect(audioCtx.destination);
-                    gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-                    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
-                    step++;
-                } catch(e){}
-            }, 200);
-        };
 
         // JAPANESE TTS TRANSLATION ENGINE (Anime Upgrade)
         const getJpText = (text) => {
@@ -943,7 +1080,8 @@
                 "SOUL STEAL": "ソウルスティール", "BLOOD WAVE": "血の波", "FINISH HIM!": "トドメだ！",
                 "FATALITY": "フェイタリティ！", "YOU WIN": "君の勝ちだ！", "YOU LOSE": "君の負けだ...",
                 "PERFECT PARRY!": "パーフェクトパリィ！", "SECOND WIND!": "限界突破！",
-                "ZA WARUDO!": "ザ・ワールド！", "TIME RESUMES": "時は動き出す...", "LIMIT BREAK!": "限界突破！"
+                "ZA WARUDO!": "ザ・ワールド！", "TIME RESUMES": "時は動き出す...", "LIMIT BREAK!": "限界突破！",
+                "ENRAGE!": "激怒！", "HOLY SMITE": "聖なる一撃", "DIVINE SHIELD": "神の盾", "HEAVENLY JUDGMENT!": "天の裁き！"
             };
             if (map[text]) return map[text];
             if (text.includes("FIGHT!")) {
@@ -959,25 +1097,37 @@
         };
 
         const announceSkill = (text) => {
-            if (!voiceEnabled || !('speechSynthesis' in window)) return;
-            try {
-                window.speechSynthesis.cancel(); 
-                setTimeout(() => { 
-                    let jpText = getJpText(text);
-                    const u = new SpeechSynthesisUtterance(jpText); 
-                    u.volume = 1; u.rate = 1.4; u.pitch = 0.6; // High energy anime voice
-                    
-                    let voices = window.speechSynthesis.getVoices();
-                    if(voices.length > 0) { 
-                        let jpVoice = voices.find(v => v.lang === 'ja-JP' || v.lang === 'ja_JP' || v.lang.includes('ja')); 
-                        if(jpVoice) u.voice = jpVoice; 
-                    }
-                    window.speechSynthesis.speak(u); 
-                }, 50); 
-            } catch(e) {}
+            if (!voiceEnabled) return;
+            
+            // Check if we have a pre-rendered VOICEVOX file for this text
+            if (voiceFiles[text]) {
+                new Howl({ src: [voiceFiles[text]], volume: 1.0 }).play();
+            } else if ('speechSynthesis' in window) {
+                // FALLBACK: If no Voicevox file exists yet, use browser TTS so the game doesn't break!
+                try {
+                    window.speechSynthesis.cancel(); 
+                    setTimeout(() => { 
+                        let jpText = getJpText(text);
+                        const u = new SpeechSynthesisUtterance(jpText); 
+                        u.volume = 1; u.rate = 1.4; u.pitch = 0.6; // High energy anime voice
+                        
+                        let voices = window.speechSynthesis.getVoices();
+                        if(voices.length > 0) { 
+                            let jpVoice = voices.find(v => v.lang === 'ja-JP' || v.lang === 'ja_JP' || v.lang.includes('ja')); 
+                            if(jpVoice) u.voice = jpVoice; 
+                        }
+                        window.speechSynthesis.speak(u); 
+                    }, 50); 
+                } catch(e) {}
+            }
         };
 
         const playSound = (type) => {
+            if (navigator.vibrate) {
+                if (type === 'heavy' || type === 'smite') navigator.vibrate(50); // Strong vibrate
+                else if (type === 'hit' || type === 'clang') navigator.vibrate(20); // Quick vibrate
+            }
+
             if(!audioCtx || audioCtx.state !== 'running') return;
             try {
                 const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
@@ -1001,32 +1151,66 @@
         const skillDisplay = document.getElementById('skill-display'); const mainBody = document.getElementById('main-body');
         const stageArea = document.getElementById('stage-area'); const propsLayer = document.getElementById('props-layer'); const spark = document.getElementById('spark');
         
-        let f1 = { id: 'p1', el: p1, hpBar: document.getElementById('hp-bar-1'), mpBar: document.getElementById('mp-bar-1'), maxHp: 100, hp: 100, mp: 50, canHit: false, dmg: 0, isCrit: false, isUltimate: false, baseX: 150, y: 0, vy: 0, hasBox: false, tempBonusDmg: 0, combo: 0, comboText: document.getElementById('combo-p1'), color: '#00d2ff', isPlayer: true, status: 'none', statusTimer: 0, superArmor: false, isBlocking: false, blockTime: 0, manaAccumulator: 0, currentMove: null, usedLimitBreak: false, usedSecondWind: false, isInvincible: false, godMeter: 0 };
-        let f2 = { id: 'p2', el: p2, hpBar: document.getElementById('hp-bar-2'), mpBar: document.getElementById('mp-bar-2'), maxHp: 100, hp: 100, mp: 50, canHit: false, dmg: 0, isCrit: false, isUltimate: false, baseX: 150, y: 0, vy: 0, hasBox: false, tempBonusDmg: 0, combo: 0, comboText: document.getElementById('combo-p2'), color: '#ff0055', isPlayer: false, status: 'none', statusTimer: 0, superArmor: false, isBlocking: false, blockTime: 0, manaAccumulator: 0, currentMove: null, usedLimitBreak: false, usedSecondWind: false, isInvincible: false };
+        let f1 = { id: 'p1', el: p1, hpBar: document.getElementById('hp-bar-1'), mpBar: document.getElementById('mp-bar-1'), maxHp: 100, hp: 100, mp: 50, canHit: false, dmg: 0, isCrit: false, isUltimate: false, baseX: 150, y: 0, vy: 0, hasBox: false, tempBonusDmg: 0, combo: 0, comboText: document.getElementById('combo-p1'), color: '#00d2ff', isPlayer: true, status: 'none', statusTimer: 0, superArmor: false, isBlocking: false, blockTime: 0, dodgeTime: 0, manaAccumulator: 0, currentMove: null, usedLimitBreak: false, usedSecondWind: false, isInvincible: false, godMeter: 0, enraged: false };
+        let f2 = { id: 'p2', el: p2, hpBar: document.getElementById('hp-bar-2'), mpBar: document.getElementById('mp-bar-2'), maxHp: 100, hp: 100, mp: 50, canHit: false, dmg: 0, isCrit: false, isUltimate: false, baseX: 150, y: 0, vy: 0, hasBox: false, tempBonusDmg: 0, combo: 0, comboText: document.getElementById('combo-p2'), color: '#ff0055', isPlayer: false, status: 'none', statusTimer: 0, superArmor: false, isBlocking: false, blockTime: 0, dodgeTime: 0, manaAccumulator: 0, currentMove: null, usedLimitBreak: false, usedSecondWind: false, isInvincible: false, enraged: false };
         
-        let aiLoopTimer; let spawnerTimer; let droneTimer; let petTimer; let physicsFrame; let bossAttackTimer; let isSlowMo = false; let isBossStage = false; let enemyType = 'normal';
+        let aiLoopTimer; let spawnerTimer; let droneTimer; let petTimer; let physicsFrame; let bossAttackTimer; let weatherTimer; let isSlowMo = false; let isBossStage = false; let enemyType = 'normal';
         let activeProps = []; let thrownProjectiles = []; let gravityParticles = []; let comboTimers = { p1: null, p2: null };
         let manualCooldown = false; let moveCooldown = false; let hitStopFrames = 0; let hazardTimer = null; let holdLeft = false; let holdRight = false;
         const GRAVITY = -1.2; 
 
         const petColorPalette = ['#f39c12', '#00d2ff', '#e74c3c', '#2ecc71', '#9b59b6'];
-        const enemyPool = ['normal', 'ninja', 'tank', 'mage', 'reaper', 'giant', 'assassin', 'berserker'];
+        const enemyPool = ['normal', 'ninja', 'tank', 'mage', 'reaper', 'giant', 'assassin', 'berserker', 'goblin', 'slime'];
         const bgPool = ['bg-dojo', 'bg-forest', 'bg-volcano', 'bg-cyber', 'bg-void', 'bg-heaven'];
 
         const removeStates = (fighter) => fighter.classList.remove('palm', 'crane', 'uppercut', 'spin-kick', 'dragon-punch', 'shadow-kick', 'omega-burst', 'titan-smash', 'phantom-strike', 'dodge', 'block', 'hit', 'charge', 'charging', 'throw', 'fatality-strikes', 'hook', 'sweep', 'tornado-kick', 'meteor-strike', 'palm-flurry', 'meteor-drop', 'bull-rush');
         const updateMana = (f, amt) => { f.mp = Math.max(0, Math.min(100, f.mp + amt)); f.mpBar.style.width = f.mp + '%'; };
+        
         const updateGodMeter = () => { 
             let p = Math.min(100, f1.godMeter); 
-            document.getElementById('god-bar-1').style.width = p + '%'; 
-            if (p >= 100) activateGodMode();
+            let bar = document.getElementById('god-bar-1');
+            let btn = document.getElementById('manual-god-btn');
+            bar.style.width = p + '%'; 
+            
+            if (p >= 100) {
+                bar.classList.add('ready');
+                if(btn) {
+                    btn.disabled = false;
+                    btn.classList.add('ready-to-click');
+                }
+            } else {
+                bar.classList.remove('ready');
+                if(btn) {
+                    btn.disabled = true;
+                    btn.classList.remove('ready-to-click');
+                }
+            }
         };
+
         const updateHealthBar = (f) => {
-            let p = (f.hp / f.maxHp) * 100; f.hpBar.style.width = p + '%';
+            let displayHp = Math.max(0, f.hp); 
+            let p = Math.max(0, (displayHp / f.maxHp) * 100);
+            
+            f.hpBar.style.width = p + '%';
             if (p > 50) f.hpBar.style.background = 'linear-gradient(to bottom, #4cd137 0%, #2ecc71 40%, #27ae60 100%)'; 
             else if (p > 30) f.hpBar.style.background = 'linear-gradient(to bottom, #f5f6fa 0%, #f1c40f 40%, #e67e22 100%)'; 
             else f.hpBar.style.background = 'linear-gradient(to bottom, #ff7979 0%, #e74c3c 40%, #c0392b 100%)'; 
-            document.getElementById(`hp-text-${f.id === 'p1' ? '1' : '2'}`).innerText = f.hp <= 0 ? "0" : Math.floor(f.hp);
+            
+            document.getElementById(`hp-text-${f.id === 'p1' ? '1' : '2'}`).innerText = Math.floor(displayHp);
+
+            if (f.id === 'p1') {
+                const vignette = document.getElementById('danger-vignette');
+                if (p <= 25 && p > 0) vignette.classList.add('danger-active');
+                else vignette.classList.remove('danger-active');
+            }
+
+            if (p <= 30 && p > 0) {
+                f.el.classList.add('rage-mode');
+            } else {
+                f.el.classList.remove('rage-mode');
+            }
         };
+
         const moveFighter = (f, dist) => {
             f.baseX += dist; if (f.baseX < 30) f.baseX = 30;
             if (f === f1 && f1.baseX + f2.baseX > 710) f1.baseX = 710 - f2.baseX;
@@ -1034,8 +1218,65 @@
             f.el.style[f === f1 ? 'left' : 'right'] = f.baseX + 'px';
         };
 
+        const triggerManualGodMode = () => {
+            if (f1.godMeter >= 100 && gameActive && !isTimeStopped && !isTransitioning) {
+                let btn = document.getElementById('manual-god-btn');
+                if(btn) {
+                    btn.classList.remove('ready-to-click');
+                    btn.disabled = true;
+                }
+                activateGodMode();
+            }
+        };
+
+        const fleeFight = () => {
+            if (!gameActive || isTransitioning || isFatalityPromptActive) return;
+            if (confirm("Retreat back to the Dojo? You will lose 10% of your coins.")) {
+                isTransitioning = true;
+                playerStats.coins = Math.floor(playerStats.coins * 0.9); // 10% penalty
+                playSound('dodge');
+                skillDisplay.innerText = "RETREATED!"; 
+                skillDisplay.style.color = "#aaa"; 
+                skillDisplay.style.textShadow = "0 0 20px #000, 0 5px 0 #fff";
+                skillDisplay.classList.add('show-skill');
+                
+                f1.el.classList.add('dodge');
+                moveFighter(f1, -200);
+                
+                // STOP ALL BGM ON FLEE
+                bgm.normal.stop(); bgm.boss.stop(); bgm.abyss.stop();
+                
+                setTimeout(() => {
+                    skillDisplay.classList.remove('show-skill');
+                    endMatch(false, true); // End the match as a "loss/flee" without fatality
+                }, 1000);
+            }
+        };
+
+        const useQuickPotion = () => {
+            if (!gameActive || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
+            if (playerStats.coins >= 100) {
+                if (f1.hp >= f1.maxHp) {
+                    showAutoToast("HP is already full!");
+                    return;
+                }
+                playerStats.coins -= 100;
+                updateUI();
+                
+                let healAmt = Math.floor(f1.maxHp * 0.3);
+                f1.hp = Math.min(f1.maxHp, f1.hp + healAmt);
+                updateHealthBar(f1);
+                playSound('heal');
+                
+                spawnGravityParticles(f1.id === 'p1' ? f1.baseX : 800 - f1.baseX, 50, '#2ecc71', true);
+                spawnDamageText(f1.id === 'p1' ? f1.baseX : 800 - f1.baseX, 350 - f1.y - 100, `+${healAmt}`, '#2ecc71');
+            } else {
+                showAutoToast("Not enough coins for Potion!");
+            }
+        };
+
         const activateGodMode = () => {
-            if(isTimeStopped || !gameActive || f2.hp <= 0 || isTransitioning) return;
+            if(isTimeStopped || !gameActive || f2.hp <= 0 || isTransitioning || isFatalityPromptActive) return;
             isTimeStopped = true;
             f1.godMeter = 0; updateGodMeter();
             playSound('time-stop');
@@ -1071,10 +1312,16 @@
 
         function spawnDamageText(x, y, textValue, color = '#ff4757') {
             const txt = document.createElement('div'); txt.className = 'dmg-text';
-            txt.innerText = textValue.toString().includes('+') ? textValue : '-' + textValue; 
+            txt.innerText = String(textValue).includes('+') || isNaN(parseInt(textValue)) ? textValue : '-' + textValue; 
             txt.style.color = color;
-            txt.style.left = x + 'px'; txt.style.top = y + 'px';
-            if (textValue.toString().includes('CRIT')) txt.style.transform = 'scale(1.5)';
+            
+            let randomOffsetX = (Math.random() - 0.5) * 40;
+            let randomOffsetY = (Math.random() - 0.5) * 40;
+            
+            txt.style.left = (x + randomOffsetX) + 'px'; 
+            txt.style.top = (y + randomOffsetY) + 'px';
+            
+            if (String(textValue).includes('CRIT') || String(textValue).includes('WEAK')) txt.style.transform = 'scale(1.5)';
             propsLayer.appendChild(txt); setTimeout(() => txt.remove(), 800);
         }
 
@@ -1088,8 +1335,46 @@
             }
         };
 
+        const spawnWeather = () => {
+            if (!gameActive || isTimeStopped) return;
+            
+            let isFire = enemyType === 'boss' || enemyType === 'berserker' || stageArea.classList.contains('bg-volcano');
+            let isSnow = stageArea.classList.contains('bg-cyber') || stageArea.classList.contains('bg-heaven');
+            
+            if (isFire || isSnow) {
+                const flake = document.createElement('div');
+                flake.className = 'particle';
+                flake.style.width = (Math.random() * 4 + 2) + 'px';
+                flake.style.height = flake.style.width;
+                flake.style.background = isFire ? '#ff4757' : '#00d2ff';
+                flake.style.boxShadow = `0 0 10px ${isFire ? '#ff4757' : '#00d2ff'}`;
+                flake.style.left = (Math.random() * 800) + 'px';
+                flake.style.top = '-10px';
+                flake.style.opacity = Math.random() * 0.5 + 0.2;
+                flake.style.zIndex = 1;
+                propsLayer.appendChild(flake);
+                
+                let wx = parseInt(flake.style.left);
+                let wy = -10;
+                let speed = Math.random() * 2 + 1;
+                let drift = (Math.random() - 0.5) * 2;
+                
+                let wInt = setInterval(() => {
+                    if (!gameActive || isTransitioning) { clearInterval(wInt); flake.remove(); return; }
+                    if (isTimeStopped) return;
+                    wy += speed;
+                    wx += drift;
+                    flake.style.top = wy + 'px';
+                    flake.style.left = wx + 'px';
+                    if (wy > 400) { clearInterval(wInt); flake.remove(); }
+                }, 30);
+            }
+            
+            weatherTimer = setTimeout(spawnWeather, isFire ? 150 : 400);
+        };
+
         const spawnProp = () => {
-            if (!gameActive || isTimeStopped || isTransitioning) return;
+            if (!gameActive || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
             let type = Math.random();
             let propType = 'box'; let className = 'box-prop';
             if (type > 0.85) { propType = 'potion'; className = 'potion-prop'; }
@@ -1101,7 +1386,7 @@
             propsLayer.appendChild(propEl);
             let targetY = 350; 
             let dropInt = setInterval(() => {
-                if(!gameActive || isTransitioning) { clearInterval(dropInt); propEl.remove(); return; }
+                if(!gameActive || isTransitioning || isFatalityPromptActive) { clearInterval(dropInt); propEl.remove(); return; }
                 if(isTimeStopped) return; 
                 let currentTop = parseInt(propEl.style.top);
                 if (currentTop < targetY) { propEl.style.top = (currentTop + 6) + 'px'; } 
@@ -1111,7 +1396,7 @@
         };
 
         const triggerBossTelegraph = () => {
-            if(!gameActive || f2.hp <= 0 || enemyType !== 'boss' || isTimeStopped || isTransitioning) return;
+            if(!gameActive || f2.hp <= 0 || enemyType !== 'boss' || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
             let targetX = f1.id === 'p1' ? f1.baseX : 800 - f1.baseX; 
             let warning = document.createElement('div');
             warning.className = 'boss-warning';
@@ -1121,7 +1406,7 @@
             playSound('charge');
             
             setTimeout(() => {
-                if(!gameActive || isTimeStopped || isTransitioning) { warning.remove(); return; }
+                if(!gameActive || isTimeStopped || isTransitioning || isFatalityPromptActive) { warning.remove(); return; }
                 warning.classList.add('blast');
                 playSound('heavy'); playSound('smite');
                 
@@ -1133,33 +1418,17 @@
                 setTimeout(() => warning.remove(), 300);
             }, 1500);
             
-            bossAttackTimer = setTimeout(triggerBossTelegraph, 4500);
-        };
-
-        const godDropPotion = () => {
-            if (!gameActive || playerStats.coins < 20 || isTimeStopped || isTransitioning) return;
-            playerStats.coins -= 20; updateUI();
-            const propEl = document.createElement('div'); propEl.className = 'prop potion-prop';
-            propEl.style.left = f1.baseX + 'px'; propEl.style.top = '-50px'; propsLayer.appendChild(propEl);
-            setTimeout(() => { propEl.style.top = '350px'; }, 50); activeProps.push({ el: propEl, type: 'potion', x: f1.baseX, y: 350 });
-        };
-        
-        const godSmite = () => {
-            if (!gameActive || playerStats.coins < 50 || isTimeStopped || isTransitioning) return;
-            playerStats.coins -= 50; updateUI();
-            const light = document.getElementById('lightning');
-            light.style.left = (800 - f2.baseX) + 'px'; light.style.opacity = 1; playSound('smite');
-            setTimeout(() => light.style.opacity = 0, 300);
-            f2.canHit = false; triggerDamage(f1, f2, true, 50 * (1 + (playerStats.prestige || 0))); 
+            let attackRate = f2.enraged ? 2500 : 4500;
+            bossAttackTimer = setTimeout(triggerBossTelegraph, attackRate);
         };
 
         const spawnHazard = () => {
-            if (!gameActive || playerStats.stage < 2 || isTimeStopped || isTransitioning) return;
+            if (!gameActive || playerStats.stage < 2 || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
             const xPos = Math.random() * 600 + 100;
             const warning = document.createElement('div'); warning.className = 'hazard-warning';
             warning.style.left = xPos + 'px'; propsLayer.appendChild(warning);
             setTimeout(() => {
-                if(!gameActive || isTransitioning) { warning.remove(); return; }
+                if(!gameActive || isTransitioning || isFatalityPromptActive) { warning.remove(); return; }
                 warning.remove();
                 const spikes = document.createElement('div'); spikes.className = 'hazard-spikes';
                 spikes.style.left = xPos + 'px'; propsLayer.appendChild(spikes); playSound('heavy');
@@ -1175,7 +1444,7 @@
         };
 
         const fireDroneLaser = () => {
-            if (!gameActive || !playerStats.hasDrone || isTimeStopped || isTransitioning) return;
+            if (!gameActive || !playerStats.hasDrone || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
             playSound('jump');
             const proj = document.createElement('div'); proj.className = 'particle'; 
             proj.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, #00d2ff 50%, #000 100%)`; 
@@ -1185,13 +1454,13 @@
         };
 
         const petAttack = () => {
-            let pCount = playerStats.petCount || 0;
-            if(!gameActive || f1.hp <= 0 || pCount === 0 || isTimeStopped || isTransitioning) return;
+            let pCount = (playerStats.petCount || 0) + (playerStats.perks.freePet ? 1 : 0);
+            if(!gameActive || f1.hp <= 0 || pCount === 0 || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
             
             const pets = document.querySelectorAll('#pets-container .pet');
             pets.forEach((petEl, i) => {
                 setTimeout(() => {
-                    if(!gameActive || f1.hp <= 0 || isTimeStopped || isTransitioning) return;
+                    if(!gameActive || f1.hp <= 0 || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
                     petEl.classList.add('pet-attack');
                     setTimeout(() => petEl.classList.remove('pet-attack'), 500);
                     playSound('jump');
@@ -1233,7 +1502,16 @@
             let targetEl = isClone ? p1Clone : fObj.el;
 
             if (move.id === 'block') { targetEl.classList.add('block'); if(!isClone) {fObj.isBlocking = true; fObj.blockTime = performance.now();} return; }
-            if (move.id === 'dodge') { targetEl.classList.add('dodge'); if(!isClone){ moveFighter(fObj, -40); updateMana(fObj, 15); fObj.combo = 0; } return; }
+            if (move.id === 'dodge') { 
+                targetEl.classList.add('dodge'); 
+                if(!isClone){ 
+                    moveFighter(fObj, -40); 
+                    updateMana(fObj, 15); 
+                    fObj.combo = 0; 
+                    fObj.dodgeTime = performance.now(); // Track exactly when they dodged
+                } 
+                return; 
+            }
             if (move.id === 'charge') { targetEl.classList.add('charge', 'charging'); if(!isClone) { updateMana(fObj, 25); playSound('charge'); } return; }
             if (move.id === 'throw' && !isClone) { targetEl.classList.add('throw'); setTimeout(() => { if (gameActive && fObj.hp > 0 && !isTransitioning) throwProjectile(fObj); }, 150); return; }
 
@@ -1256,6 +1534,7 @@
             let statBonus = fObj.isPlayer ? playerStats.baseDmgBonus : (isBossStage ? playerStats.stage * 5 : playerStats.stage * 2);
             if (!fObj.isPlayer && enemyType === 'tank') statBonus += 10; 
             if (!fObj.isPlayer && enemyType === 'berserker') statBonus += 15 + playerStats.stage; 
+            if (!fObj.isPlayer && enemyType === 'slime') statBonus -= 5; // Slimes hit weak
             
             if (fObj.isPlayer) {
                 let pMult = 1 + (playerStats.prestige || 0);
@@ -1268,6 +1547,12 @@
             }
 
             let finalDmg = baseAttackDmg + fObj.tempBonusDmg + statBonus; 
+
+            // COMBO MULTIPLIER (Max 20 hits = +40% Bonus Damage)
+            let activeCombo = fObj.combo || 0;
+            let comboMultiplier = 1 + (Math.min(activeCombo, 20) * 0.02);
+            finalDmg = Math.floor(finalDmg * comboMultiplier);
+
             if(!isClone) {
                 fObj.dmg = finalDmg; 
                 fObj.isCrit = isCrit;
@@ -1275,7 +1560,13 @@
                 finalDmg *= 0.5; // clone does 50% damage
             }
             
-            let speedMult = fObj.isPlayer ? (playerStats.atkSpd || 1) : (enemyType === 'assassin' ? 1.5 : (enemyType === 'giant' ? 0.7 : 1));
+            let speedMult = fObj.isPlayer ? (playerStats.atkSpd || 1) : 1;
+            if(!fObj.isPlayer && enemyType === 'assassin') speedMult = 1.5;
+            if(!fObj.isPlayer && enemyType === 'goblin') speedMult = 1.8;
+            if(!fObj.isPlayer && enemyType === 'giant') speedMult = 0.7;
+            if(!fObj.isPlayer && enemyType === 'slime') speedMult = 0.6;
+            
+            if(fObj.enraged) speedMult *= 1.5;
             let hitDelay = (move.hitDelay || 150) / speedMult;
             
             setTimeout(() => {
@@ -1389,7 +1680,7 @@
         };
 
         const aiDecision = (fObj) => {
-            if (!gameActive || fObj.hp <= 0 || isTimeStopped || isTransitioning || (fObj.isPlayer && playerStats.manualMode)) return; 
+            if (!gameActive || fObj.hp <= 0 || isTimeStopped || isTransitioning || (fObj.isPlayer && playerStats.manualMode) || isFatalityPromptActive) return; 
             if (fObj.status === 'frozen' && Math.random() < 0.5) return; 
 
             let hpPercent = (fObj.hp / fObj.maxHp) * 100;
@@ -1407,14 +1698,15 @@
             if (dist > 180) {
                 if (enemyType === 'mage' && fObj.mp >= 30 && Math.random() > 0.5) {
                      executeMove(fObj, roleMoves['mage'].skills[0]); 
-                } else if (Math.random() > 0.2) moveFighter(fObj, enemyType === 'assassin' ? 120 : 80); 
+                } else if (Math.random() > 0.2) moveFighter(fObj, (enemyType === 'assassin' || enemyType === 'goblin') ? 120 : 80); 
                 else executeMove(fObj, {id:'charge'});
             } else {
                 updateMana(fObj, 5); const r = Math.random();
-                let dodgeChance = (enemyType === 'assassin' || enemyType === 'mage') ? 0.35 : 0.2;
+                let dodgeChance = (enemyType === 'assassin' || enemyType === 'mage' || enemyType === 'goblin') ? 0.35 : 0.2;
+                if(enemyType === 'slime') dodgeChance = 0.05;
                 
                 if (r < dodgeChance) { moveFighter(fObj, -80); executeMove(fObj, {id:'dodge'}); }
-                else if (r < dodgeChance + 0.1 && enemyType !== 'giant') executeMove(fObj, {id:'block'}); 
+                else if (r < dodgeChance + 0.1 && enemyType !== 'giant' && enemyType !== 'slime') executeMove(fObj, {id:'block'}); 
                 else { 
                     let move;
                     let activeRole = fObj.isPlayer ? playerStats.role : (enemyType === 'boss' ? 'tank' : (roleMoves[enemyType] ? enemyType : 'balanced'));
@@ -1422,14 +1714,27 @@
                     if (hpPercent <= 30 && fObj.mp >= 50 && Math.random() > 0.2) move = roleMoves[activeRole].ultimate;
                     else if (Math.random() > 0.5) { const s = roleMoves[activeRole].skills; move = (fObj.mp >= s[0].cost) ? s[Math.floor(Math.random() * s.length)] : basics_pool[Math.floor(Math.random() * basics_pool.length)]; } 
                     else move = basics_pool[Math.floor(Math.random() * basics_pool.length)]; 
-                    executeMove(fObj, move);
+                    
+                    if (!fObj.isPlayer && (move.isSkill || move.isUltimate)) {
+                        const warning = document.createElement('div');
+                        warning.innerText = '❕';
+                        warning.style.cssText = `position:absolute; top:-40px; font-size:30px; left:50%; transform:translateX(-50%); z-index:100; animation: bounce-indicator 0.3s infinite; filter: drop-shadow(0 0 10px red);`;
+                        fObj.el.appendChild(warning);
+                        
+                        setTimeout(() => {
+                            warning.remove();
+                            if (gameActive && !isTransitioning) executeMove(fObj, move);
+                        }, 400); 
+                    } else {
+                        executeMove(fObj, move);
+                    }
                 }
             }
         };
 
         // --- CONTROLS ---
         document.addEventListener('keydown', (e) => {
-            if (!gameActive || !playerStats.manualMode || f1.hp <= 0 || isTimeStopped || isTransitioning) return;
+            if (!gameActive || !playerStats.manualMode || f1.hp <= 0 || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
             const k = e.key.toLowerCase();
             if (['a', 'd'].includes(k)) {
                 if (moveCooldown) return;
@@ -1475,19 +1780,27 @@
         
         const applyManualCooldown = () => {
             let cooldownTime = 350 / (playerStats.atkSpd || 1);
-            manualCooldown = true; setTimeout(()=>manualCooldown=false, cooldownTime);
+            manualCooldown = true; 
+            
+            const actionBtns = document.querySelectorAll('.action-pad .ctrl-btn');
+            actionBtns.forEach(btn => btn.classList.add('on-cooldown'));
+            
+            setTimeout(() => {
+                manualCooldown = false;
+                actionBtns.forEach(btn => btn.classList.remove('on-cooldown'));
+            }, cooldownTime);
         };
         
-        bindTouch('m-block', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning) { executeMove(f1, {id:'block'}); applyManualCooldown(); }});
-        bindTouch('m-charge', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning) { executeMove(f1, {id: Math.random()>0.5?'dodge':'charge'}); applyManualCooldown(); }});
-        bindTouch('m-attack', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning) { 
+        bindTouch('m-block', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning && !isFatalityPromptActive) { executeMove(f1, {id:'block'}); applyManualCooldown(); }});
+        bindTouch('m-charge', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning && !isFatalityPromptActive) { executeMove(f1, {id: Math.random()>0.5?'dodge':'charge'}); applyManualCooldown(); }});
+        bindTouch('m-attack', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning && !isFatalityPromptActive) { 
             let move = basics_pool[Math.floor(Math.random() * basics_pool.length)];
             if(Math.random()>0.6) { let s = roleMoves[playerStats.role].skills; let sm = s[Math.floor(Math.random()*s.length)]; if(f1.mp>=sm.cost) move=sm; }
             executeMove(f1, move); applyManualCooldown(); 
         }});
-        bindTouch('m-throw', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && f1.hasBox && !isTimeStopped && !isTransitioning) { executeMove(f1, {id:'throw'}); applyManualCooldown(); }});
+        bindTouch('m-throw', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && f1.hasBox && !isTimeStopped && !isTransitioning && !isFatalityPromptActive) { executeMove(f1, {id:'throw'}); applyManualCooldown(); }});
         bindTouch('m-ult', () => { 
-            if(!gameActive || !playerStats.manualMode || manualCooldown || f1.hp<=0 || isTimeStopped || isTransitioning) return;
+            if(!gameActive || !playerStats.manualMode || manualCooldown || f1.hp<=0 || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
             if (f1.hp <= 30 && f1.mp >= 50) executeMove(f1, roleMoves[playerStats.role].ultimate);
             else { let s = roleMoves[playerStats.role].skills[0]; if(f1.mp >= s.cost) executeMove(f1, s); }
             applyManualCooldown();
@@ -1497,7 +1810,8 @@
             if (!gameActive) return;
             aiDecision(f1); aiDecision(f2);
             let aiBaseSpeed = Math.max(250, 750 - (playerStats.stage * 50));
-            if (enemyType === 'ninja' || enemyType === 'assassin') aiBaseSpeed *= 0.5; 
+            if (enemyType === 'ninja' || enemyType === 'assassin' || enemyType === 'goblin') aiBaseSpeed *= 0.5; 
+            if (enemyType === 'slime') aiBaseSpeed *= 1.5;
             let delay = isSlowMo ? 1800 : Math.random() * 300 + aiBaseSpeed; 
             aiLoopTimer = setTimeout(runAILoop, delay);
         }
@@ -1514,10 +1828,67 @@
             playSound('clang'); mainBody.classList.add('parry-flash'); setTimeout(()=>mainBody.classList.remove('parry-flash'), 100);
             skillDisplay.innerText = "PERFECT PARRY!"; skillDisplay.style.color = "#66fcf1"; skillDisplay.style.textShadow = "0 0 20px #00d2ff, 0 5px 0 #fff"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 800);
             updateMana(defender, 100); removeStates(attacker.el); attacker.el.classList.add('hit'); 
-            setTimeout(() => { if(gameActive && !isTransitioning) attacker.el.classList.remove('hit'); }, 1000);
+            setTimeout(() => { if(gameActive && !isTransitioning && !isFatalityPromptActive) attacker.el.classList.remove('hit'); }, 1000);
         }
 
-        // REMASTERED FATALITIES (Centered)
+        // --- MANUAL FATALITY LOGIC ---
+        const promptFatality = (attacker, defender) => {
+            isFatalityPromptActive = true;
+            isTimeStopped = true; // Pause physics
+            mainBody.classList.add('slow-mo');
+            
+            announceSkill("FINISH HIM!");
+            skillDisplay.innerText = "FINISH HIM!"; 
+            skillDisplay.style.color = "#ff0000"; 
+            skillDisplay.style.textShadow = "0 0 20px #ff0000, 0 5px 0 #fff"; 
+            skillDisplay.classList.add('show-skill');
+            
+            document.getElementById('in-fight-controls').style.display = 'none';
+            
+            const promptUI = document.getElementById('fatality-prompt');
+            promptUI.style.display = 'flex';
+            
+            const timerBar = document.getElementById('fatality-timer-bar');
+            timerBar.style.transition = 'none';
+            timerBar.style.width = '100%';
+            
+            // Force reflow to restart animation safely
+            void timerBar.offsetWidth;
+            
+            timerBar.style.transition = 'width 3s linear';
+            timerBar.style.width = '0%';
+
+            let promptTimeout = setTimeout(() => {
+                if (isFatalityPromptActive) {
+                    cancelFatalityPrompt(defender);
+                }
+            }, 3000);
+
+            document.getElementById('fatality-btn').onclick = () => {
+                if (isFatalityPromptActive) {
+                    clearTimeout(promptTimeout);
+                    isFatalityPromptActive = false;
+                    promptUI.style.display = 'none';
+                    skillDisplay.classList.remove('show-skill');
+                    triggerFatality(attacker, defender);
+                }
+            };
+        };
+
+        const cancelFatalityPrompt = (defender) => {
+            isFatalityPromptActive = false;
+            document.getElementById('fatality-prompt').style.display = 'none';
+            skillDisplay.classList.remove('show-skill');
+            
+            isTimeStopped = false;
+            mainBody.classList.remove('slow-mo');
+            
+            isTransitioning = true;
+            defender.hp = 0;
+            updateHealthBar(defender);
+            endMatch(true); // Player won, normal death
+        };
+
         function finishFatality(attacker, defender) {
             playSound('heavy'); announceSkill("FATALITY");
             const fatText = document.createElement('div'); fatText.className = 'fatality-text show-fatality'; fatText.innerText = "FATALITY"; mainBody.appendChild(fatText);
@@ -1526,7 +1897,7 @@
             // Check for Boss Loot
             if(isBossStage && attacker.isPlayer && Math.random() < 0.25) {
                 setTimeout(() => {
-                    const weapons = ['katana', 'greatsword', 'staff'];
+                    const weapons = ['katana', 'greatsword', 'staff', 'trident', 'titanhammer'];
                     let dropped = weapons[Math.floor(Math.random() * weapons.length)];
                     
                     if (!playerStats.unlockedWeapons.includes(dropped)) playerStats.unlockedWeapons.push(dropped);
@@ -1544,117 +1915,203 @@
                 mainBody.classList.remove('fatality-mode'); fatText.remove(); defender.el.style.display = 'flex';
                 document.getElementById('combat-hud').style.opacity = 1;
                 defender.hp = 0; 
+                updateHealthBar(defender);
                 isTransitioning = false; // clear state before calling endMatch to ensure it fires
                 endMatch(attacker.isPlayer, true);
             }, 3000);
         }
 
         function triggerFatality(attacker, defender) {
-            gameActive = false; isSlowMo = false;
-            document.getElementById('combat-hud').style.opacity = 0;
-            announceSkill("FINISH HIM!"); 
-            skillDisplay.innerText = "FINISH HIM!"; skillDisplay.style.color = "#ff0000"; skillDisplay.style.textShadow = "0 0 20px #ff0000, 0 5px 0 #fff"; skillDisplay.classList.add('show-skill');
-            mainBody.classList.add('slow-mo');
+            gameActive = false; isSlowMo = false; isTimeStopped = false;
             
-            setTimeout(() => {
-                skillDisplay.classList.remove('show-skill'); mainBody.classList.remove('slow-mo'); mainBody.classList.add('fatality-mode');
-                removeStates(attacker.el); removeStates(defender.el); defender.el.classList.add('hit');
+            // STOP ALL BGM FOR FATALITY SCENE
+            bgm.normal.stop(); bgm.boss.stop(); bgm.abyss.stop();
 
-                let role = attacker.isPlayer ? playerStats.role : 'balanced';
+            document.getElementById('combat-hud').style.opacity = 0;
+            document.getElementById('in-fight-controls').style.display = 'none';
+            mainBody.classList.add('fatality-mode');
+            removeStates(attacker.el); removeStates(defender.el); defender.el.classList.add('hit');
+
+            defender.hp = 0;
+            updateHealthBar(defender);
+
+            let role = attacker.isPlayer ? playerStats.role : 'balanced';
+            
+            // Force defender to exact middle of the stage
+            defender.baseX = 400;
+            defender.y = 0;
+            defender.el.style[defender.id === 'p1' ? 'left' : 'right'] = '400px';
+            defender.el.style.bottom = '0px';
+
+            // Helper to safely position attacker relative to the screen
+            const setAttackerX = (visualX) => {
+                attacker.baseX = attacker.id === 'p1' ? visualX : 800 - visualX;
+                attacker.el.style[attacker.id === 'p1' ? 'left' : 'right'] = attacker.baseX + 'px';
+            };
+
+            if (role === 'tank') {
+                setAttackerX(400); attacker.y = 500; attacker.el.style.bottom = attacker.y + 'px'; attacker.el.classList.add('titan-smash');
+                setTimeout(() => {
+                    attacker.el.classList.add('meteor-drop'); attacker.y = 0; attacker.el.style.bottom = '0px'; 
+                    playSound('heavy'); playSound('hit'); mainBody.classList.add('heavy-shake'); setTimeout(() => mainBody.classList.remove('heavy-shake'), 600);
+                    spawnGravityParticles(400, 50, '#ff0000', true); for(let i=0; i<12; i++) spawnGravityParticles(400, 50+Math.random()*100, '#f1c40f', true); 
+                    defender.el.style.display = 'none'; setTimeout(() => finishFatality(attacker, defender), 800);
+                }, 1200);
+            } else if (role === 'assassin') {
+                // REMASTERED ASSASSIN FATALITY
+                attacker.el.classList.add('phantom-strike');
+                playSound('charge');
                 
-                // Force defender to exact middle of the stage
-                defender.baseX = 400;
-                defender.y = 0;
-                defender.el.style[defender.id === 'p1' ? 'left' : 'right'] = '400px';
-                defender.el.style.bottom = '0px';
-
-                // Helper to safely position attacker relative to the screen
-                const setAttackerX = (visualX) => {
-                    attacker.baseX = attacker.id === 'p1' ? visualX : 800 - visualX;
-                    attacker.el.style[attacker.id === 'p1' ? 'left' : 'right'] = attacker.baseX + 'px';
-                };
-
-                if (role === 'tank') {
-                    setAttackerX(400); attacker.y = 500; attacker.el.style.bottom = attacker.y + 'px'; attacker.el.classList.add('titan-smash');
-                    setTimeout(() => {
-                        attacker.el.classList.add('meteor-drop'); attacker.y = 0; attacker.el.style.bottom = '0px'; 
-                        playSound('heavy'); playSound('hit'); mainBody.classList.add('heavy-shake'); setTimeout(() => mainBody.classList.remove('heavy-shake'), 600);
-                        spawnGravityParticles(400, 50, '#ff0000', true); for(let i=0; i<12; i++) spawnGravityParticles(400, 50+Math.random()*100, '#f1c40f', true); 
-                        defender.el.style.display = 'none'; setTimeout(() => finishFatality(attacker, defender), 800);
-                    }, 1200);
-                } else if (role === 'assassin') {
-                    attacker.el.classList.add('phantom-strike'); let slashes = 0; 
-                    let slashInterval = setInterval(() => {
-                        playSound('slice'); setAttackerX(400 + (slashes % 2 === 0 ? -150 : 150)); slashes++;
-                        let slash = document.createElement('div'); slash.className = 'slash-mark';
-                        slash.style.left = (400 - 150 + Math.random()*100) + 'px'; slash.style.top = (50 + Math.random()*200) + 'px';
-                        slash.style.setProperty('--rot', `${Math.random()*360}deg`); mainBody.appendChild(slash); setTimeout(()=>slash.remove(), 500);
-                        if (slashes > 12) {
-                            clearInterval(slashInterval); attacker.el.classList.remove('phantom-strike'); setAttackerX(attacker.id === 'p1' ? 320 : 480);
-                            setTimeout(() => { playSound('clang'); spawnGravityParticles(400, 100, '#ff0000', true); spawnGravityParticles(400, 100, '#ff0000', true); defender.el.style.display = 'none'; finishFatality(attacker, defender); }, 800);
-                        }
-                    }, 100);
-                } else if (role === 'mage') {
-                    setAttackerX(attacker.id === 'p1' ? 250 : 550);
-                    attacker.el.classList.add('palm-flurry'); playSound('charge');
-                    let fInt = setInterval(() => { spawnGravityParticles(400, 50+Math.random()*150, '#ff4757', true); playSound('hit'); }, 80);
-                    setTimeout(() => {
-                        clearInterval(fInt); playSound('heavy'); mainBody.classList.add('shake-screen');
-                        spawnGravityParticles(400, 150, '#ff4757', true); defender.el.style.display = 'none'; finishFatality(attacker, defender);
-                    }, 1500);
-                } else if (role === 'witch') {
-                    setAttackerX(attacker.id === 'p1' ? 300 : 500);
-                    attacker.el.classList.add('crane'); defender.y = 150; defender.el.style.bottom = '150px'; defender.el.style.filter = 'hue-rotate(270deg) brightness(2)';
-                    playSound('heal');
-                    let sInt = setInterval(() => { spawnGravityParticles(400, 200, '#9b59b6', false); }, 100);
-                    setTimeout(() => {
-                        clearInterval(sInt); playSound('smite'); defender.el.style.display = 'none'; finishFatality(attacker, defender);
-                    }, 1500);
-                } else if (role === 'archer') {
-                    setAttackerX(attacker.id === 'p1' ? 50 : 750);
-                    attacker.el.classList.add('palm'); playSound('charge');
-                    let laser = document.createElement('div'); laser.style.cssText = `position:absolute; width:800px; height:4px; background:#2ecc71; top:${350 - attacker.y - 60}px; left:0; z-index:200; opacity:0.5; box-shadow:0 0 10px #2ecc71;`;
-                    propsLayer.appendChild(laser);
-                    setTimeout(() => {
-                        laser.style.opacity = 1; laser.style.height = '25px'; playSound('clang'); playSound('heavy');
-                        mainBody.classList.add('heavy-shake'); setTimeout(()=>mainBody.classList.remove('heavy-shake'), 400);
-                        spawnGravityParticles(400, 100, '#2ecc71', true); spawnGravityParticles(400, 100, '#2ecc71', true); defender.el.style.display = 'none';
-                        setTimeout(() => { laser.remove(); finishFatality(attacker, defender); }, 500);
-                    }, 1000);
-                } else {
-                    // Balanced
-                    setAttackerX(attacker.id === 'p1' ? 340 : 460);
-                    setTimeout(() => {
-                        attacker.el.classList.add('fatality-strikes'); let t = 0; for(let i=0; i<20; i++) { setTimeout(() => { playSound('hit'); spawnGravityParticles(400, 100+Math.random()*100, '#f1c40f', false); }, t); t += 80; }
-                        setTimeout(() => {
-                            attacker.el.classList.remove('fatality-strikes'); attacker.el.classList.add('uppercut'); 
+                // Darken background for anime effect
+                mainBody.style.background = '#000';
+                defender.el.style.filter = 'brightness(0)';
+                attacker.el.style.filter = 'brightness(200%) hue-rotate(-50deg)';
+                
+                let slashes = 0;
+                let slashAngles = [0, 45, 90, 135, -45, -90];
+                
+                let slashInterval = setInterval(() => {
+                    playSound('slice'); 
+                    setAttackerX(400 + (Math.random() * 300 - 150)); 
+                    attacker.y = Math.random() * 200;
+                    attacker.el.style.bottom = attacker.y + 'px';
+                    slashes++;
+                    
+                    let slash = document.createElement('div'); 
+                    slash.className = 'slash-mark';
+                    slash.style.left = (300 + Math.random()*200) + 'px'; 
+                    slash.style.top = (50 + Math.random()*200) + 'px';
+                    slash.style.width = '500px';
+                    slash.style.setProperty('--rot', `${slashAngles[slashes % slashAngles.length]}deg`); 
+                    slash.style.boxShadow = '0 0 30px #fff, 0 0 50px #8e44ad, inset 0 0 20px #fff';
+                    mainBody.appendChild(slash); 
+                    
+                    if (slashes > 15) {
+                        clearInterval(slashInterval); 
+                        attacker.el.classList.remove('phantom-strike'); 
+                        setAttackerX(attacker.id === 'p1' ? 250 : 550);
+                        attacker.y = 0; attacker.el.style.bottom = '0px';
+                        attacker.el.classList.add('dodge'); // pose like sheathing sword
+                        
+                        setTimeout(() => { 
+                            playSound('clang'); playSound('heavy');
+                            mainBody.classList.add('heavy-shake'); setTimeout(()=>mainBody.classList.remove('heavy-shake'), 600);
+                            for(let i=0;i<5;i++) {
+                                spawnGravityParticles(400, 100+Math.random()*100, '#ff0000', true); 
+                                spawnGravityParticles(400, 100+Math.random()*100, '#8e44ad', true);
+                            }
+                            defender.el.style.display = 'none'; 
                             
-                            // Beam finisher
-                            playSound('heavy'); playSound('clang');
-                            const beam = document.createElement('div');
-                            beam.className = 'energy-beam';
-                            beam.innerHTML = '<div class="beam-core"></div>';
-                            beam.style.setProperty('--beam-color', '#00d2ff');
-                            beam.style.left = (attacker.id === 'p1' ? 340 : 0) + 'px';
-                            beam.style.width = '800px';
-                            beam.style.top = (350 - attacker.y - 80) + 'px';
-                            propsLayer.appendChild(beam);
-                            setTimeout(() => { beam.style.opacity = 1; mainBody.classList.add('heavy-shake'); }, 50);
+                            // Clean up slashes & restore bg
+                            document.querySelectorAll('.slash-mark').forEach(s=>s.remove());
+                            mainBody.style.background = '';
                             
-                            defender.el.style.display = 'none'; spawnGravityParticles(400, 200, '#00d2ff', true);
-                            
-                            setTimeout(() => { beam.remove(); finishFatality(attacker, defender); }, 1000);
-                        }, 1800);
-                    }, 500);
-                }
-            }, 1000); 
+                            setTimeout(()=>finishFatality(attacker, defender), 1000);
+                        }, 1200); // Dramatic pause
+                    }
+                }, 60); 
+            } else if (role === 'mage') {
+                setAttackerX(attacker.id === 'p1' ? 250 : 550);
+                attacker.el.classList.add('palm-flurry'); playSound('charge');
+                let fInt = setInterval(() => { spawnGravityParticles(400, 50+Math.random()*150, '#ff4757', true); playSound('hit'); }, 80);
+                setTimeout(() => {
+                    clearInterval(fInt); playSound('heavy'); mainBody.classList.add('shake-screen');
+                    spawnGravityParticles(400, 150, '#ff4757', true); defender.el.style.display = 'none'; finishFatality(attacker, defender);
+                }, 1500);
+            } else if (role === 'witch') {
+                setAttackerX(attacker.id === 'p1' ? 300 : 500);
+                attacker.el.classList.add('crane'); defender.y = 150; defender.el.style.bottom = '150px'; defender.el.style.filter = 'hue-rotate(270deg) brightness(2)';
+                playSound('heal');
+                let sInt = setInterval(() => { spawnGravityParticles(400, 200, '#9b59b6', false); }, 100);
+                setTimeout(() => {
+                    clearInterval(sInt); playSound('smite'); defender.el.style.display = 'none'; finishFatality(attacker, defender);
+                }, 1500);
+            } else if (role === 'archer') {
+                setAttackerX(attacker.id === 'p1' ? 50 : 750);
+                attacker.el.classList.add('palm'); playSound('charge');
+                let laser = document.createElement('div'); laser.style.cssText = `position:absolute; width:800px; height:4px; background:#2ecc71; top:${350 - attacker.y - 60}px; left:0; z-index:200; opacity:0.5; box-shadow:0 0 10px #2ecc71;`;
+                propsLayer.appendChild(laser);
+                setTimeout(() => {
+                    laser.style.opacity = 1; laser.style.height = '25px'; playSound('clang'); playSound('heavy');
+                    mainBody.classList.add('heavy-shake'); setTimeout(()=>mainBody.classList.remove('heavy-shake'), 400);
+                    spawnGravityParticles(400, 100, '#2ecc71', true); spawnGravityParticles(400, 100, '#2ecc71', true); defender.el.style.display = 'none';
+                    setTimeout(() => { laser.remove(); finishFatality(attacker, defender); }, 500);
+                }, 1000);
+            } else if (role === 'paladin') {
+                setAttackerX(attacker.id === 'p1' ? 400 : 400);
+                attacker.el.classList.add('block'); playSound('charge');
+                let holyLight = document.createElement('div'); holyLight.style.cssText = `position:absolute; width:150px; height:600px; background:linear-gradient(to right, transparent, #fff, transparent); top:-200px; left:325px; z-index:200; opacity:0; box-shadow:0 0 30px #f1c40f;`;
+                propsLayer.appendChild(holyLight);
+                setTimeout(() => {
+                    holyLight.style.opacity = 1; playSound('smite'); mainBody.classList.add('heavy-shake');
+                    spawnGravityParticles(400, 50, '#f1c40f', true); spawnGravityParticles(400, 150, '#fff', true); defender.el.style.display = 'none';
+                    setTimeout(() => { holyLight.remove(); finishFatality(attacker, defender); }, 1500);
+                }, 1000);
+            } else {
+                // Balanced
+                setAttackerX(attacker.id === 'p1' ? 340 : 460);
+                setTimeout(() => {
+                    attacker.el.classList.add('fatality-strikes'); let t = 0; for(let i=0; i<20; i++) { setTimeout(() => { playSound('hit'); spawnGravityParticles(400, 100+Math.random()*100, '#f1c40f', false); }, t); t += 80; }
+                    setTimeout(() => {
+                        attacker.el.classList.remove('fatality-strikes'); attacker.el.classList.add('uppercut'); 
+                        
+                        // Beam finisher
+                        playSound('heavy'); playSound('clang');
+                        const beam = document.createElement('div');
+                        beam.className = 'energy-beam';
+                        beam.innerHTML = '<div class="beam-core"></div>';
+                        beam.style.setProperty('--beam-color', '#00d2ff');
+                        beam.style.left = (attacker.id === 'p1' ? 340 : 0) + 'px';
+                        beam.style.width = '800px';
+                        beam.style.top = (350 - attacker.y - 80) + 'px';
+                        propsLayer.appendChild(beam);
+                        setTimeout(() => { beam.style.opacity = 1; mainBody.classList.add('heavy-shake'); }, 50);
+                        
+                        defender.el.style.display = 'none'; spawnGravityParticles(400, 200, '#00d2ff', true);
+                        
+                        setTimeout(() => { beam.remove(); finishFatality(attacker, defender); }, 1000);
+                    }, 1800);
+                }, 500);
+            }
         }
 
         // GLOBAL FLAG TO PREVENT MULTI-KILL BUGS
         let isTransitioning = false;
 
         function triggerDamage(attacker, defender, isProj, flatDmg = null) {
-            if (!gameActive || defender.hp <= 0 || attacker.hp <= 0 || isTransitioning) return false;
+            if (!gameActive || defender.hp <= 0 || attacker.hp <= 0 || isTransitioning || isFatalityPromptActive) return false;
+            
+            // PERFECT DODGE CHECK
+            if (defender.isPlayer && playerStats.manualMode && defender.dodgeTime) {
+                let timeSinceDodge = performance.now() - defender.dodgeTime;
+                if (timeSinceDodge < 400 && !attacker.isUltimate) { // 400ms window
+                    defender.dodgeTime = 0; // consume dodge
+                    playSound('clang'); mainBody.classList.add('parry-flash'); setTimeout(()=>mainBody.classList.remove('parry-flash'), 100);
+                    skillDisplay.innerText = "PERFECT DODGE!"; skillDisplay.style.color = "#9b59b6"; skillDisplay.style.textShadow = "0 0 20px #8e44ad, 0 5px 0 #fff"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 800);
+                    
+                    // Dodge Healing Perk
+                    if(playerStats.perks.healDodge) {
+                        let hAmt = Math.floor(defender.maxHp * 0.1);
+                        defender.hp = Math.min(defender.maxHp, defender.hp + hAmt);
+                        updateHealthBar(defender);
+                        spawnDamageText(defender.id === 'p1' ? defender.baseX : 800 - defender.baseX, 350 - defender.y - 100, `+${hAmt}`, '#2ecc71');
+                    }
+
+                    // Slow enemy down & buff player
+                    attacker.el.style.filter = "grayscale(100%) blur(2px)";
+                    attacker.el.style.animationPlayState = 'paused';
+                    defender.tempBonusDmg += 50 * (1 + (playerStats.prestige || 0)); // Huge damage boost for next hit
+                    
+                    setTimeout(() => {
+                        if(gameActive && !isTransitioning && !isFatalityPromptActive) {
+                            attacker.el.style.filter = "";
+                            attacker.el.style.animationPlayState = 'running';
+                            defender.tempBonusDmg = 0; // Remove boost
+                        }
+                    }, 1500);
+                    return false; // Evade all damage
+                }
+            }
             
             let finalDmg = flatDmg !== null ? flatDmg : attacker.dmg;
             finalDmg = isNaN(finalDmg) ? 15 : finalDmg; 
@@ -1662,10 +2119,23 @@
             
             if (defender.isInvincible) return false;
 
+            // ELEMENTAL WEAKNESS LOGIC
+            let isWeakness = false;
+            let moveInfo = attacker.currentMove || {};
+            if (defenderWeakness === 'ice' && (playerStats.role === 'mage' && moveInfo.isIce)) isWeakness = true;
+            if (defenderWeakness === 'earth' && playerStats.role === 'tank') isWeakness = true;
+            if (defenderWeakness === 'holy' && playerStats.role === 'paladin') isWeakness = true;
+            if (isWeakness && attacker.isPlayer) {
+                finalDmg = Math.floor(finalDmg * 1.5);
+                spawnDamageText((defender.id === 'p1' ? defender.baseX : 800 - defender.baseX) + 20, 350 - defender.y - 100, "WEAKNESS!", "#66fcf1");
+            }
+
+            // FATALITY CHECK - Trigger prompt instead of immediate fatality
             if (attacker.isPlayer && !defender.isPlayer && (defender.hp - finalDmg <= defender.maxHp * 0.15)) {
-                if(!isTransitioning) {
-                    isTransitioning = true;
-                    triggerFatality(attacker, defender); 
+                if(!isTransitioning && !isFatalityPromptActive) {
+                    defender.hp = Math.max(1, defender.hp - finalDmg); // Leave them at 1 HP to stay alive during prompt
+                    updateHealthBar(defender);
+                    promptFatality(attacker, defender); 
                 }
                 return true;
             }
@@ -1679,8 +2149,8 @@
 
                 if (!defender.superArmor || isUlt) { removeStates(defender.el); defender.el.classList.add('hit'); defender.combo = 0; }
 
-                let inflictsFire = playerStats.element === 'fire' || (attacker.isPlayer && playerStats.role === 'mage');
-                let inflictsIce = playerStats.element === 'ice';
+                let inflictsFire = playerStats.element === 'fire' || (attacker.isPlayer && playerStats.role === 'mage' && moveInfo.isFire);
+                let inflictsIce = playerStats.element === 'ice' || (attacker.isPlayer && playerStats.role === 'mage' && moveInfo.isIce);
                 let inflictsLightning = playerStats.element === 'lightning';
                 
                 // NEW PERKS SYSTEM
@@ -1700,7 +2170,9 @@
                 
                 if (hasThorns && !isProj && !attacker.isPlayer) { 
                     let reflect = Math.floor(finalDmg * 0.15);
-                    attacker.hp -= reflect; updateHealthBar(attacker); 
+                    attacker.hp -= reflect; 
+                    if (attacker.hp < 0) attacker.hp = 0; // Prevent Negative Thorns HP
+                    updateHealthBar(attacker); 
                     spawnDamageText(attacker.id === 'p1' ? attacker.baseX : 800 - attacker.baseX, 350 - attacker.y - 70, reflect, '#2ecc71');
                     if(attacker.hp <= 0 && !isTransitioning) { 
                         isTransitioning = true;
@@ -1711,6 +2183,19 @@
             }
             
             defender.hp -= finalDmg; 
+            if (defender.hp < 0) defender.hp = 0; // Ensure no negative HP
+
+            // BOSS ENRAGE MECHANIC
+            if (enemyType === 'boss' && !defender.isPlayer && defender.hp <= defender.maxHp * 0.3 && !defender.enraged) {
+                defender.enraged = true;
+                defender.mp = 100;
+                defender.el.classList.add('boss-enraged');
+                announceSkill("ENRAGE!");
+                skillDisplay.innerText = "BOSS ENRAGE!"; skillDisplay.style.color = "#ff0000"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 1500);
+                playSound('heavy'); playSound('smite');
+                mainBody.classList.add('za-warudo');
+                setTimeout(() => mainBody.classList.remove('za-warudo'), 800);
+            }
             
             // LIMIT BREAK & SECOND WIND 
             if (defender.id === 'p1' && defender.hp < defender.maxHp * 0.15 && !defender.usedLimitBreak && defender.hp > 0) {
@@ -1734,8 +2219,6 @@
                 spawnGravityParticles(defender.id === 'p1' ? defender.baseX : 800 - defender.baseX, 50, '#f1c40f', true);
                 skillDisplay.innerText = "SECOND WIND!"; skillDisplay.style.color = "#f1c40f"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 1000);
                 announceSkill("SECOND WIND!");
-            } else if (defender.hp < 0) {
-                defender.hp = 0; 
             }
             
             updateHealthBar(defender);
@@ -1743,7 +2226,15 @@
             let realX = defender.id === 'p1' ? defender.baseX : 800 - defender.baseX;
             let dmgColor = isUlt ? '#f1c40f' : '#ff4757';
             let dmgText = finalDmg;
-            if (attacker.isCrit) { dmgColor = '#9b59b6'; dmgText = finalDmg + ' CRIT!'; playSound('heavy'); }
+            if (attacker.isCrit) { 
+                dmgColor = '#9b59b6'; 
+                dmgText = finalDmg + ' CRIT!'; 
+                playSound('heavy'); 
+                
+                // Add micro-shake for normal crits to make them feel impactful
+                mainBody.classList.add('shake-screen'); 
+                setTimeout(() => mainBody.classList.remove('shake-screen'), 150);
+            }
             
             // 30% Chance for Anime Impact Frames on Ultimate Crit
             if (isUlt && Math.random() < 0.3) {
@@ -1785,15 +2276,21 @@
                 }
                 return true; 
             }
-            setTimeout(() => { if(gameActive && !defender.superArmor && !isTransitioning) defender.el.classList.remove('hit'); }, 200); return false;
+            setTimeout(() => { if(gameActive && !defender.superArmor && !isTransitioning && !isFatalityPromptActive) defender.el.classList.remove('hit'); }, 200); return false;
         }
 
         function endMatch(playerWon, fromFatality = false) {
             if (!gameActive && !fromFatality) return;
-            gameActive = false; isSlowMo = false; mainBody.classList.remove('slow-mo'); 
-            clearTimeout(aiLoopTimer); clearTimeout(spawnerTimer); clearInterval(droneTimer); clearInterval(petTimer); clearTimeout(hazardTimer); clearTimeout(bossAttackTimer);
+            gameActive = false; isSlowMo = false; isTimeStopped = false; isFatalityPromptActive = false; mainBody.classList.remove('slow-mo'); 
+            
+            // STOP BGM
+            bgm.normal.stop(); bgm.boss.stop(); bgm.abyss.stop();
+
+            clearTimeout(aiLoopTimer); clearTimeout(spawnerTimer); clearInterval(droneTimer); clearInterval(petTimer); clearTimeout(hazardTimer); clearTimeout(bossAttackTimer); clearTimeout(weatherTimer);
             document.querySelectorAll('.hazard-warning, .hazard-spikes, .slash-mark, .energy-beam, .boss-warning').forEach(e => e.remove());
             holdLeft = false; holdRight = false; updateUI(); 
+            document.getElementById('in-fight-controls').style.display = 'none';
+            document.getElementById('fatality-prompt').style.display = 'none';
             
             let loser = playerWon ? f2 : f1;
             setTimeout(() => { 
@@ -1804,45 +2301,63 @@
                 playSound('heavy');
             }, 200);
             
-            announceSkill(playerWon ? "YOU WIN" : "YOU LOSE"); playSound('heavy');
-            skillDisplay.innerText = playerWon ? "VICTORY!" : "DEFEAT"; 
-            skillDisplay.style.color = playerWon ? "#2ecc71" : "#e74c3c";
-            skillDisplay.classList.add('show-skill');
+            if(!fromFatality) {
+                announceSkill(playerWon ? "YOU WIN" : "YOU LOSE"); playSound('heavy');
+                skillDisplay.innerText = playerWon ? "VICTORY!" : "DEFEAT"; 
+                skillDisplay.style.color = playerWon ? "#2ecc71" : "#e74c3c";
+                skillDisplay.classList.add('show-skill');
+            }
 
             if (playerWon) { 
                 playerStats.coins += (isBossStage ? 150 : 50) + (playerStats.stage * 10); 
-                playSound('coin'); playerStats.stage++; 
+                playSound('coin'); 
                 
-                // Weapon Drop chance (25% on Bosses)
-                if (isBossStage && Math.random() < 0.25) {
+                if(!inAbyss) playerStats.stage++; 
+                
+                // Boss Drop
+                if (isBossStage && Math.random() < 0.5) { // Increased drop chance
                     setTimeout(() => {
-                        const weapons = ['katana', 'greatsword', 'staff'];
+                        const weapons = ['katana', 'greatsword', 'staff', 'trident', 'titanhammer'];
                         let dropped = weapons[Math.floor(Math.random() * weapons.length)];
                         
                         if (!playerStats.unlockedWeapons.includes(dropped)) playerStats.unlockedWeapons.push(dropped);
                         playerStats.weapon = dropped;
                         
-                        document.getElementById('loot-alert').innerText = `🌟 LEGENDARY WEAPON DROP: ${allWeapons[dropped].toUpperCase()}! 🌟`;
+                        document.getElementById('loot-alert').innerText = `🌟 BOSS DROP: ${allWeapons[dropped].toUpperCase()}! 🌟`;
                         document.getElementById('loot-alert').style.animation = 'none';
                         void document.getElementById('loot-alert').offsetWidth; 
                         document.getElementById('loot-alert').style.animation = 'lootPop 4s ease-in forwards';
                         saveProgress(); updateUI(); renderInventory(); playSound('coin');
                     }, 1000);
                 }
-            } else {
+            } else if(!fromFatality) {
                 playerStats.coins += 20 + (playerStats.stage * 5); playSound('coin');
             }
 
             setTimeout(() => {
                 skillDisplay.classList.remove('show-skill'); 
                 
-                if (playerWon && playerStats.autoNext) {
+                if (inAbyss) {
+                    if (playerWon) {
+                        abyssKills++;
+                        document.getElementById('top-abyss').innerText = abyssKills;
+                        closeShopAndStart();
+                    } else {
+                        inAbyss = false;
+                        if(abyssKills >= 10) { alert("You survived 10 rounds in the Abyss! Enjoy a FREE MYTHIC PULL!"); pullGacha(true); }
+                        document.getElementById('combat-hud').style.opacity = 0;
+                        document.getElementById('main-shop-view').style.display = 'block';
+                        document.getElementById('shop-overlay').style.display = 'flex';
+                        updateUI();
+                    }
+                } else if (playerWon && playerStats.autoNext) {
                     autoUpgrade(); 
                     closeShopAndStart();
                 } else {
                     document.getElementById('combat-hud').style.opacity = 0;
                     document.getElementById('main-shop-view').style.display = 'block';
                     document.getElementById('inventory-view').style.display = 'none';
+                    document.getElementById('tree-view').style.display = 'none';
                     document.getElementById('shop-overlay').style.display = 'flex';
                     document.getElementById('next-stage-btn').innerText = playerWon ? "FIGHT NEXT ENEMY" : "RETRY STAGE"; 
                     updateUI();
@@ -1860,7 +2375,7 @@
                 if (p.life <= 0) { p.el.remove(); gravityParticles.splice(i, 1); }
             }
 
-            if (!gameActive) { physicsFrame = requestAnimationFrame(physicsLoop); return; }
+            if (!gameActive || isFatalityPromptActive) { physicsFrame = requestAnimationFrame(physicsLoop); return; }
             if (hitStopFrames > 0) { hitStopFrames--; physicsFrame = requestAnimationFrame(physicsLoop); return; }
 
             if (playerStats.manualMode && f1.hp > 0 && !moveCooldown && !isTimeStopped && !isTransitioning) {
@@ -1881,7 +2396,7 @@
                 if (f.statusTimer > 0) {
                     f.statusTimer -= dt;
                     if (f.status === 'on-fire' && Math.random() < 0.1) { 
-                        f.hp -= 1; updateHealthBar(f); spawnGravityParticles(f.id==='p1'?f.baseX:800-f.baseX, f.y+40, '#ff4757', false); 
+                        f.hp -= 1; if(f.hp < 0) f.hp = 0; updateHealthBar(f); spawnGravityParticles(f.id==='p1'?f.baseX:800-f.baseX, f.y+40, '#ff4757', false); 
                         if(f.hp<=0 && !isTransitioning) { isTransitioning=true; endMatch(f === f2); } 
                     }
                     if (f.statusTimer <= 0) { f.status = 'none'; f.el.classList.remove('on-fire', 'frozen'); f.el.style.filter = ''; }
@@ -1927,7 +2442,11 @@
                 if (attacker.isUltimate) range = Math.max(range, 800); 
 
                 if (dist <= range && yDist <= 160) { 
-                    let dChance = defender.isPlayer ? playerStats.dodgeChance : (enemyType === 'ninja' || enemyType === 'assassin' ? 0.35 : (isBossStage ? 0.1 : 0.10 + (playerStats.stage * 0.02)));
+                    let dChance = defender.isPlayer ? playerStats.dodgeChance : 0.2;
+                    if(!defender.isPlayer) {
+                        if(enemyType === 'ninja' || enemyType === 'assassin' || enemyType === 'goblin') dChance = 0.35;
+                        if(enemyType === 'slime' || enemyType === 'giant') dChance = 0.05;
+                    }
                     if (defender.isPlayer && playerStats.role === 'assassin') dChance += 0.10;
                     if (defender.status === 'frozen') dChance /= 2; 
                     if (isTimeStopped) dChance = 0; 
@@ -1982,6 +2501,27 @@
                 });
             });
 
+            // --- DYNAMIC CAMERA ZOOM (Focuses on P1) ---
+            let p1RealX = f1.id === 'p1' ? f1.baseX : 800 - f1.baseX;
+            let p2RealX = f2.id === 'p1' ? f2.baseX : 800 - f2.baseX;
+            let fighterDist = Math.abs(p1RealX - p2RealX);
+            
+            let targetZoom = 1.0;
+            let isUltActive = f1.isUltimate || f2.isUltimate || isTimeStopped || isFatalityPromptActive;
+            if (fighterDist < 400 && !isUltActive && gameActive && !isTransitioning) {
+                targetZoom = 1.0 + ((400 - fighterDist) / 400) * 0.25; 
+            }
+            if (isFatalityPromptActive) targetZoom = 1.3; // Zoom in for prompt
+            
+            if (!window.currentZoom) window.currentZoom = 1.0;
+            window.currentZoom += (targetZoom - window.currentZoom) * 0.1;
+            
+            if (!window.currentOriginX) window.currentOriginX = 400;
+            window.currentOriginX += (p1RealX - window.currentOriginX) * 0.05; // Smoothly pan to P1
+
+            stageArea.style.transformOrigin = `${window.currentOriginX}px 300px`;
+            stageArea.style.transform = `scale(${scaleFactor * window.currentZoom})`;
+
             physicsFrame = requestAnimationFrame(physicsLoop);
         }
 
@@ -1989,17 +2529,39 @@
 
         const closeShopAndStart = () => {
             isTransitioning = false; // reset lock
+            isFatalityPromptActive = false;
             document.getElementById('shop-overlay').style.display = 'none'; updateUI();
             document.getElementById('combat-hud').style.opacity = 1;
+            document.getElementById('in-fight-controls').style.display = 'flex';
             
             isBossStage = playerStats.stage % 5 === 0;
             
             // REMASTERED ENEMY SELECTION
-            if (isBossStage) enemyType = 'boss'; 
-            else enemyType = enemyPool[(playerStats.stage - 1) % enemyPool.length];
+            if (inAbyss) {
+                enemyType = enemyPool[Math.floor(Math.random() * enemyPool.length)];
+                if(abyssKills > 0 && abyssKills % 5 === 0) enemyType = 'boss';
+                
+                // AUDIO: Play Abyss Theme
+                bgm.normal.stop(); bgm.boss.stop();
+                if (!bgm.abyss.playing()) bgm.abyss.play();
+                
+            } else {
+                if (isBossStage) {
+                    enemyType = 'boss'; 
+                    // AUDIO: Play Boss Theme
+                    bgm.normal.stop(); bgm.abyss.stop();
+                    if (!bgm.boss.playing()) bgm.boss.play();
+                } else {
+                    enemyType = enemyPool[(playerStats.stage - 1) % enemyPool.length];
+                    // AUDIO: Play Normal Theme
+                    bgm.boss.stop(); bgm.abyss.stop();
+                    if (!bgm.normal.playing()) bgm.normal.play();
+                }
+            }
 
             f2.el.className = 'stickman p2'; 
             f2.superArmor = false;
+            f2.enraged = false;
             stageArea.className = 'stage';
 
             // Setup Enemy Visuals and Stats
@@ -2008,6 +2570,8 @@
                 stageArea.classList.add(bgPool[(playerStats.stage - 1) % bgPool.length]); 
                 f2.maxHp = 80 + (playerStats.stage * 10); 
             }
+            
+            if(inAbyss) f2.maxHp *= (1 + (abyssKills * 0.1)); // Abyss scaling
 
             if (enemyType === 'ninja') f2.el.classList.add('enemy-ninja');
             if (enemyType === 'tank') { f2.el.classList.add('enemy-tank'); f2.superArmor = true; }
@@ -2016,24 +2580,40 @@
             if (enemyType === 'giant') { f2.el.classList.add('enemy-giant'); f2.maxHp *= 2; f2.superArmor = true; }
             if (enemyType === 'assassin') f2.el.classList.add('enemy-assassin');
             if (enemyType === 'berserker') f2.el.classList.add('enemy-berserker');
+            if (enemyType === 'goblin') { f2.el.classList.add('enemy-goblin'); f2.maxHp *= 0.6; }
+            if (enemyType === 'slime') { f2.el.classList.add('enemy-slime'); f2.maxHp *= 1.5; f2.superArmor = true; }
 
             let prestigeMult = 1 + (playerStats.prestige || 0);
             let activeMaxHp = (playerStats.maxHp + (playerStats.role === 'tank' ? 100 : (playerStats.role === 'assassin' ? -30 : 0))) * prestigeMult;
             if(activeMaxHp < 10) activeMaxHp = 10;
             f1.maxHp = activeMaxHp; 
-            f1.superArmor = (playerStats.role === 'tank');
+            f1.superArmor = (playerStats.role === 'tank' || playerStats.role === 'paladin');
+
+            // Set Element Weakness Hints
+            defenderWeakness = 'none';
+            let hintText = "";
+            if (enemyType === 'boss' || stageArea.classList.contains('bg-volcano') || enemyType === 'slime') { defenderWeakness = 'ice'; hintText = "Weak to ICE / MAGE"; }
+            else if (stageArea.classList.contains('bg-cyber') || enemyType === 'ninja') { defenderWeakness = 'earth'; hintText = "Weak to EARTH / TANK"; }
+            else if (enemyType === 'reaper' || enemyType === 'mage') { defenderWeakness = 'holy'; hintText = "Weak to HOLY / PALADIN"; }
+            document.getElementById('weakness-hint').innerText = hintText;
 
             // Apply Attack Speed Variable for CSS timing
             f1.el.style.setProperty('--atk-spd', playerStats.atkSpd || 1);
-            let enemyAtkSpd = enemyType === 'assassin' ? 1.5 : (enemyType === 'giant' ? 0.7 : 1);
+            let enemyAtkSpd = 1;
+            if(enemyType === 'assassin') enemyAtkSpd = 1.5;
+            if(enemyType === 'giant') enemyAtkSpd = 0.7;
+            if(enemyType === 'goblin') enemyAtkSpd = 1.8;
+            if(enemyType === 'slime') enemyAtkSpd = 0.6;
+            
+            if(inAbyss) enemyAtkSpd *= (1 + (abyssKills * 0.05));
             f2.el.style.setProperty('--atk-spd', enemyAtkSpd);
 
             // Apply prestige cosmetics safely
-            f1.el.classList.remove('god-aura', 'aura-galaxy');
+            f1.el.classList.remove('god-aura', 'aura-galaxy', 'aura-inferno', 'aura-thunder', 'aura-void');
             if(document.getElementById('p1-wings')) document.getElementById('p1-wings').style.display = 'none';
             if(document.getElementById('p1-halo')) document.getElementById('p1-halo').style.display = 'none';
             
-            if(playerStats.aura === 'galaxy') f1.el.classList.add('aura-galaxy');
+            if(playerStats.aura !== 'none') f1.el.classList.add(`aura-${playerStats.aura}`);
             else if(playerStats.prestige >= 1) f1.el.classList.add('god-aura');
             
             if(playerStats.prestige >= 2 && document.getElementById('p1-wings')) document.getElementById('p1-wings').style.display = 'block';
@@ -2055,11 +2635,11 @@
                 }
             }
 
-            // Spawn up to 5 God Pets
+            // Spawn God Pets (including perk)
             const petsContainer = document.getElementById('pets-container');
             if(petsContainer) {
                 petsContainer.innerHTML = '';
-                let pCount = playerStats.petCount || 0;
+                let pCount = (playerStats.petCount || 0) + (playerStats.perks.freePet ? 1 : 0);
                 for(let i=0; i<pCount; i++) {
                     let p = document.createElement('div');
                     p.className = 'pet';
@@ -2071,10 +2651,10 @@
             }
 
             [f1, f2].forEach(f => {
-                f.hp = f.maxHp; f.mp = 50; f.baseX = 150; f.y = 0; f.vy = 0; f.hasSword = false; f.hasBox = false; f.tempBonusDmg = 0; f.combo = 0; f.status = 'none'; f.statusTimer = 0; f.isBlocking = false; f.manaAccumulator = 0; f.currentMove = null; f.usedLimitBreak = false; f.usedSecondWind = false; f.isInvincible = false;
+                f.hp = f.maxHp; f.mp = 50; f.baseX = 150; f.y = 0; f.vy = 0; f.hasSword = false; f.hasBox = false; f.tempBonusDmg = 0; f.combo = 0; f.status = 'none'; f.statusTimer = 0; f.isBlocking = false; f.dodgeTime = 0; f.manaAccumulator = 0; f.currentMove = null; f.usedLimitBreak = false; f.usedSecondWind = false; f.isInvincible = false;
                 if(f.id === 'p1') { f.godMeter = 0; updateGodMeter(); }
                 updateHealthBar(f); f.mpBar.style.width = '50%';
-                f.el.classList.remove('ko', 'has-sword', 'on-fire', 'frozen', 'limit-break', 'role-assassin', 'role-mage', 'role-witch', 'role-tank', 'role-archer'); 
+                f.el.classList.remove('ko', 'has-sword', 'on-fire', 'frozen', 'limit-break', 'role-assassin', 'role-mage', 'role-witch', 'role-tank', 'role-archer', 'role-paladin', 'rage-mode', 'boss-enraged'); 
                 removeStates(f.el); f.el.style.bottom = '0px'; f.el.style[f === f1 ? 'left' : 'right'] = '150px'; f.comboText.classList.remove('show-combo');
                 f.el.style.filter = ''; f.el.style.animationPlayState = 'running';
                 
@@ -2087,40 +2667,68 @@
             clearTimeout(comboTimers.p1); clearTimeout(comboTimers.p2);
             activeProps.forEach(p => p.el.remove()); activeProps = []; thrownProjectiles.forEach(p => p.el.remove()); thrownProjectiles = []; gravityParticles.forEach(p => p.el.remove()); gravityParticles = [];
             
-            let stageName = "ROUND " + playerStats.stage;
+            // HUD Text setup
+            if(inAbyss) {
+                document.getElementById('stage-number-container').style.display = 'none';
+                document.getElementById('abyss-tracker').style.display = 'inline';
+                document.getElementById('top-abyss').innerText = abyssKills;
+            } else {
+                document.getElementById('stage-number-container').style.display = 'inline';
+                document.getElementById('abyss-tracker').style.display = 'none';
+            }
+
+            let stageName = inAbyss ? "THE ABYSS" : "ROUND " + playerStats.stage;
             let enemyNameHUD = "ENEMY";
             if (enemyType === 'boss') { stageName = "WARNING! BOSS FIGHT!"; enemyNameHUD = "BOSS"; }
-            else if (enemyType === 'ninja') { stageName = "NINJA AMBUSH!"; enemyNameHUD = "NINJA"; }
-            else if (enemyType === 'tank') { stageName = "ARMORED TANK!"; enemyNameHUD = "TANK"; }
-            else if (enemyType === 'mage') { stageName = "DARK MAGE!"; enemyNameHUD = "MAGE"; }
-            else if (enemyType === 'reaper') { stageName = "SOUL REAPER!"; enemyNameHUD = "REAPER"; }
-            else if (enemyType === 'giant') { stageName = "COLOSSAL GIANT!"; enemyNameHUD = "GIANT"; }
-            else if (enemyType === 'assassin') { stageName = "ELITE ASSASSIN!"; enemyNameHUD = "ASSASSIN"; }
-            else if (enemyType === 'berserker') { stageName = "BLOOD BERSERKER!"; enemyNameHUD = "BERSERKER"; }
+            else if (enemyType === 'ninja') { stageName = inAbyss?"ABYSS": "NINJA AMBUSH!"; enemyNameHUD = "NINJA"; }
+            else if (enemyType === 'tank') { stageName = inAbyss?"ABYSS": "ARMORED TANK!"; enemyNameHUD = "TANK"; }
+            else if (enemyType === 'mage') { stageName = inAbyss?"ABYSS": "DARK MAGE!"; enemyNameHUD = "MAGE"; }
+            else if (enemyType === 'reaper') { stageName = inAbyss?"ABYSS": "SOUL REAPER!"; enemyNameHUD = "REAPER"; }
+            else if (enemyType === 'giant') { stageName = inAbyss?"ABYSS": "COLOSSAL GIANT!"; enemyNameHUD = "GIANT"; }
+            else if (enemyType === 'assassin') { stageName = inAbyss?"ABYSS": "ELITE ASSASSIN!"; enemyNameHUD = "ASSASSIN"; }
+            else if (enemyType === 'berserker') { stageName = inAbyss?"ABYSS": "BLOOD BERSERKER!"; enemyNameHUD = "BERSERKER"; }
+            else if (enemyType === 'goblin') { stageName = inAbyss?"ABYSS": "GOBLIN SCOUT!"; enemyNameHUD = "GOBLIN"; }
+            else if (enemyType === 'slime') { stageName = inAbyss?"ABYSS": "TOXIC SLIME!"; enemyNameHUD = "SLIME"; }
 
-            document.getElementById('enemy-name-display').innerText = enemyNameHUD;
+            // Add icons to Player Name
+            const roleIcons = { 'balanced': '⚖️', 'assassin': '🗡️', 'mage': '🧙‍♂️', 'witch': '🦇', 'tank': '🛡️', 'archer': '🏹', 'paladin': '⚔️' };
+            document.querySelector('.hud-side:not(.right) .hud-name').innerText = `${roleIcons[playerStats.role] || '🥋'} SydaR`;
 
-            if (playerStats.stage === 1 && !playerStats.prestige) {
+            // Add icons to Enemy Name
+            const enemyIcons = { 'normal': '👺', 'ninja': '🥷', 'tank': '🛡️', 'mage': '🔮', 'reaper': '💀', 'giant': '👹', 'assassin': '🗡️', 'berserker': '🩸', 'boss': '👑', 'goblin': '👺', 'slime': '🦠' };
+            document.getElementById('enemy-name-display').innerText = `${enemyIcons[enemyType] || '👺'} ${enemyNameHUD}`;
+
+            // Epic Boss Bar Toggle
+            if (enemyType === 'boss') {
+                document.getElementById('combat-hud').classList.add('boss-active');
+            } else {
+                document.getElementById('combat-hud').classList.remove('boss-actiove');
+            }
+
+            if (playerStats.stage === 1 && !playerStats.prestige && !inAbyss) {
                 setTimeout(() => {
-                    skillDisplay.innerText = "TUTORIAL: HIT ENEMY TO GET COINS!"; skillDisplay.style.color = "#f1c40f"; skillDisplay.classList.add('show-skill');
+                    skillDisplay.innerText = "TUTORIAL: HIT ENEMY TO GET COINS!"; skillDisplay.classList.add('show-skill');
                     setTimeout(() => skillDisplay.classList.remove('show-skill'), 2000);
                 }, 2000);
             }
 
             announceSkill(stageName + " FIGHT!"); playSound('start'); 
-            skillDisplay.innerText = stageName; skillDisplay.style.color = "#e74c3c"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 1500);
+            skillDisplay.innerText = stageName; skillDisplay.style.color = inAbyss ? "#8e44ad" : "#e74c3c"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 1500);
 
             gameActive = true; hitStopFrames = 0; manualCooldown = false; holdLeft = false; holdRight = false; isTimeStopped = false;
             mainBody.classList.remove('za-warudo');
             
             runAILoop(); 
             spawnerTimer = setTimeout(spawnProp, 4000); 
-            if (playerStats.stage >= 2) hazardTimer = setTimeout(spawnHazard, 6000);
+            if (playerStats.stage >= 2 || inAbyss) hazardTimer = setTimeout(spawnHazard, 6000);
             if (playerStats.hasDrone) droneTimer = setInterval(fireDroneLaser, 4000);
-            if (enemyType === 'boss') bossAttackTimer = setTimeout(triggerBossTelegraph, 4000); 
+            if (enemyType === 'boss') bossAttackTimer = setTimeout(triggerBossTelegraph, 4500); 
             
             clearInterval(petTimer);
-            if ((playerStats.petCount || 0) > 0) petTimer = setInterval(petAttack, 3000);
+            let pCount = (playerStats.petCount || 0) + (playerStats.perks.freePet ? 1 : 0);
+            if (pCount > 0) petTimer = setInterval(petAttack, 3000);
+
+            spawnWeather();
         };
 
         loadProgress(); renderInventory(); updateUI(); physicsLoop(); 

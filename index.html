@@ -178,13 +178,15 @@
         .main-action-btns button { flex: 1; margin-top: 0; padding: 8px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; color: white; }
 
         /* --- GOD TREE & INVENTORY UI --- */
-        #inventory-view, #tree-view { display: none; width: 100%; flex-direction: column; gap: 15px; }
+        #inventory-view, #tree-view, #missions-view { display: none; width: 100%; flex-direction: column; gap: 15px; }
         .inv-section { text-align: left; background: #0b0c10; padding: 15px; border-radius: 8px; border: 1px solid #45a29e; }
         .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .inv-item { background: #1f2833; padding: 10px; border-radius: 5px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; color: #ccc; }
         .inv-item.unlocked { border-color: #f1c40f; color: #fff; }
         .inv-item.equipped { border-color: #2ecc71; background: #143320; }
         .inv-item h4 { margin: 0; font-size: 1rem; }
+        
+        .text-left { text-align: left; }
 
         /* --- MOBILE TOUCH CONTROLS --- */
         #mobile-controls { position: absolute; bottom: 20px; width: 100%; max-width: 800px; display: none; justify-content: space-between; padding: 0 15px; box-sizing: border-box; z-index: 1000; pointer-events: none; transition: opacity 0.5s; }
@@ -262,6 +264,14 @@
         .pet::before { content: '👀'; font-size: 12px; position: absolute; top: 4px; left: 3px; z-index: 2; text-shadow: none; }
         .pet-attack { animation: petJump calc(0.5s / var(--atk-spd, 1)) ease-out; }
         @keyframes petJump { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-40px) scale(1.1); } }
+
+        /* --- NEW COSMETICS --- */
+        .hat { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 10; display: none; }
+        .hat-ronin { display: block; width: 50px; height: 15px; background: #d4ac0d; border-radius: 50% 50% 0 0; border-bottom: 3px solid #7d6608; }
+
+        .tail { position: absolute; bottom: 10px; left: -20px; z-index: -1; transform-origin: right center; display: none; }
+        .tail-kitsune { display: block; width: 40px; height: 20px; background: linear-gradient(to right, #e67e22, #f1c40f, #fff); border-radius: 50% 0 0 50%; animation: tail-swish 2s infinite alternate ease-in-out; }
+        @keyframes tail-swish { 0% { transform: rotate(-20deg); } 100% { transform: rotate(20deg); } }
 
         /* --- SKELETON WITH ROLES & ENEMIES (REMASTERED 3D) --- */
         .stickman { position: absolute; display: flex; flex-direction: column; align-items: center; transform-origin: bottom center; z-index: 10; transform: scaleX(var(--facing, 1)) translateX(var(--shift, 0)); transition: transform calc(0.15s / var(--atk-spd, 1)) cubic-bezier(0.25, 1, 0.5, 1), left calc(0.15s / var(--atk-spd, 1)) ease-out, right calc(0.15s / var(--atk-spd, 1)) ease-out, filter 0.1s; }
@@ -395,9 +405,13 @@
             <div id="pets-container"></div> 
             
             <div class="stickman clone" id="p1-clone" style="display:none;">
-                <div class="head"><div class="halo" id="clone-halo"></div></div>
+                <div class="head">
+                    <div class="halo" id="clone-halo"></div>
+                    <div class="hat" id="clone-hat"></div>
+                </div>
                 <div class="torso">
                     <div class="wings" id="clone-wings"></div>
+                    <div class="tail" id="clone-tail"></div>
                     <div class="limb arm front-arm"><div class="lower" id="clone-weapon-arm"></div></div>
                     <div class="limb arm back-arm"><div class="lower"></div></div>
                     <div class="limb leg front-leg"><div class="lower"></div></div>
@@ -409,9 +423,11 @@
                 <div class="player-indicator">▼ YOU</div>
                 <div class="head">
                     <div class="halo" id="p1-halo"></div>
+                    <div class="hat" id="p1-hat"></div>
                 </div>
                 <div class="torso">
                     <div class="wings" id="p1-wings"></div>
+                    <div class="tail" id="p1-tail"></div>
                     <div class="limb arm front-arm"><div class="lower" id="p1-weapon-arm"></div></div>
                     <div class="limb arm back-arm"><div class="lower" id="p1-weapon-arm-back"></div></div>
                     <div class="limb leg front-leg"><div class="lower"></div></div>
@@ -456,6 +472,7 @@
                 <button style="background:#3498db;" onclick="saveProgress()">💾 SAVE</button>
                 <button style="background:#e67e22;" onclick="toggleInventory(true)">🎒 INVENTORY</button>
                 <button style="background:#f1c40f; color:#000;" onclick="toggleTree(true)">🌳 GOD TREE</button>
+                <button style="background:#e74c3c;" onclick="toggleMissions(true)">📜 PASS</button>
                 <button style="background:#8e44ad;" onclick="startAbyss()">🌌 THE ABYSS</button>
             </div>
 
@@ -564,6 +581,55 @@
             </div>
             <button class="next-btn" onclick="toggleTree(false)" style="background:#3498db; box-shadow: 0 5px 0 #2980b9;">BACK TO SHOP</button>
         </div>
+
+        <div class="shop-panel" id="missions-view" style="display:none;">
+            <h1 style="color: #e74c3c;">📜 MISSIONS & BATTLE PASS</h1>
+            
+            <div class="shop-tabs">
+                <button class="tab-btn active" id="btn-tab-daily" onclick="switchMissionTab('tab-daily')">Daily / Monthly</button>
+                <button class="tab-btn" id="btn-tab-pass" onclick="switchMissionTab('tab-pass')">Battle Pass</button>
+            </div>
+
+            <div id="tab-daily" class="tab-content active text-left">
+                <div class="inv-item" style="border-color: #f1c40f; background: linear-gradient(to right, #2c3e50, #d35400); margin-bottom: 20px; text-align: center; flex-direction: column; gap: 10px;">
+                    <h3 style="color:#f1c40f; margin:0; font-size: 1.5rem; text-shadow: 0 2px 5px #000;">🎁 DAILY LOGIN REWARD</h3>
+                    <p style="margin:0; font-size:0.9rem; color: #fff;">Log in every day for free Coins and Battle Pass XP!</p>
+                    <button class="buy-btn" id="claim-login-btn" onclick="claimLoginReward()" style="width: 100%; padding: 15px; font-size: 1.2rem; background: #f1c40f; color: #000; box-shadow: 0 5px 0 #d35400;">CLAIM REWARD</button>
+                </div>
+
+                <h3 style="color:#f1c40f;">Daily Tasks</h3>
+                <div class="inv-item">
+                    <div><h4>Slayer (Defeat 10 Enemies)</h4><p style="margin:0;font-size:0.8rem;">Progress: <span id="ui-daily-kills">0</span>/10</p></div>
+                    <button class="buy-btn" id="claim-daily-kills" onclick="claimMission('dailyKills')">Claim (500 BP XP)</button>
+                </div>
+                <div class="inv-item" style="margin-top:10px;">
+                    <div><h4>Gambler (Pull Gacha 1 Time)</h4><p style="margin:0;font-size:0.8rem;">Progress: <span id="ui-daily-gacha">0</span>/1</p></div>
+                    <button class="buy-btn" id="claim-daily-gacha" onclick="claimMission('dailyGacha')">Claim (500 BP XP)</button>
+                </div>
+                
+                <h3 style="color:#9b59b6; margin-top:20px;">Monthly Mission</h3>
+                <div class="inv-item">
+                    <div><h4>God Slayer (Defeat 5 Bosses)</h4><p style="margin:0;font-size:0.8rem;">Progress: <span id="ui-monthly-boss">0</span>/5</p></div>
+                    <button class="buy-btn" id="claim-monthly-boss" onclick="claimMission('monthlyBosses')">Claim (5000 Coins)</button>
+                </div>
+            </div>>
+
+            <div id="tab-pass" class="tab-content text-left">
+                <h3 style="color:#66fcf1;">Season 1: Shadows Wake</h3>
+                <p style="color:#fff;">Current Tier: <span id="ui-bp-tier" style="font-weight:bold;color:#f1c40f;">0</span> | Next Tier in: <span id="ui-bp-exp">0</span>/1000 XP</p>
+                <div class="fatality-timer-container" style="margin-bottom: 20px; background:#111;">
+                    <div id="bp-exp-bar" style="height: 100%; background: #66fcf1; width: 0%; transition: width 0.3s;"></div>
+                </div>
+                
+                <div class="shop-grid" id="bp-rewards-grid">
+                    <div class="shop-item utility"><div><h3>Tier 1</h3><p>Reward: 1000 Coins</p></div><button class="buy-btn bp-claim" id="btn-bp-1" onclick="claimBP(1)">Claim</button></div>
+                    <div class="shop-item cosmetic" style="border-left-color: #f1c40f;"><div><h3 style="color:#f1c40f;">Tier 2</h3><p>Reward: Ronin Hat</p></div><button class="buy-btn bp-claim" id="btn-bp-2" onclick="claimBP(2)">Claim</button></div>
+                    <div class="shop-item magic" style="border-left-color: #9b59b6;"><div><h3 style="color:#9b59b6;">Tier 3</h3><p>Reward: Kitsune Tail</p></div><button class="buy-btn bp-claim" id="btn-bp-3" onclick="claimBP(3)">Claim</button></div>
+                </div>
+            </div>
+
+            <button class="next-btn" onclick="toggleMissions(false)" style="background:#3498db; box-shadow: 0 5px 0 #2980b9;">BACK TO SHOP</button>
+        </div>
     </div>
 
     <script>
@@ -595,7 +661,19 @@
             relics: { vamp: false, thorns: false, secondWind: false },
             costs: { hp: 30, dmg: 50, dodge: 100, crit: 100, mana: 100, atkspd: 150, drone: 200, pet: 500, vamp: 300, thorns: 300, secondWind: 500, clone: 2000 },
             godSouls: 0,
-            perks: { freePet: false, healDodge: false, cheapGacha: false, paladin: false }
+            perks: { freePet: false, healDodge: false, cheapGacha: false, paladin: false },
+            
+            lastLoginDate: "",
+            
+            // NEW ADDITIONS FOR MISSIONS AND PASS
+            bpExp: 0, bpTier: 0, bpClaimed: [],
+            missions: {
+                dailyKills: 0, dailyKillsClaimed: false,
+                dailyGacha: 0, dailyGachaClaimed: false,
+                monthlyBosses: 0, monthlyBossesClaimed: false
+            },
+            unlockedCosmetics: { hats: [], tails: [], skins: [] },
+            equippedCosmetics: { hat: 'none', tail: 'none', skin: 'none' }
         };
 
         let inAbyss = false;
@@ -729,6 +807,11 @@
                         if (parsedSave.costs) parsedSave.costs = { ...playerStats.costs, ...parsedSave.costs };
                         if (parsedSave.relics) parsedSave.relics = { ...playerStats.relics, ...parsedSave.relics };
                         if (parsedSave.perks) parsedSave.perks = { ...playerStats.perks, ...parsedSave.perks };
+                        
+                        if (parsedSave.missions) parsedSave.missions = { ...playerStats.missions, ...parsedSave.missions };
+                        if (parsedSave.unlockedCosmetics) parsedSave.unlockedCosmetics = { ...playerStats.unlockedCosmetics, ...parsedSave.unlockedCosmetics };
+                        if (parsedSave.equippedCosmetics) parsedSave.equippedCosmetics = { ...playerStats.equippedCosmetics, ...parsedSave.equippedCosmetics };
+                        
                         if (parsedSave.hasPet === true && parsedSave.petCount === undefined) parsedSave.petCount = 1;
                         if (parsedSave.atkSpd === undefined) parsedSave.atkSpd = 1.0;
                         if (parsedSave.godSouls === undefined) parsedSave.godSouls = 0;
@@ -736,6 +819,9 @@
                         if (parsedSave.weapon === undefined) parsedSave.weapon = 'none';
                         if (parsedSave.aura === undefined) parsedSave.aura = 'none';
                         if (parsedSave.hasClone === undefined) parsedSave.hasClone = false;
+                        if (parsedSave.bpExp === undefined) parsedSave.bpExp = 0;
+                        if (parsedSave.bpTier === undefined) parsedSave.bpTier = 0;
+                        if (parsedSave.bpClaimed === undefined) parsedSave.bpClaimed = [];
                         
                         parsedSave.unlockedWeapons = parsedSave.unlockedWeapons || [];
                         parsedSave.unlockedAuras = parsedSave.unlockedAuras || [];
@@ -824,16 +910,165 @@
         };
 
         const switchShopTab = (tabId) => {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('#main-shop-view .tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('#main-shop-view .tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             document.getElementById('btn-' + tabId).classList.add('active');
+        };
+
+        const toggleMissions = (show) => {
+            document.getElementById('main-shop-view').style.display = show ? 'none' : 'block';
+            document.getElementById('missions-view').style.display = show ? 'block' : 'none';
+            document.getElementById('inventory-view').style.display = 'none';
+            document.getElementById('tree-view').style.display = 'none';
+            if(show) updateMissionUI();
+        };
+
+        const switchMissionTab = (tabId) => {
+            document.querySelectorAll('#missions-view .tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('#missions-view .tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('btn-' + tabId).classList.add('active');
+        };
+
+        const updateMissionUI = () => {
+            document.getElementById('ui-daily-kills').innerText = playerStats.missions.dailyKills;
+            document.getElementById('ui-daily-gacha').innerText = playerStats.missions.dailyGacha;
+            document.getElementById('ui-monthly-boss').innerText = playerStats.missions.monthlyBosses;
+            
+            document.getElementById('ui-bp-tier').innerText = playerStats.bpTier;
+            let expProgress = playerStats.bpExp % 1000;
+            document.getElementById('ui-bp-exp').innerText = expProgress;
+            document.getElementById('bp-exp-bar').style.width = (expProgress / 1000 * 100) + '%';
+            
+            document.getElementById('claim-daily-kills').disabled = playerStats.missions.dailyKills < 10 || playerStats.missions.dailyKillsClaimed;
+            if(playerStats.missions.dailyKillsClaimed) document.getElementById('claim-daily-kills').innerText = "Claimed";
+
+            document.getElementById('claim-daily-gacha').disabled = playerStats.missions.dailyGacha < 1 || playerStats.missions.dailyGachaClaimed;
+            if(playerStats.missions.dailyGachaClaimed) document.getElementById('claim-daily-gacha').innerText = "Claimed";
+
+            document.getElementById('claim-monthly-boss').disabled = playerStats.missions.monthlyBosses < 5 || playerStats.missions.monthlyBossesClaimed;
+            if(playerStats.missions.monthlyBossesClaimed) document.getElementById('claim-monthly-boss').innerText = "Claimed";
+
+            [1, 2, 3].forEach(t => {
+                let btn = document.getElementById('btn-bp-' + t);
+                if(btn) {
+                    if (playerStats.bpClaimed.includes(t)) { btn.innerText = "Claimed"; btn.disabled = true; btn.style.background = "#555"; }
+                    else if (playerStats.bpTier >= t) { btn.innerText = "Claim"; btn.disabled = false; btn.style.background = "#2ecc71"; }
+                    else { btn.innerText = "Locked"; btn.disabled = true; btn.style.background = "#555"; }
+                }
+            let today = new Date().toDateString();
+            let loginBtn = document.getElementById('claim-login-btn');
+            if (loginBtn) {
+                if (playerStats.lastLoginDate === today) {
+                    loginBtn.innerText = "CLAIMED TODAY ✓";
+                    loginBtn.disabled = true;
+                    loginBtn.style.background = "#555";
+                    loginBtn.style.boxShadow = "none";
+                    loginBtn.style.color = "#888";
+                } else {
+                    loginBtn.innerText = "CLAIM (500 Coins + 200 XP)";
+                    loginBtn.disabled = false;
+                    loginBtn.style.background = "#f1c40f";
+                    loginBtn.style.boxShadow = "0 5px 0 #d35400";
+                    loginBtn.style.color = "#000";
+                }
+            }
+                
+            });
+        };
+
+        const addBPExp = (amt) => {
+            playerStats.bpExp += amt;
+            let newTier = Math.floor(playerStats.bpExp / 1000);
+            if (newTier > playerStats.bpTier) {
+                playerStats.bpTier = newTier;
+                showAutoToast(`🌟 BATTLE PASS TIER UP! Reached Tier ${newTier}`);
+            }
+            updateMissionUI();
+            saveProgress();
+        };
+
+        const claimMission = (missionId) => {
+            if (missionId === 'dailyKills' && !playerStats.missions.dailyKillsClaimed) {
+                playerStats.missions.dailyKillsClaimed = true;
+                addBPExp(500);
+                playSound('coin');
+            }
+            if (missionId === 'dailyGacha' && !playerStats.missions.dailyGachaClaimed) {
+                playerStats.missions.dailyGachaClaimed = true;
+                addBPExp(500);
+                playSound('coin');
+            }
+            if (missionId === 'monthlyBosses' && !playerStats.missions.monthlyBossesClaimed) {
+                playerStats.missions.monthlyBossesClaimed = true;
+                playerStats.coins += 5000;
+                updateUI();
+                playSound('coin');
+            }
+        };
+
+        const claimBP = (tier) => {
+            if (playerStats.bpTier >= tier && !playerStats.bpClaimed.includes(tier)) {
+                playerStats.bpClaimed.push(tier);
+                if (tier === 1) { playerStats.coins += 1000; showAutoToast("Claimed 1000 Coins!"); }
+                if (tier === 2) { playerStats.unlockedCosmetics.hats.push('ronin'); playerStats.equippedCosmetics.hat = 'ronin'; showAutoToast("Claimed Ronin Hat!"); }
+                if (tier === 3) { playerStats.unlockedCosmetics.tails.push('kitsune'); playerStats.equippedCosmetics.tail = 'kitsune'; showAutoToast("Claimed Kitsune Tail!"); }
+                playSound('coin');
+                updateMissionUI();
+                renderCosmetics();
+                saveProgress();
+            }
+        };
+        
+        const claimLoginReward = () => {
+            let today = new Date().toDateString(); // Gets today's exact date
+            if (playerStats.lastLoginDate !== today) {
+                // Give Rewards
+                playerStats.lastLoginDate = today;
+                playerStats.coins += 500;
+                addBPExp(200);
+                
+                // Reset daily task progress since it's a new day!
+                playerStats.missions.dailyKills = 0;
+                playerStats.missions.dailyKillsClaimed = false;
+                playerStats.missions.dailyGacha = 0;
+                playerStats.missions.dailyGachaClaimed = false;
+                
+                playSound('coin');
+                showAutoToast("🎁 Claimed Daily Login: +500 Coins & +200 BP XP!");
+                
+                updateUI();
+                updateMissionUI();
+                saveProgress();
+            }
+        };
+
+        const renderCosmetics = () => {
+            const p1Hat = document.getElementById('p1-hat');
+            const p1Tail = document.getElementById('p1-tail');
+            const cloneHat = document.getElementById('clone-hat');
+            const cloneTail = document.getElementById('clone-tail');
+            
+            if(p1Hat) {
+                p1Hat.className = 'hat ' + (playerStats.equippedCosmetics.hat !== 'none' ? 'hat-' + playerStats.equippedCosmetics.hat : '');
+                p1Hat.style.display = playerStats.equippedCosmetics.hat !== 'none' ? 'block' : 'none';
+            }
+            if(p1Tail) {
+                p1Tail.className = 'tail ' + (playerStats.equippedCosmetics.tail !== 'none' ? 'tail-' + playerStats.equippedCosmetics.tail : '');
+                p1Tail.style.display = playerStats.equippedCosmetics.tail !== 'none' ? 'block' : 'none';
+            }
+            if(cloneHat && p1Hat) { cloneHat.className = p1Hat.className; cloneHat.style.display = p1Hat.style.display; }
+            if(cloneTail && p1Tail) { cloneTail.className = p1Tail.className; cloneTail.style.display = p1Tail.style.display; }
         };
 
         const pullGacha = (isFree = false) => {
             let cost = playerStats.perks.cheapGacha ? 800 : 1000;
             if(isFree || playerStats.coins >= cost) {
-                if(!isFree) playerStats.coins -= cost;
+                if(!isFree) {
+                    playerStats.coins -= cost;
+                    playerStats.missions.dailyGacha++;
+                }
                 
                 const pool = ['dualdaggers', 'scythe', 'trident', 'titanhammer', 'galaxy', 'inferno', 'thunder', 'void'];
                 const drop = pool[Math.floor(Math.random() * pool.length)];
@@ -863,6 +1098,7 @@
             document.getElementById('main-shop-view').style.display = show ? 'none' : 'block';
             document.getElementById('inventory-view').style.display = show ? 'flex' : 'none';
             document.getElementById('tree-view').style.display = 'none';
+            document.getElementById('missions-view').style.display = 'none';
             if(show) renderInventory();
         };
         
@@ -870,6 +1106,7 @@
             document.getElementById('main-shop-view').style.display = show ? 'none' : 'block';
             document.getElementById('tree-view').style.display = show ? 'flex' : 'none';
             document.getElementById('inventory-view').style.display = 'none';
+            document.getElementById('missions-view').style.display = 'none';
             if(show) updateUI();
         };
 
@@ -982,9 +1219,12 @@
             ['pet', 'heal', 'gacha', 'paladin'].forEach(p => {
                 let idMap = { 'pet': 'freePet', 'heal': 'healDodge', 'gacha': 'cheapGacha', 'paladin': 'paladin'};
                 if(playerStats.perks[idMap[p]]) {
-                    document.getElementById(`perk-${p}`).innerText = "UNLOCKED";
-                    document.getElementById(`perk-${p}`).disabled = true;
-                    document.getElementById(`perk-${p}`).style.background = "#2ecc71";
+                    let btn = document.getElementById(`perk-${p}`);
+                    if(btn){
+                        btn.innerText = "UNLOCKED";
+                        btn.disabled = true;
+                        btn.style.background = "#2ecc71";
+                    }
                 }
             });
 
@@ -995,6 +1235,7 @@
             if (playerStats.manualMode && window.innerWidth < 820 && gameActive) document.getElementById('mobile-controls').style.display = 'flex';
             else document.getElementById('mobile-controls').style.display = 'none';
 
+            renderCosmetics();
             localStorage.setItem('stickmanRpgSave', JSON.stringify(playerStats));
         };
 
@@ -1040,11 +1281,7 @@
             abyss: new Howl({ src: ['bgm/abyss_theme.mp3'], loop: true, volume: 0.4 })
         };
 
-        const voiceFiles = {
-            // "ZA WARUDO!": "voices/za_warudo.mp3",
-            // "TIME RESUMES": "voices/time_resumes.mp3",
-            // "FINISH HIM!": "voices/finish_him.mp3",
-        };
+        const voiceFiles = {};
         
         const initAudio = () => {
             try {
@@ -1088,8 +1325,8 @@
 
         const playSound = (type) => {
             if (navigator.vibrate) {
-                if (type === 'heavy' || type === 'smite') navigator.vibrate(50); // Strong vibrate
-                else if (type === 'hit' || type === 'clang') navigator.vibrate(20); // Quick vibrate
+                if (type === 'heavy' || type === 'smite') navigator.vibrate(50); 
+                else if (type === 'hit' || type === 'clang') navigator.vibrate(20); 
             }
 
             if(!audioCtx || audioCtx.state !== 'running') return;
@@ -2276,6 +2513,9 @@
                 playerStats.coins += (isBossStage ? 150 : 50) + (playerStats.stage * 10); 
                 playSound('coin'); 
                 
+                playerStats.missions.dailyKills++;
+                if (isBossStage) playerStats.missions.monthlyBosses++;
+                
                 if(!inAbyss) playerStats.stage++; 
                 
                 // Boss Drop
@@ -2322,6 +2562,7 @@
                     document.getElementById('main-shop-view').style.display = 'block';
                     document.getElementById('inventory-view').style.display = 'none';
                     document.getElementById('tree-view').style.display = 'none';
+                    document.getElementById('missions-view').style.display = 'none';
                     document.getElementById('shop-overlay').style.display = 'flex';
                     document.getElementById('next-stage-btn').innerText = playerWon ? "FIGHT NEXT ENEMY" : "RETRY STAGE"; 
                     updateUI();
@@ -2581,6 +2822,8 @@
                     if (playerStats.weapon === 'dualdaggers') p1ArmBack.classList.add('weapon-dualdaggers');
                 }
             }
+            
+            renderCosmetics();
 
             // Spawn God Pets (including perk)
             const petsContainer = document.getElementById('pets-container');
@@ -2601,58 +2844,29 @@
                 f.hp = f.maxHp; f.mp = 50; f.baseX = 150; f.y = 0; f.vy = 0; f.hasSword = false; f.hasBox = false; f.tempBonusDmg = 0; f.combo = 0; f.status = 'none'; f.statusTimer = 0; f.isBlocking = false; f.dodgeTime = 0; f.manaAccumulator = 0; f.currentMove = null; f.usedLimitBreak = false; f.usedSecondWind = false; f.isInvincible = false;
                 if(f.id === 'p1') { f.godMeter = 0; updateGodMeter(); }
                 updateHealthBar(f); f.mpBar.style.width = '50%';
-                f.el.classList.remove('ko', 'has-sword', 'on-fire', 'frozen', 'limit-break', 'role-assassin', 'role-mage', 'role-witch', 'role-tank', 'role-archer', 'role-paladin', 'rage-mode', 'boss-enraged'); 
-                removeStates(f.el); f.el.style.bottom = '0px'; f.el.style[f === f1 ? 'left' : 'right'] = '150px'; f.comboText.classList.remove('show-combo');
-                f.el.style.filter = ''; f.el.style.animationPlayState = 'running';
-                
-                if (f.isPlayer) {
-                    if (playerStats.role !== 'balanced') f.el.classList.add(`role-${playerStats.role}`);
-                    else { if (playerStats.element === 'fire') f.el.classList.add('elem-fire'); if (playerStats.element === 'ice') f.el.classList.add('elem-ice'); }
-                }
+                f.el.classList.remove('ko', 'has-sword', 'block', 'dodge', 'hit', 'charge', 'charging', 'throw', 'fatality-strikes', 'limit-break', 'boss-enraged', 'phantom-strike', 'uppercut', 'crane', 'palm', 'meteor-drop', 'titan-smash');
+                f.el.style.display = 'flex';
+                f.el.style.animationPlayState = 'running';
+                f.el.style.filter = '';
+                if(f.id === 'p2') f.el.style.opacity = 1;
             });
+
+            document.getElementById('p1-name-display').innerText = "SydaR";
+            document.getElementById('enemy-name-display').innerText = isBossStage ? "BOSS" : enemyType.toUpperCase();
             
-            clearTimeout(comboTimers.p1); clearTimeout(comboTimers.p2);
-            activeProps.forEach(p => p.el.remove()); activeProps = []; thrownProjectiles.forEach(p => p.el.remove()); thrownProjectiles = []; gravityParticles.forEach(p => p.el.remove()); gravityParticles = [];
-            
-            // HUD Text setup
             if(inAbyss) {
-                document.getElementById('stage-number-container').style.display = 'none';
+                document.getElementById('enemy-name-display').innerText = "ABYSS " + enemyType.toUpperCase();
                 document.getElementById('abyss-tracker').style.display = 'inline';
-                document.getElementById('top-abyss').innerText = abyssKills;
             } else {
-                document.getElementById('stage-number-container').style.display = 'inline';
                 document.getElementById('abyss-tracker').style.display = 'none';
             }
 
-            let stageName = inAbyss ? "THE ABYSS" : "ROUND " + playerStats.stage;
-            let enemyNameHUD = "ENEMY";
-            if (enemyType === 'boss') { stageName = "WARNING! BOSS FIGHT!"; enemyNameHUD = "BOSS"; }
-            else if (enemyType === 'ninja') { stageName = inAbyss?"ABYSS": "NINJA AMBUSH!"; enemyNameHUD = "NINJA"; }
-            else if (enemyType === 'tank') { stageName = inAbyss?"ABYSS": "ARMORED TANK!"; enemyNameHUD = "TANK"; }
-            else if (enemyType === 'mage') { stageName = inAbyss?"ABYSS": "DARK MAGE!"; enemyNameHUD = "MAGE"; }
-            else if (enemyType === 'reaper') { stageName = inAbyss?"ABYSS": "SOUL REAPER!"; enemyNameHUD = "REAPER"; }
-            else if (enemyType === 'giant') { stageName = inAbyss?"ABYSS": "COLOSSAL GIANT!"; enemyNameHUD = "GIANT"; }
-            else if (enemyType === 'assassin') { stageName = inAbyss?"ABYSS": "ELITE ASSASSIN!"; enemyNameHUD = "ASSASSIN"; }
-            else if (enemyType === 'berserker') { stageName = inAbyss?"ABYSS": "BLOOD BERSERKER!"; enemyNameHUD = "BERSERKER"; }
-            else if (enemyType === 'goblin') { stageName = inAbyss?"ABYSS": "GOBLIN SCOUT!"; enemyNameHUD = "GOBLIN"; }
-            else if (enemyType === 'slime') { stageName = inAbyss?"ABYSS": "TOXIC SLIME!"; enemyNameHUD = "SLIME"; }
+            f1.el.style.left = '150px'; f2.el.style.right = '150px';
+            f1.el.style.bottom = '0px'; f2.el.style.bottom = '0px';
 
-            // Add icons to Player Name
-            const roleIcons = { 'balanced': '⚖️', 'assassin': '🗡️', 'mage': '🧙‍♂️', 'witch': '🦇', 'tank': '🛡️', 'archer': '🏹', 'paladin': '⚔️' };
-            document.querySelector('.hud-side:not(.right) .hud-name').innerText = `${roleIcons[playerStats.role] || '🥋'} SydaR`;
-
-            // Add icons to Enemy Name
-            const enemyIcons = { 'normal': '👺', 'ninja': '🥷', 'tank': '🛡️', 'mage': '🔮', 'reaper': '💀', 'giant': '👹', 'assassin': '🗡️', 'berserker': '🩸', 'boss': '👑', 'goblin': '👺', 'slime': '🦠' };
-            document.getElementById('enemy-name-display').innerText = `${enemyIcons[enemyType] || '👺'} ${enemyNameHUD}`;
-
-            // Epic Boss Bar Toggle
-            if (enemyType === 'boss') {
-                document.getElementById('combat-hud').classList.add('boss-active');
-            } else {
-                document.getElementById('combat-hud').classList.remove('boss-actiove');
-            }
-
-            if (playerStats.stage === 1 && !playerStats.prestige && !inAbyss) {
+            let stageName = inAbyss ? "THE ABYSS" : (isBossStage ? "BOSS STAGE" : "STAGE " + playerStats.stage);
+            
+            if(playerStats.stage === 1 && !inAbyss) {
                 setTimeout(() => {
                     skillDisplay.innerText = "TUTORIAL: HIT ENEMY TO GET COINS!"; skillDisplay.classList.add('show-skill');
                     setTimeout(() => skillDisplay.classList.remove('show-skill'), 2000);
@@ -2673,12 +2887,25 @@
             
             clearInterval(petTimer);
             let pCount = (playerStats.petCount || 0) + (playerStats.perks.freePet ? 1 : 0);
-            if (pCount > 0) petTimer = setInterval(petAttack, 3000);
+            if (pCount > 0) petTimer = setInterval(petAttack, 3000 - (pCount * 300));
 
             spawnWeather();
         };
 
-        loadProgress(); renderInventory(); updateUI(); physicsLoop(); 
+        // --- INIT ---
+        window.onload = () => {
+            loadProgress(); 
+            updateUI();
+            
+            // Generate inventory on load
+            renderInventory();
+
+            // Set default audio context state setup
+            document.getElementById('shop-overlay').style.display = 'flex';
+            document.getElementById('audio-btn').style.display = 'block';
+            
+            requestAnimationFrame(physicsLoop);
+        };
     </script>
 </body>
 </html>

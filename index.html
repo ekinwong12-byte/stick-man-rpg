@@ -569,9 +569,21 @@
     <script>
         let scaleFactor = 1;
         function resizeStage() {
+            const wrapper = document.getElementById('game-wrapper');
             const stage = document.getElementById('stage-area');
-            if (window.innerWidth < 820) { scaleFactor = window.innerWidth / 820; } 
-            else { scaleFactor = 1; }
+            
+            // Calculate scale to fit both width and height gracefully for all phones
+            let w = window.innerWidth;
+            let h = wrapper ? wrapper.clientHeight : window.innerHeight * 0.6;
+            let scaleW = w / 820;
+            let scaleH = h / 450; 
+            
+            scaleFactor = Math.min(1, scaleW, scaleH);
+            
+            if (stage) {
+                stage.style.transformOrigin = 'center center';
+                stage.style.transform = `scale(${scaleFactor})`;
+            }
         }
         window.addEventListener('resize', resizeStage); resizeStage();
 
@@ -1020,31 +1032,18 @@
             }
         };
 
-        // --- NEW AUDIO ENGINE (HOWLER.JS BGM + VOICEVOX TTS FALLBACK) ---
         let audioCtx; let voiceEnabled = false; let gameActive = false; let isTimeStopped = false;
         
-        // Step 1: Create a 'bgm' folder in your project directory
-        // Step 2: Download MP3s from DOVA-SYNDROME and rename them to match these.
-        // NOTE: Howler will NOT crash the game if you haven't downloaded these yet! It just stays silent.
         const bgm = {
             normal: new Howl({ src: ['bgm/battle_theme.mp3'], loop: true, volume: 0.4 }),
             boss: new Howl({ src: ['bgm/boss_theme.mp3'], loop: true, volume: 0.5 }),
             abyss: new Howl({ src: ['bgm/abyss_theme.mp3'], loop: true, volume: 0.4 })
         };
 
-        // Step 1: Create a 'voices' folder in your project directory
-        // Step 2: Use Voicevox to generate these lines and name the files accordingly.
         const voiceFiles = {
-            "ZA WARUDO!": "voices/za_warudo.mp3",
-            "TIME RESUMES": "voices/time_resumes.mp3",
-            "FINISH HIM!": "voices/finish_him.mp3",
-            "FATALITY": "voices/fatality.mp3",
-            "YOU WIN": "voices/you_win.mp3",
-            "YOU LOSE": "voices/you_lose.mp3",
-            "ENRAGE!": "voices/enrage.mp3",
-            "LIMIT BREAK!": "voices/limit_break.mp3",
-            "SECOND WIND!": "voices/second_wind.mp3",
-            // Add your skill moves here if you generate them in Voicevox! e.g., "KAMEHAMEHA!": "voices/kamehameha.mp3"
+            // "ZA WARUDO!": "voices/za_warudo.mp3",
+            // "TIME RESUMES": "voices/time_resumes.mp3",
+            // "FINISH HIM!": "voices/finish_him.mp3",
         };
         
         const initAudio = () => {
@@ -1064,57 +1063,22 @@
         };
         document.getElementById('audio-btn').addEventListener('click', initAudio);
 
-        // JAPANESE TTS TRANSLATION ENGINE (Anime Upgrade)
-        const getJpText = (text) => {
-            const map = {
-                "PALM STRIKE": "掌底", "CRANE KICK": "飛び蹴り", "UPPERCUT": "アッパー", "SPIN KICK": "旋風脚",
-                "HOOK PUNCH": "フック", "LEG SWEEP": "足払い", "DRAGON PUNCH": "昇龍拳", "OMEGA BURST!": "オメガバースト！",
-                "SHADOW KICK": "影蹴り", "PHANTOM STEP": "幻影陣", "DIMENSION SLASH!": "次元斬！",
-                "FIRE PALM": "炎掌", "METEOR PUNCH": "メテオパンチ", "INFERNO BLAST!": "インフェルノブラスト！",
-                "DARK SWEEP": "暗黒払い", "SOUL REAP": "魂刈り", "BLOOD MOON!": "ブラッドムーン！",
-                "ABYSSAL GAZE!": "深淵の凝視！", "BULL RUSH": "猛進", "GROUND SLAM": "グラウンドスラム",
-                "EARTHQUAKE!": "アースクエイク！", "PIERCING ARROW": "貫きの矢", "EVASIVE SHOT": "回避射撃",
-                "ARROW RAIN!": "矢の雨！", "SHORYUKEN": "昇龍拳！", "TATSUMAKI": "竜巻旋風脚！",
-                "KAMEHAMEHA!": "かめはめ波！", "SHURIKEN": "手裏剣", "OMNISLASH!": "超究武神覇斬！",
-                "FIREBALL": "ファイアボール", "FROST NOVA": "フロストノヴァ", "METEOR SWARM!": "メテオスワーム！",
-                "SOUL STEAL": "ソウルスティール", "BLOOD WAVE": "血の波", "FINISH HIM!": "トドメだ！",
-                "FATALITY": "フェイタリティ！", "YOU WIN": "君の勝ちだ！", "YOU LOSE": "君の負けだ...",
-                "PERFECT PARRY!": "パーフェクトパリィ！", "SECOND WIND!": "限界突破！",
-                "ZA WARUDO!": "ザ・ワールド！", "TIME RESUMES": "時は動き出す...", "LIMIT BREAK!": "限界突破！",
-                "ENRAGE!": "激怒！", "HOLY SMITE": "聖なる一撃", "DIVINE SHIELD": "神の盾", "HEAVENLY JUDGMENT!": "天の裁き！"
-            };
-            if (map[text]) return map[text];
-            if (text.includes("FIGHT!")) {
-                if (text.includes("ROUND")) {
-                    let roundNum = text.match(/\d+/);
-                    if (roundNum) return `ラウンド ${roundNum[0]}、 ファイト！`;
-                }
-                if (text.includes("BOSS")) return "ボスバトル、ファイト！";
-                return "ファイト！";
-            }
-            if (text.includes("TUTORIAL")) return "チュートリアル";
-            return text;
-        };
-
         const announceSkill = (text) => {
             if (!voiceEnabled) return;
             
-            // Check if we have a pre-rendered VOICEVOX file for this text
             if (voiceFiles[text]) {
                 new Howl({ src: [voiceFiles[text]], volume: 1.0 }).play();
             } else if ('speechSynthesis' in window) {
-                // FALLBACK: If no Voicevox file exists yet, use browser TTS so the game doesn't break!
                 try {
                     window.speechSynthesis.cancel(); 
                     setTimeout(() => { 
-                        let jpText = getJpText(text);
-                        const u = new SpeechSynthesisUtterance(jpText); 
-                        u.volume = 1; u.rate = 1.4; u.pitch = 0.6; // High energy anime voice
+                        const u = new SpeechSynthesisUtterance(text); 
+                        u.volume = 1; u.rate = 1.2; u.pitch = 0.9; 
                         
                         let voices = window.speechSynthesis.getVoices();
                         if(voices.length > 0) { 
-                            let jpVoice = voices.find(v => v.lang === 'ja-JP' || v.lang === 'ja_JP' || v.lang.includes('ja')); 
-                            if(jpVoice) u.voice = jpVoice; 
+                            let enVoice = voices.find(v => v.lang.startsWith('en')); 
+                            if(enVoice) u.voice = enVoice; 
                         }
                         window.speechSynthesis.speak(u); 
                     }, 50); 
@@ -2501,26 +2465,9 @@
                 });
             });
 
-            // --- DYNAMIC CAMERA ZOOM (Focuses on P1) ---
-            let p1RealX = f1.id === 'p1' ? f1.baseX : 800 - f1.baseX;
-            let p2RealX = f2.id === 'p1' ? f2.baseX : 800 - f2.baseX;
-            let fighterDist = Math.abs(p1RealX - p2RealX);
-            
-            let targetZoom = 1.0;
-            let isUltActive = f1.isUltimate || f2.isUltimate || isTimeStopped || isFatalityPromptActive;
-            if (fighterDist < 400 && !isUltActive && gameActive && !isTransitioning) {
-                targetZoom = 1.0 + ((400 - fighterDist) / 400) * 0.25; 
-            }
-            if (isFatalityPromptActive) targetZoom = 1.3; // Zoom in for prompt
-            
-            if (!window.currentZoom) window.currentZoom = 1.0;
-            window.currentZoom += (targetZoom - window.currentZoom) * 0.1;
-            
-            if (!window.currentOriginX) window.currentOriginX = 400;
-            window.currentOriginX += (p1RealX - window.currentOriginX) * 0.05; // Smoothly pan to P1
-
-            stageArea.style.transformOrigin = `${window.currentOriginX}px 300px`;
-            stageArea.style.transform = `scale(${scaleFactor * window.currentZoom})`;
+            // --- STATIC CAMERA (Fixed for Mobile) ---
+            stageArea.style.transformOrigin = `center center`;
+            stageArea.style.transform = `scale(${scaleFactor})`;
 
             physicsFrame = requestAnimationFrame(physicsLoop);
         }

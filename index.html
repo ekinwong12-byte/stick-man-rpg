@@ -7,6 +7,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
     <style>
         body { margin: 0; background: #0b0c10; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; font-family: 'Arial Black', sans-serif; color: white; user-select: none; touch-action: none; transition: filter 0.05s, background 0.2s; }
+        
+        /* PAUSE ANIMATIONS WHEN TAB IS HIDDEN */
+        body.is-paused * { animation-play-state: paused !important; }
 
         /* --- AUTO UPGRADE TOAST --- */
         #auto-toast { position: absolute; top: 10px; left: 50%; transform: translateX(-50%) translateY(-150%); background: rgba(46, 204, 113, 0.95); border: 2px solid #27ae60; color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 1rem; z-index: 2000; opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.5); text-shadow: 1px 1px 2px #000; font-style: italic; min-width: 300px; }
@@ -469,10 +472,12 @@
             <p style="color: #f1c40f; font-size: 1.2rem; margin-bottom: 10px;">💰 Coins: <span id="shop-coins">0</span></p>
             
             <div class="main-action-btns">
-                <button style="background:#3498db;" onclick="saveProgress()">💾 SAVE</button>
                 <button style="background:#e67e22;" onclick="toggleInventory(true)">🎒 INVENTORY</button>
                 <button style="background:#f1c40f; color:#000;" onclick="toggleTree(true)">🌳 GOD TREE</button>
-                <button style="background:#e74c3c;" onclick="toggleMissions(true)">📜 PASS</button>
+                <button style="background:#e74c3c; position:relative;" onclick="toggleMissions(true)">
+                    📜 PASS 
+                    <span id="pass-badge" style="display:none; position:absolute; top:-5px; right:-5px; background:#ff0000; border-radius:50%; width:16px; height:16px; border:2px solid #fff; box-shadow: 0 0 10px #ff0000; animation: pulse-danger 1s infinite alternate;"></span>
+                </button>
                 <button style="background:#8e44ad;" onclick="startAbyss()">🌌 THE ABYSS</button>
             </div>
 
@@ -500,6 +505,7 @@
             </div>
 
             <div id="tab-stats" class="tab-content active">
+                <button class="buy-btn" style="background:#2ecc71; color:#000; width:100%; padding:10px; margin-bottom:15px; font-size:1.1rem; box-shadow: 0 4px 0 #27ae60;" onclick="triggerAutoUpgradeBtn()">⚡ AUTO UPGRADE ALL (Spends Coins)</button>
                 <div class="shop-grid">
                     <div class="shop-item"><div><h3>Max Health</h3><p>Current: <span id="stat-hp">100</span></p></div><button class="buy-btn" id="buy-hp" onclick="buyUpgrade('hp')">Buy (30)</button></div>
                     <div class="shop-item"><div><h3>Damage</h3><p>Current: +<span id="stat-dmg">0</span></p></div><button class="buy-btn" id="buy-dmg" onclick="buyUpgrade('dmg')">Buy (50)</button></div>
@@ -537,7 +543,7 @@
                 </div>
             </div>
 
-            <button class="next-btn" id="prestige-btn" onclick="doPrestige()" style="background:#f39c12; box-shadow: 0 5px 0 #d35400; display:none; margin-top: 15px;">🌟 TIME LEAP (Rewind 10 Stages, Gain Stats & Souls!)</button>
+            <button class="next-btn" id="prestige-btn" onclick="doPrestige()" style="background:#f39c12; box-shadow: 0 5px 0 #d35400; display:none; margin-top: 15px;">🌟 TIME LEAP</button>
             <button class="next-btn" id="next-stage-btn" onclick="closeShopAndStart()">FIGHT NEXT ENEMY</button>
         </div>
         
@@ -559,7 +565,7 @@
         <div class="shop-panel" id="tree-view">
             <h1 style="color: #f1c40f;">🌳 GOD SKILL TREE</h1>
             <p style="color: #fff; font-size:1.2rem; margin-bottom: 20px;">✨ God Souls: <span id="tree-souls">0</span></p>
-            <p style="color: #aaa; font-size: 0.8rem;">Gain God Souls by using Time Leap! (1 Soul every 5 Stages).</p>
+            <p style="color: #aaa; font-size: 0.8rem;">Gain God Souls by using Time Leap!</p>
             
             <div class="inv-section">
                 <div class="inv-item">
@@ -586,8 +592,14 @@
             <h1 style="color: #e74c3c;">📜 MISSIONS & BATTLE PASS</h1>
             
             <div class="shop-tabs">
-                <button class="tab-btn active" id="btn-tab-daily" onclick="switchMissionTab('tab-daily')">Daily / Monthly</button>
-                <button class="tab-btn" id="btn-tab-pass" onclick="switchMissionTab('tab-pass')">Battle Pass</button>
+                <button class="tab-btn active" id="btn-tab-daily" onclick="switchMissionTab('tab-daily')" style="position:relative;">
+                    Daily / Monthly
+                    <span id="badge-tab-daily" style="display:none; position:absolute; top:-5px; right:-5px; background:#ff0000; border-radius:50%; width:12px; height:12px; border:2px solid #fff; box-shadow: 0 0 10px #ff0000; animation: pulse-danger 1s infinite alternate;"></span>
+                </button>
+                <button class="tab-btn" id="btn-tab-pass" onclick="switchMissionTab('tab-pass')" style="position:relative;">
+                    Battle Pass
+                    <span id="badge-tab-pass" style="display:none; position:absolute; top:-5px; right:-5px; background:#ff0000; border-radius:50%; width:12px; height:12px; border:2px solid #fff; box-shadow: 0 0 10px #ff0000; animation: pulse-danger 1s infinite alternate;"></span>
+                </button>
             </div>
 
             <div id="tab-daily" class="tab-content active text-left">
@@ -612,7 +624,7 @@
                     <div><h4>God Slayer (Defeat 5 Bosses)</h4><p style="margin:0;font-size:0.8rem;">Progress: <span id="ui-monthly-boss">0</span>/5</p></div>
                     <button class="buy-btn" id="claim-monthly-boss" onclick="claimMission('monthlyBosses')">Claim (5000 Coins)</button>
                 </div>
-            </div>>
+            </div>
 
             <div id="tab-pass" class="tab-content text-left">
                 <h3 style="color:#66fcf1;">Season 1: Shadows Wake</h3>
@@ -632,13 +644,19 @@
         </div>
     </div>
 
+    <div id="reward-popup" style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(11, 12, 16, 0.98); border:3px solid #f1c40f; padding:30px; border-radius:15px; z-index:3000; text-align:center; box-shadow:0 0 50px rgba(241,196,15,0.5); width: 80%; max-width: 350px; backdrop-filter: blur(10px);">
+        <h2 style="color:#f1c40f; margin-top:0; font-size: 1.8rem; text-shadow: 0 5px 10px #000;">🎁 DAILY REWARD!</h2>
+        <p style="color:#fff; font-size: 1.1rem; margin-bottom: 25px;">You have a new Daily Login Reward waiting for you!</p>
+        <button onclick="goToMissions()" style="width:100%; padding:15px; font-size:1.2rem; background:#f1c40f; color:#000; border:none; font-family:'Arial Black'; border-radius:8px; cursor:pointer; box-shadow: 0 5px 0 #d35400;">CLAIM NOW</button>
+        <button onclick="closeRewardPopup()" style="width:100%; padding:10px; margin-top:15px; background:#555; color:#fff; border:none; font-family:'Arial Black'; border-radius:8px; cursor:pointer;">LATER</button>
+    </div>
+
     <script>
         let scaleFactor = 1;
         function resizeStage() {
             const wrapper = document.getElementById('game-wrapper');
             const stage = document.getElementById('stage-area');
             
-            // Calculate scale to fit both width and height gracefully for all phones
             let w = window.innerWidth;
             let h = wrapper ? wrapper.clientHeight : window.innerHeight * 0.6;
             let scaleW = w / 820;
@@ -664,8 +682,6 @@
             perks: { freePet: false, healDodge: false, cheapGacha: false, paladin: false },
             
             lastLoginDate: "",
-            
-            // NEW ADDITIONS FOR MISSIONS AND PASS
             bpExp: 0, bpTier: 0, bpClaimed: [],
             missions: {
                 dailyKills: 0, dailyKillsClaimed: false,
@@ -731,6 +747,18 @@
                 let txt = "⚙️ Auto-Upgrade Bought:<br>";
                 for(let k in boughtItems) txt += `${upgradeNames[k] || k} x${boughtItems[k]}<br>`;
                 showAutoToast(txt);
+                updateUI();
+            }
+        };
+
+        const triggerAutoUpgradeBtn = () => {
+            let startCoins = playerStats.coins;
+            autoUpgrade();
+            if (playerStats.coins < startCoins) {
+                playSound('coin');
+                updateUI();
+            } else {
+                showAutoToast("Not enough coins for any upgrades!");
             }
         };
 
@@ -807,7 +835,6 @@
                         if (parsedSave.costs) parsedSave.costs = { ...playerStats.costs, ...parsedSave.costs };
                         if (parsedSave.relics) parsedSave.relics = { ...playerStats.relics, ...parsedSave.relics };
                         if (parsedSave.perks) parsedSave.perks = { ...playerStats.perks, ...parsedSave.perks };
-                        
                         if (parsedSave.missions) parsedSave.missions = { ...playerStats.missions, ...parsedSave.missions };
                         if (parsedSave.unlockedCosmetics) parsedSave.unlockedCosmetics = { ...playerStats.unlockedCosmetics, ...parsedSave.unlockedCosmetics };
                         if (parsedSave.equippedCosmetics) parsedSave.equippedCosmetics = { ...playerStats.equippedCosmetics, ...parsedSave.equippedCosmetics };
@@ -819,6 +846,8 @@
                         if (parsedSave.weapon === undefined) parsedSave.weapon = 'none';
                         if (parsedSave.aura === undefined) parsedSave.aura = 'none';
                         if (parsedSave.hasClone === undefined) parsedSave.hasClone = false;
+                        
+                        if (parsedSave.lastLoginDate === undefined) parsedSave.lastLoginDate = "";
                         if (parsedSave.bpExp === undefined) parsedSave.bpExp = 0;
                         if (parsedSave.bpTier === undefined) parsedSave.bpTier = 0;
                         if (parsedSave.bpClaimed === undefined) parsedSave.bpClaimed = [];
@@ -839,35 +868,23 @@
 
         const saveProgress = () => {
             localStorage.setItem('stickmanRpgSave', JSON.stringify(playerStats));
-            const btn = document.querySelector('button[onclick="saveProgress()"]');
-            if(btn) { const oldText = btn.innerText; btn.innerText = "✅ SAVED!"; setTimeout(() => btn.innerText = oldText, 1500); }
         };
 
-        const resetStageToOne = () => {
-            if (confirm("Go back to Stage 1 to farm coins? You will keep ALL your stats, upgrades, pets, and prestige!")) {
-                playerStats.stage = 1;
-                saveProgress();
-                location.reload();
-            }
-        };
-
-        const resetProgress = () => {
-            if (confirm("Are you sure you want to WIPE EVERYTHING? This cannot be undone.")) { localStorage.removeItem('stickmanRpgSave'); location.reload(); }
-        };
+        // --- PRESTIGE REBALANCE SCALING ---
+        const getPrestigeReq = () => 10 + (playerStats.prestige || 0) * 10;
 
         const doPrestige = () => {
-            if(playerStats.stage < 10) return;
+            let req = getPrestigeReq();
+            if(playerStats.stage < req) return;
             
-            let newStage = Math.max(1, playerStats.stage - 10);
-            
-            if (confirm(`TIME LEAP! You will rewind to Stage ${newStage} and lose current upgrades, but your Base Stats will multiply by x${(playerStats.prestige || 0) + 2}. You will also gain God Souls and starting coins. Proceed?`)) {
+            if (confirm(`TIME LEAP! You will restart at Stage 1 and lose current upgrades, but your Base Stats will multiply by x${(playerStats.prestige || 0) + 2}. You will also gain God Souls and starting coins. Proceed?`)) {
                 
                 let soulsEarned = Math.floor(playerStats.stage / 5);
                 let startingCoins = playerStats.stage * 150; 
 
                 playerStats.prestige = (playerStats.prestige || 0) + 1;
                 playerStats.godSouls += soulsEarned;
-                playerStats.stage = newStage; 
+                playerStats.stage = 1; 
                 playerStats.coins += startingCoins; 
                 
                 playerStats.maxHp = 100;
@@ -883,7 +900,7 @@
                 playerStats.costs = { hp: 30, dmg: 50, dodge: 100, crit: 100, mana: 100, atkspd: 150, drone: 200, vamp: 300, thorns: 300, secondWind: 500, pet: 500, clone: 2000 };
                 
                 saveProgress();
-                alert(`You rewound time to Stage ${newStage}! \n\n+${soulsEarned} God Souls\n+${startingCoins} Starting Coins to rebuild your strength!`);
+                alert(`You rewound time to Stage 1! \n\n+${soulsEarned} God Souls\n+${startingCoins} Starting Coins to rebuild your strength!`);
                 location.reload();
             }
         };
@@ -957,6 +974,8 @@
                     else if (playerStats.bpTier >= t) { btn.innerText = "Claim"; btn.disabled = false; btn.style.background = "#2ecc71"; }
                     else { btn.innerText = "Locked"; btn.disabled = true; btn.style.background = "#555"; }
                 }
+            });
+
             let today = new Date().toDateString();
             let loginBtn = document.getElementById('claim-login-btn');
             if (loginBtn) {
@@ -974,8 +993,6 @@
                     loginBtn.style.color = "#000";
                 }
             }
-                
-            });
         };
 
         const addBPExp = (amt) => {
@@ -1020,16 +1037,14 @@
                 saveProgress();
             }
         };
-        
+
         const claimLoginReward = () => {
-            let today = new Date().toDateString(); // Gets today's exact date
+            let today = new Date().toDateString();
             if (playerStats.lastLoginDate !== today) {
-                // Give Rewards
                 playerStats.lastLoginDate = today;
                 playerStats.coins += 500;
                 addBPExp(200);
                 
-                // Reset daily task progress since it's a new day!
                 playerStats.missions.dailyKills = 0;
                 playerStats.missions.dailyKillsClaimed = false;
                 playerStats.missions.dailyGacha = 0;
@@ -1042,6 +1057,55 @@
                 updateMissionUI();
                 saveProgress();
             }
+        };
+
+        // --- SMART NOTIFICATION SYSTEM ---
+        const updateNotificationBadges = () => {
+            let today = new Date().toDateString();
+            let hasLoginReward = playerStats.lastLoginDate !== today;
+            
+            // Check Missions
+            let hasDailyKills = playerStats.missions.dailyKills >= 10 && !playerStats.missions.dailyKillsClaimed;
+            let hasDailyGacha = playerStats.missions.dailyGacha >= 1 && !playerStats.missions.dailyGachaClaimed;
+            let hasMonthlyBoss = playerStats.missions.monthlyBosses >= 5 && !playerStats.missions.monthlyBossesClaimed;
+            
+            // Check Battle Pass
+            let hasBPReward = false;
+            [1, 2, 3].forEach(t => {
+                if (playerStats.bpTier >= t && !playerStats.bpClaimed.includes(t)) hasBPReward = true;
+            });
+
+            let hasDailyTabNotice = hasLoginReward || hasDailyKills || hasDailyGacha || hasMonthlyBoss;
+            let hasPassTabNotice = hasBPReward;
+            let hasMainNotice = hasDailyTabNotice || hasPassTabNotice;
+
+            const mainBadge = document.getElementById('pass-badge');
+            if (mainBadge) mainBadge.style.display = hasMainNotice ? 'block' : 'none';
+
+            const dailyBadge = document.getElementById('badge-tab-daily');
+            if (dailyBadge) dailyBadge.style.display = hasDailyTabNotice ? 'block' : 'none';
+
+            const passBadge = document.getElementById('badge-tab-pass');
+            if (passBadge) passBadge.style.display = hasPassTabNotice ? 'block' : 'none';
+            
+            return hasLoginReward; 
+        };
+
+        const checkDailyReward = () => {
+            let hasLoginReward = updateNotificationBadges(); 
+            if (hasLoginReward) {
+                document.getElementById('reward-popup').style.display = 'block';
+                playSound('jump');
+            }
+        };
+
+        const closeRewardPopup = () => {
+            document.getElementById('reward-popup').style.display = 'none';
+        };
+
+        const goToMissions = () => {
+            closeRewardPopup();
+            toggleMissions(true);
         };
 
         const renderCosmetics = () => {
@@ -1182,14 +1246,24 @@
                 document.getElementById('top-prestige').innerText = playerStats.prestige;
             }
 
-            if (playerStats.stage >= 10) {
-                const pBtn = document.getElementById('prestige-btn');
+            // Updated Prestige Button Logic
+            let req = getPrestigeReq();
+            const pBtn = document.getElementById('prestige-btn');
+            if (pBtn) {
                 pBtn.style.display = 'block';
-            } else {
-                document.getElementById('prestige-btn').style.display = 'none';
+                if (playerStats.stage >= req) {
+                    pBtn.style.background = '#f39c12';
+                    pBtn.style.boxShadow = '0 5px 0 #d35400';
+                    pBtn.disabled = false;
+                    pBtn.innerText = `🌟 TIME LEAP (Rewind to Stage 1, Gain Stats & Souls!)`;
+                } else {
+                    pBtn.style.background = '#555';
+                    pBtn.style.boxShadow = 'none';
+                    pBtn.disabled = true;
+                    pBtn.innerText = `🌟 TIME LEAP (Unlocks at Stage ${req})`;
+                }
             }
 
-            // Gacha Button Update
             document.getElementById('buy-gacha').innerText = `Pull (${playerStats.perks.cheapGacha ? 800 : 1000})`;
 
             ['hp', 'dmg', 'dodge', 'crit', 'mana', 'atkspd', 'vamp', 'thorns', 'secondWind', 'pet', 'clone'].forEach(type => {
@@ -1214,7 +1288,6 @@
                 document.getElementById('buy-pet').disabled = true; 
             }
             
-            // Skill Tree UI
             document.getElementById('tree-souls').innerText = playerStats.godSouls;
             ['pet', 'heal', 'gacha', 'paladin'].forEach(p => {
                 let idMap = { 'pet': 'freePet', 'heal': 'healDodge', 'gacha': 'cheapGacha', 'paladin': 'paladin'};
@@ -1229,13 +1302,13 @@
             });
 
             if(playerStats.perks.paladin) document.getElementById('paladin-opt').style.display = 'block';
-
             document.getElementById('role-select').value = playerStats.role || 'balanced';
             
             if (playerStats.manualMode && window.innerWidth < 820 && gameActive) document.getElementById('mobile-controls').style.display = 'flex';
             else document.getElementById('mobile-controls').style.display = 'none';
 
             renderCosmetics();
+            updateNotificationBadges(); // Forces all red dots to sync
             localStorage.setItem('stickmanRpgSave', JSON.stringify(playerStats));
         };
 
@@ -1273,15 +1346,35 @@
             }
         };
 
-        let audioCtx; let voiceEnabled = false; let gameActive = false; let isTimeStopped = false;
+        let audioCtx; let voiceEnabled = false; let gameActive = false; let isTimeStopped = false; let isPaused = false;
         
-        const bgm = {
-            normal: new Howl({ src: ['bgm/battle_theme.mp3'], loop: true, volume: 0.4 }),
-            boss: new Howl({ src: ['bgm/boss_theme.mp3'], loop: true, volume: 0.5 }),
-            abyss: new Howl({ src: ['bgm/abyss_theme.mp3'], loop: true, volume: 0.4 })
+        // PROCEDURAL BGM GENERATOR
+        const proceduralBGM = {
+            timer: null,
+            play: function(theme) {
+                this.stop();
+                if (!audioCtx) return;
+                let tempo = 200; let sequence = []; let oscType = 'square'; let vol = 0.05;
+
+                if (theme === 'normal') { sequence = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63]; oscType = 'triangle'; tempo = 250; } 
+                else if (theme === 'boss') { sequence = [150, 160, 150, 140, 200, 150]; oscType = 'sawtooth'; tempo = 180; vol = 0.08; } 
+                else if (theme === 'abyss') { sequence = [100, 150, 120, 100, 80, 100]; oscType = 'square'; tempo = 300; vol = 0.06; }
+
+                let step = 0;
+                this.timer = setInterval(() => {
+                    if (!gameActive || isTimeStopped || audioCtx.state !== 'running' || isPaused) return;
+                    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                    osc.type = oscType; osc.frequency.setValueAtTime(sequence[step % sequence.length], audioCtx.currentTime);
+                    gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (tempo / 1000) * 0.9);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + (tempo / 1000));
+                    step++;
+                }, tempo);
+            },
+            stop: function() { if (this.timer) clearInterval(this.timer); }
         };
 
-        const voiceFiles = {};
+        const bgm = { normal: { play: () => proceduralBGM.play('normal'), stop: () => proceduralBGM.stop() }, boss: { play: () => proceduralBGM.play('boss'), stop: () => proceduralBGM.stop() }, abyss: { play: () => proceduralBGM.play('abyss'), stop: () => proceduralBGM.stop() } };
         
         const initAudio = () => {
             try {
@@ -1291,32 +1384,21 @@
                 }
                 if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
             } catch(e) {}
-            
             voiceEnabled = true;
             try { if ('speechSynthesis' in window) { let g = new SpeechSynthesisUtterance(''); g.volume = 0; window.speechSynthesis.speak(g); } } catch(e) {}
-            
-            document.getElementById('audio-btn').style.display = 'none'; 
-            startGame();
+            document.getElementById('audio-btn').style.display = 'none'; startGame();
         };
         document.getElementById('audio-btn').addEventListener('click', initAudio);
 
         const announceSkill = (text) => {
-            if (!voiceEnabled) return;
-            
-            if (voiceFiles[text]) {
-                new Howl({ src: [voiceFiles[text]], volume: 1.0 }).play();
-            } else if ('speechSynthesis' in window) {
+            if (!voiceEnabled || isPaused) return;
+            if ('speechSynthesis' in window) {
                 try {
                     window.speechSynthesis.cancel(); 
                     setTimeout(() => { 
-                        const u = new SpeechSynthesisUtterance(text); 
-                        u.volume = 1; u.rate = 1.2; u.pitch = 0.9; 
-                        
+                        const u = new SpeechSynthesisUtterance(text); u.volume = 1; u.rate = 1.2; u.pitch = 0.9; 
                         let voices = window.speechSynthesis.getVoices();
-                        if(voices.length > 0) { 
-                            let enVoice = voices.find(v => v.lang.startsWith('en')); 
-                            if(enVoice) u.voice = enVoice; 
-                        }
+                        if(voices.length > 0) { let enVoice = voices.find(v => v.lang.startsWith('en')); if(enVoice) u.voice = enVoice; }
                         window.speechSynthesis.speak(u); 
                     }, 50); 
                 } catch(e) {}
@@ -1324,11 +1406,8 @@
         };
 
         const playSound = (type) => {
-            if (navigator.vibrate) {
-                if (type === 'heavy' || type === 'smite') navigator.vibrate(50); 
-                else if (type === 'hit' || type === 'clang') navigator.vibrate(20); 
-            }
-
+            if (isPaused) return;
+            if (navigator.vibrate) { if (type === 'heavy' || type === 'smite') navigator.vibrate(50); else if (type === 'hit' || type === 'clang') navigator.vibrate(20); }
             if(!audioCtx || audioCtx.state !== 'running') return;
             try {
                 const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
@@ -1375,16 +1454,10 @@
             
             if (p >= 100) {
                 bar.classList.add('ready');
-                if(btn) {
-                    btn.disabled = false;
-                    btn.classList.add('ready-to-click');
-                }
+                if(btn) { btn.disabled = false; btn.classList.add('ready-to-click'); }
             } else {
                 bar.classList.remove('ready');
-                if(btn) {
-                    btn.disabled = true;
-                    btn.classList.remove('ready-to-click');
-                }
+                if(btn) { btn.disabled = true; btn.classList.remove('ready-to-click'); }
             }
         };
 
@@ -1404,12 +1477,8 @@
                 if (p <= 25 && p > 0) vignette.classList.add('danger-active');
                 else vignette.classList.remove('danger-active');
             }
-
-            if (p <= 30 && p > 0) {
-                f.el.classList.add('rage-mode');
-            } else {
-                f.el.classList.remove('rage-mode');
-            }
+            if (p <= 30 && p > 0) f.el.classList.add('rage-mode');
+            else f.el.classList.remove('rage-mode');
         };
 
         const moveFighter = (f, dist) => {
@@ -1422,10 +1491,7 @@
         const triggerManualGodMode = () => {
             if (f1.godMeter >= 100 && gameActive && !isTimeStopped && !isTransitioning) {
                 let btn = document.getElementById('manual-god-btn');
-                if(btn) {
-                    btn.classList.remove('ready-to-click');
-                    btn.disabled = true;
-                }
+                if(btn) { btn.classList.remove('ready-to-click'); btn.disabled = true; }
                 activateGodMode();
             }
         };
@@ -1434,68 +1500,37 @@
             if (!gameActive || isTransitioning || isFatalityPromptActive) return;
             if (confirm("Retreat back to the Dojo? You will lose 10% of your coins.")) {
                 isTransitioning = true;
-                playerStats.coins = Math.floor(playerStats.coins * 0.9); // 10% penalty
+                playerStats.coins = Math.floor(playerStats.coins * 0.9); 
                 playSound('dodge');
-                skillDisplay.innerText = "RETREATED!"; 
-                skillDisplay.style.color = "#aaa"; 
-                skillDisplay.style.textShadow = "0 0 20px #000, 0 5px 0 #fff";
+                skillDisplay.innerText = "RETREATED!"; skillDisplay.style.color = "#aaa"; skillDisplay.style.textShadow = "0 0 20px #000, 0 5px 0 #fff";
                 skillDisplay.classList.add('show-skill');
-                
-                f1.el.classList.add('dodge');
-                moveFighter(f1, -200);
-                
-                // STOP ALL BGM ON FLEE
+                f1.el.classList.add('dodge'); moveFighter(f1, -200);
                 bgm.normal.stop(); bgm.boss.stop(); bgm.abyss.stop();
-                
-                setTimeout(() => {
-                    skillDisplay.classList.remove('show-skill');
-                    endMatch(false, true); // End the match as a "loss/flee" without fatality
-                }, 1000);
+                setTimeout(() => { skillDisplay.classList.remove('show-skill'); endMatch(false, true); }, 1000);
             }
         };
 
         const useQuickPotion = () => {
-            if (!gameActive || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
+            if (!gameActive || isTimeStopped || isTransitioning || isFatalityPromptActive || isPaused) return;
             if (playerStats.coins >= 100) {
-                if (f1.hp >= f1.maxHp) {
-                    showAutoToast("HP is already full!");
-                    return;
-                }
-                playerStats.coins -= 100;
-                updateUI();
-                
+                if (f1.hp >= f1.maxHp) { showAutoToast("HP is already full!"); return; }
+                playerStats.coins -= 100; updateUI();
                 let healAmt = Math.floor(f1.maxHp * 0.3);
-                f1.hp = Math.min(f1.maxHp, f1.hp + healAmt);
-                updateHealthBar(f1);
-                playSound('heal');
-                
+                f1.hp = Math.min(f1.maxHp, f1.hp + healAmt); updateHealthBar(f1); playSound('heal');
                 spawnGravityParticles(f1.id === 'p1' ? f1.baseX : 800 - f1.baseX, 50, '#2ecc71', true);
                 spawnDamageText(f1.id === 'p1' ? f1.baseX : 800 - f1.baseX, 350 - f1.y - 100, `+${healAmt}`, '#2ecc71');
-            } else {
-                showAutoToast("Not enough coins for Potion!");
-            }
+            } else showAutoToast("Not enough coins for Potion!");
         };
 
         const activateGodMode = () => {
-            if(isTimeStopped || !gameActive || f2.hp <= 0 || isTransitioning || isFatalityPromptActive) return;
-            isTimeStopped = true;
-            f1.godMeter = 0; updateGodMeter();
-            playSound('time-stop');
-            announceSkill("ZA WARUDO!");
-            
-            let tsText = document.getElementById('ts-text');
-            tsText.classList.add('show-skill');
-            mainBody.classList.add('za-warudo');
-            
+            if(isTimeStopped || !gameActive || f2.hp <= 0 || isTransitioning || isFatalityPromptActive || isPaused) return;
+            isTimeStopped = true; f1.godMeter = 0; updateGodMeter(); playSound('time-stop'); announceSkill("ZA WARUDO!");
+            let tsText = document.getElementById('ts-text'); tsText.classList.add('show-skill'); mainBody.classList.add('za-warudo');
             f2.el.style.animationPlayState = 'paused';
-            
-            setTimeout(() => {
-                tsText.classList.remove('show-skill');
-            }, 1000);
+            setTimeout(() => { tsText.classList.remove('show-skill'); }, 1000);
 
-            // Auto Barrage during Time Stop
             let zaWarudoInterval = setInterval(() => {
-                if(!isTimeStopped || !gameActive || f2.hp <= 0 || isTransitioning) { clearInterval(zaWarudoInterval); return; }
+                if(!isTimeStopped || !gameActive || f2.hp <= 0 || isTransitioning || isPaused) { clearInterval(zaWarudoInterval); return; }
                 let s = roleMoves[playerStats.role].skills;
                 let move = s[Math.floor(Math.random() * s.length)];
                 executeMove(f1, move);
@@ -1503,11 +1538,8 @@
 
             setTimeout(() => {
                 if(!gameActive || isTransitioning) return;
-                isTimeStopped = false;
-                clearInterval(zaWarudoInterval);
-                mainBody.classList.remove('za-warudo');
-                f2.el.style.animationPlayState = 'running';
-                announceSkill("TIME RESUMES");
+                isTimeStopped = false; clearInterval(zaWarudoInterval); mainBody.classList.remove('za-warudo');
+                f2.el.style.animationPlayState = 'running'; announceSkill("TIME RESUMES");
             }, 4000);
         };
 
@@ -1515,13 +1547,8 @@
             const txt = document.createElement('div'); txt.className = 'dmg-text';
             txt.innerText = String(textValue).includes('+') || isNaN(parseInt(textValue)) ? textValue : '-' + textValue; 
             txt.style.color = color;
-            
-            let randomOffsetX = (Math.random() - 0.5) * 40;
-            let randomOffsetY = (Math.random() - 0.5) * 40;
-            
-            txt.style.left = (x + randomOffsetX) + 'px'; 
-            txt.style.top = (y + randomOffsetY) + 'px';
-            
+            let randomOffsetX = (Math.random() - 0.5) * 40; let randomOffsetY = (Math.random() - 0.5) * 40;
+            txt.style.left = (x + randomOffsetX) + 'px'; txt.style.top = (y + randomOffsetY) + 'px';
             if (String(textValue).includes('CRIT') || String(textValue).includes('WEAK')) txt.style.transform = 'scale(1.5)';
             propsLayer.appendChild(txt); setTimeout(() => txt.remove(), 800);
         }
@@ -1529,115 +1556,77 @@
         const spawnGravityParticles = (x, y, color, isHeavy) => {
             for(let i=0; i<(isHeavy?30:10); i++) {
                 let p = document.createElement('div'); p.className = 'particle'; p.style.backgroundColor = isHeavy && Math.random()>0.5 ? '#fff' : color; 
-                p.style.boxShadow = `inset -2px -2px 4px rgba(0,0,0,0.5), 0 0 10px ${color}`; 
-                propsLayer.appendChild(p);
+                p.style.boxShadow = `inset -2px -2px 4px rgba(0,0,0,0.5), 0 0 10px ${color}`; propsLayer.appendChild(p);
                 let angle = Math.random() * Math.PI + Math.PI; let speed = Math.random() * (isHeavy?20:10) + 5;
                 gravityParticles.push({ el: p, x: x, y: 400 - y, vx: Math.cos(angle)*speed, vy: Math.abs(Math.sin(angle))*speed, life: 1.0 });
             }
         };
 
         const spawnWeather = () => {
-            if (!gameActive || isTimeStopped) return;
-            
+            if (!gameActive || isTimeStopped || isPaused) return;
             let isFire = enemyType === 'boss' || enemyType === 'berserker' || stageArea.classList.contains('bg-volcano');
             let isSnow = stageArea.classList.contains('bg-cyber') || stageArea.classList.contains('bg-heaven');
-            
             if (isFire || isSnow) {
-                const flake = document.createElement('div');
-                flake.className = 'particle';
-                flake.style.width = (Math.random() * 4 + 2) + 'px';
-                flake.style.height = flake.style.width;
-                flake.style.background = isFire ? '#ff4757' : '#00d2ff';
-                flake.style.boxShadow = `0 0 10px ${isFire ? '#ff4757' : '#00d2ff'}`;
-                flake.style.left = (Math.random() * 800) + 'px';
-                flake.style.top = '-10px';
-                flake.style.opacity = Math.random() * 0.5 + 0.2;
-                flake.style.zIndex = 1;
+                const flake = document.createElement('div'); flake.className = 'particle'; flake.style.width = (Math.random() * 4 + 2) + 'px'; flake.style.height = flake.style.width;
+                flake.style.background = isFire ? '#ff4757' : '#00d2ff'; flake.style.boxShadow = `0 0 10px ${isFire ? '#ff4757' : '#00d2ff'}`;
+                flake.style.left = (Math.random() * 800) + 'px'; flake.style.top = '-10px'; flake.style.opacity = Math.random() * 0.5 + 0.2; flake.style.zIndex = 1;
                 propsLayer.appendChild(flake);
-                
-                let wx = parseInt(flake.style.left);
-                let wy = -10;
-                let speed = Math.random() * 2 + 1;
-                let drift = (Math.random() - 0.5) * 2;
-                
+                let wx = parseInt(flake.style.left); let wy = -10; let speed = Math.random() * 2 + 1; let drift = (Math.random() - 0.5) * 2;
                 let wInt = setInterval(() => {
                     if (!gameActive || isTransitioning) { clearInterval(wInt); flake.remove(); return; }
-                    if (isTimeStopped) return;
-                    wy += speed;
-                    wx += drift;
-                    flake.style.top = wy + 'px';
-                    flake.style.left = wx + 'px';
+                    if (isTimeStopped || isPaused) return;
+                    wy += speed; wx += drift; flake.style.top = wy + 'px'; flake.style.left = wx + 'px';
                     if (wy > 400) { clearInterval(wInt); flake.remove(); }
                 }, 30);
             }
-            
             weatherTimer = setTimeout(spawnWeather, isFire ? 150 : 400);
         };
 
         const spawnProp = () => {
             if (!gameActive || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
-            let type = Math.random();
-            let propType = 'box'; let className = 'box-prop';
-            if (type > 0.85) { propType = 'potion'; className = 'potion-prop'; }
-            else if (type > 0.70) { propType = 'sword'; className = 'sword-prop'; }
-            else if (type > 0.55) { propType = 'gift'; className = 'gift-prop'; } 
+            if (isPaused) { spawnerTimer = setTimeout(spawnProp, 1000); return; }
+            let type = Math.random(); let propType = 'box'; let className = 'box-prop';
+            if (type > 0.85) { propType = 'potion'; className = 'potion-prop'; } else if (type > 0.70) { propType = 'sword'; className = 'sword-prop'; } else if (type > 0.55) { propType = 'gift'; className = 'gift-prop'; } 
             const propEl = document.createElement('div'); propEl.className = 'prop ' + className;
-            let xPos = Math.random() * 600 + 100;
-            propEl.style.left = xPos + 'px'; propEl.style.top = '-50px';
-            propsLayer.appendChild(propEl);
+            let xPos = Math.random() * 600 + 100; propEl.style.left = xPos + 'px'; propEl.style.top = '-50px'; propsLayer.appendChild(propEl);
             let targetY = 350; 
             let dropInt = setInterval(() => {
                 if(!gameActive || isTransitioning || isFatalityPromptActive) { clearInterval(dropInt); propEl.remove(); return; }
-                if(isTimeStopped) return; 
+                if(isTimeStopped || isPaused) return; 
                 let currentTop = parseInt(propEl.style.top);
-                if (currentTop < targetY) { propEl.style.top = (currentTop + 6) + 'px'; } 
-                else { clearInterval(dropInt); activeProps.push({ el: propEl, type: propType, x: xPos, y: targetY }); }
+                if (currentTop < targetY) { propEl.style.top = (currentTop + 6) + 'px'; } else { clearInterval(dropInt); activeProps.push({ el: propEl, type: propType, x: xPos, y: targetY }); }
             }, 20);
             spawnerTimer = setTimeout(spawnProp, Math.random() * 4000 + 4000);
         };
 
         const triggerBossTelegraph = () => {
             if(!gameActive || f2.hp <= 0 || enemyType !== 'boss' || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
+            if (isPaused) { bossAttackTimer = setTimeout(triggerBossTelegraph, 1000); return; }
             let targetX = f1.id === 'p1' ? f1.baseX : 800 - f1.baseX; 
-            let warning = document.createElement('div');
-            warning.className = 'boss-warning';
-            warning.style.left = (targetX - 75) + 'px';
-            propsLayer.appendChild(warning);
-            
+            let warning = document.createElement('div'); warning.className = 'boss-warning'; warning.style.left = (targetX - 75) + 'px'; propsLayer.appendChild(warning);
             playSound('charge');
-            
             setTimeout(() => {
-                if(!gameActive || isTimeStopped || isTransitioning || isFatalityPromptActive) { warning.remove(); return; }
-                warning.classList.add('blast');
-                playSound('heavy'); playSound('smite');
-                
+                if(!gameActive || isTimeStopped || isTransitioning || isFatalityPromptActive || isPaused) { warning.remove(); return; }
+                warning.classList.add('blast'); playSound('heavy'); playSound('smite');
                 let p1RealX = f1.id === 'p1' ? f1.baseX : 800 - f1.baseX;
-                if(Math.abs(p1RealX - targetX) < 100) {
-                    let bossDmg = 30 * playerStats.stage;
-                    triggerDamage(f2, f1, true, bossDmg);
-                }
+                if(Math.abs(p1RealX - targetX) < 100) triggerDamage(f2, f1, true, 30 * playerStats.stage);
                 setTimeout(() => warning.remove(), 300);
             }, 1500);
-            
-            let attackRate = f2.enraged ? 2500 : 4500;
-            bossAttackTimer = setTimeout(triggerBossTelegraph, attackRate);
+            bossAttackTimer = setTimeout(triggerBossTelegraph, f2.enraged ? 2500 : 4500);
         };
 
         const spawnHazard = () => {
             if (!gameActive || playerStats.stage < 2 || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
+            if (isPaused) { hazardTimer = setTimeout(spawnHazard, 1000); return; }
             const xPos = Math.random() * 600 + 100;
-            const warning = document.createElement('div'); warning.className = 'hazard-warning';
-            warning.style.left = xPos + 'px'; propsLayer.appendChild(warning);
+            const warning = document.createElement('div'); warning.className = 'hazard-warning'; warning.style.left = xPos + 'px'; propsLayer.appendChild(warning);
             setTimeout(() => {
-                if(!gameActive || isTransitioning || isFatalityPromptActive) { warning.remove(); return; }
+                if(!gameActive || isTransitioning || isFatalityPromptActive || isPaused) { warning.remove(); return; }
                 warning.remove();
-                const spikes = document.createElement('div'); spikes.className = 'hazard-spikes';
-                spikes.style.left = xPos + 'px'; propsLayer.appendChild(spikes); playSound('heavy');
+                const spikes = document.createElement('div'); spikes.className = 'hazard-spikes'; spikes.style.left = xPos + 'px'; propsLayer.appendChild(spikes); playSound('heavy');
                 [f1, f2].forEach(f => {
                     let fRealX = f.id === 'p1' ? f.baseX : 800 - f.baseX;
-                    if (Math.abs(fRealX - xPos - 30) < 40 && f.y < 30) {
-                        triggerDamage({id:'hazard'}, f, true, 15);
-                    }
+                    if (Math.abs(fRealX - xPos - 30) < 40 && f.y < 30) triggerDamage({id:'hazard'}, f, true, 15);
                 });
                 setTimeout(() => spikes.remove(), 1000);
             }, 1500); 
@@ -1645,133 +1634,75 @@
         };
 
         const fireDroneLaser = () => {
-            if (!gameActive || !playerStats.hasDrone || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
+            if (!gameActive || !playerStats.hasDrone || isTimeStopped || isTransitioning || isFatalityPromptActive || isPaused) return;
             playSound('jump');
-            const proj = document.createElement('div'); proj.className = 'particle'; 
-            proj.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, #00d2ff 50%, #000 100%)`; 
-            proj.style.boxShadow = '0 5px 10px rgba(0,0,0,0.5), 0 0 15px #00d2ff';
+            const proj = document.createElement('div'); proj.className = 'particle'; proj.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, #00d2ff 50%, #000 100%)`; proj.style.boxShadow = '0 5px 10px rgba(0,0,0,0.5), 0 0 15px #00d2ff';
             proj.style.left = (f1.baseX - 20) + 'px'; proj.style.top = (350 - f1.y - 80) + 'px'; propsLayer.appendChild(proj);
             thrownProjectiles.push({ el: proj, x: f1.baseX - 20, y: 350 - f1.y - 80, velX: 25, owner: f1, dmg: 10 * (1 + (playerStats.prestige || 0)), isLaser: true });
         };
 
         const petAttack = () => {
             let pCount = (playerStats.petCount || 0) + (playerStats.perks.freePet ? 1 : 0);
-            if(!gameActive || f1.hp <= 0 || pCount === 0 || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
-            
+            if(!gameActive || f1.hp <= 0 || pCount === 0 || isTimeStopped || isTransitioning || isFatalityPromptActive || isPaused) return;
             const pets = document.querySelectorAll('#pets-container .pet');
             pets.forEach((petEl, i) => {
                 setTimeout(() => {
-                    if(!gameActive || f1.hp <= 0 || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
-                    petEl.classList.add('pet-attack');
-                    setTimeout(() => petEl.classList.remove('pet-attack'), 500);
-                    playSound('jump');
-                    const proj = document.createElement('div');
-                    proj.className = 'particle';
-                    let petColor = petColorPalette[i % petColorPalette.length];
-                    proj.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, ${petColor} 50%, #000 100%)`;
-                    proj.style.boxShadow = `0 5px 10px rgba(0,0,0,0.5), 0 0 15px ${petColor}`;
-                    let petX = f1.baseX - 40 - (i * 25);
-                    proj.style.left = petX + 'px';
-                    proj.style.top = (350 - f1.y - 20) + 'px';
-                    propsLayer.appendChild(proj);
-                    let petDmg = 15 * (1 + (playerStats.prestige || 0));
-                    thrownProjectiles.push({ el: proj, x: petX, y: parseInt(proj.style.top), velX: 20, owner: f1, dmg: petDmg, color: petColor });
+                    if(!gameActive || f1.hp <= 0 || isTimeStopped || isTransitioning || isFatalityPromptActive || isPaused) return;
+                    petEl.classList.add('pet-attack'); setTimeout(() => petEl.classList.remove('pet-attack'), 500); playSound('jump');
+                    const proj = document.createElement('div'); proj.className = 'particle'; let petColor = petColorPalette[i % petColorPalette.length];
+                    proj.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, ${petColor} 50%, #000 100%)`; proj.style.boxShadow = `0 5px 10px rgba(0,0,0,0.5), 0 0 15px ${petColor}`;
+                    let petX = f1.baseX - 40 - (i * 25); proj.style.left = petX + 'px'; proj.style.top = (350 - f1.y - 20) + 'px'; propsLayer.appendChild(proj);
+                    thrownProjectiles.push({ el: proj, x: petX, y: parseInt(proj.style.top), velX: 20, owner: f1, dmg: 15 * (1 + (playerStats.prestige || 0)), color: petColor });
                 }, i * 200); 
             });
         };
 
         const throwProjectile = (fighterObj) => {
-            const proj = document.createElement('div'); proj.className = 'thrown-box';
-            let attackerRealX = fighterObj.id === 'p1' ? fighterObj.baseX : 800 - fighterObj.baseX;
-            const startX = attackerRealX + (fighterObj.id === 'p1' ? 30 : -30);
-            proj.style.left = startX + 'px'; proj.style.top = (350 - fighterObj.y - 50) + 'px'; propsLayer.appendChild(proj);
-            let projDmg = 20 * (fighterObj.isPlayer ? 1 + (playerStats.prestige || 0) : 1);
-            thrownProjectiles.push({ el: proj, x: startX, y: parseInt(proj.style.top), velX: fighterObj.id === 'p1' ? 18 : -18, owner: fighterObj, dmg: projDmg }); fighterObj.hasBox = false;
+            const proj = document.createElement('div'); proj.className = 'thrown-box'; let attackerRealX = fighterObj.id === 'p1' ? fighterObj.baseX : 800 - fighterObj.baseX;
+            const startX = attackerRealX + (fighterObj.id === 'p1' ? 30 : -30); proj.style.left = startX + 'px'; proj.style.top = (350 - fighterObj.y - 50) + 'px'; propsLayer.appendChild(proj);
+            thrownProjectiles.push({ el: proj, x: startX, y: parseInt(proj.style.top), velX: fighterObj.id === 'p1' ? 18 : -18, owner: fighterObj, dmg: 20 * (fighterObj.isPlayer ? 1 + (playerStats.prestige || 0) : 1) }); fighterObj.hasBox = false;
         };
 
         const executeMove = (fObj, move, isClone = false) => {
             if(!isClone) {
-                removeStates(fObj.el); fObj.canHit = false; fObj.isUltimate = false; fObj.isBlocking = false; fObj.isCrit = false;
-                fObj.currentMove = move; 
-                
-                // Shadow Clone Trigger
-                if(fObj.isPlayer && playerStats.hasClone) {
-                    setTimeout(() => executeMove(fObj, move, true), 200);
-                }
+                removeStates(fObj.el); fObj.canHit = false; fObj.isUltimate = false; fObj.isBlocking = false; fObj.isCrit = false; fObj.currentMove = move; 
+                if(fObj.isPlayer && playerStats.hasClone) setTimeout(() => executeMove(fObj, move, true), 200);
             }
 
             let targetEl = isClone ? p1Clone : fObj.el;
-
             if (move.id === 'block') { targetEl.classList.add('block'); if(!isClone) {fObj.isBlocking = true; fObj.blockTime = performance.now();} return; }
-            if (move.id === 'dodge') { 
-                targetEl.classList.add('dodge'); 
-                if(!isClone){ 
-                    moveFighter(fObj, -40); 
-                    updateMana(fObj, 15); 
-                    fObj.combo = 0; 
-                    fObj.dodgeTime = performance.now(); // Track exactly when they dodged
-                } 
-                return; 
-            }
+            if (move.id === 'dodge') { targetEl.classList.add('dodge'); if(!isClone){ moveFighter(fObj, -40); updateMana(fObj, 15); fObj.combo = 0; fObj.dodgeTime = performance.now(); } return; }
             if (move.id === 'charge') { targetEl.classList.add('charge', 'charging'); if(!isClone) { updateMana(fObj, 25); playSound('charge'); } return; }
-            if (move.id === 'throw' && !isClone) { targetEl.classList.add('throw'); setTimeout(() => { if (gameActive && fObj.hp > 0 && !isTransitioning) throwProjectile(fObj); }, 150); return; }
+            if (move.id === 'throw' && !isClone) { targetEl.classList.add('throw'); setTimeout(() => { if (gameActive && fObj.hp > 0 && !isTransitioning && !isPaused) throwProjectile(fObj); }, 150); return; }
 
             if (!isClone) {
                 if (move.cost > 0) updateMana(fObj, -move.cost);
                 if (move.jump > 0 && fObj.y === 0) { fObj.vy = move.jump; playSound('jump'); }
             }
 
-            if(isClone) {
-                removeStates({el: targetEl}); targetEl.classList.add(move.id);
-            } else {
-                targetEl.classList.add(move.id); fObj.activeHitbox = targetEl.querySelector(move.limb);
-            }
+            if(isClone) { removeStates({el: targetEl}); targetEl.classList.add(move.id); } 
+            else { targetEl.classList.add(move.id); fObj.activeHitbox = targetEl.querySelector(move.limb); }
             
-            let baseAttackDmg = move.dmg || 0;
-            let activeCritChance = fObj.isPlayer ? playerStats.critChance + (playerStats.role === 'assassin' ? 0.20 : 0) : 0.05;
-            let isCrit = false;
+            let baseAttackDmg = move.dmg || 0; let activeCritChance = fObj.isPlayer ? playerStats.critChance + (playerStats.role === 'assassin' ? 0.20 : 0) : 0.05; let isCrit = false;
             if (Math.random() < activeCritChance && !move.isUltimate) { isCrit = true; baseAttackDmg *= 2; }
 
             let statBonus = fObj.isPlayer ? playerStats.baseDmgBonus : (isBossStage ? playerStats.stage * 5 : playerStats.stage * 2);
             if (!fObj.isPlayer && enemyType === 'tank') statBonus += 10; 
             if (!fObj.isPlayer && enemyType === 'berserker') statBonus += 15 + playerStats.stage; 
-            if (!fObj.isPlayer && enemyType === 'slime') statBonus -= 5; // Slimes hit weak
-            
-            if (fObj.isPlayer) {
-                let pMult = 1 + (playerStats.prestige || 0);
-                baseAttackDmg = Math.floor(baseAttackDmg * pMult);
-                statBonus = Math.floor(statBonus * pMult);
-                
-                if(playerStats.weapon !== 'none') {
-                    baseAttackDmg *= 2; 
-                }
-            }
-
+            if (!fObj.isPlayer && enemyType === 'slime') statBonus -= 5;
+            if (fObj.isPlayer) { let pMult = 1 + (playerStats.prestige || 0); baseAttackDmg = Math.floor(baseAttackDmg * pMult); statBonus = Math.floor(statBonus * pMult); if(playerStats.weapon !== 'none') baseAttackDmg *= 2; }
             let finalDmg = baseAttackDmg + fObj.tempBonusDmg + statBonus; 
+            let activeCombo = fObj.combo || 0; let comboMultiplier = 1 + (Math.min(activeCombo, 20) * 0.02); finalDmg = Math.floor(finalDmg * comboMultiplier);
 
-            // COMBO MULTIPLIER (Max 20 hits = +40% Bonus Damage)
-            let activeCombo = fObj.combo || 0;
-            let comboMultiplier = 1 + (Math.min(activeCombo, 20) * 0.02);
-            finalDmg = Math.floor(finalDmg * comboMultiplier);
-
-            if(!isClone) {
-                fObj.dmg = finalDmg; 
-                fObj.isCrit = isCrit;
-            } else {
-                finalDmg *= 0.5; // clone does 50% damage
-            }
+            if(!isClone) { fObj.dmg = finalDmg; fObj.isCrit = isCrit; } else finalDmg *= 0.5;
             
             let speedMult = fObj.isPlayer ? (playerStats.atkSpd || 1) : 1;
-            if(!fObj.isPlayer && enemyType === 'assassin') speedMult = 1.5;
-            if(!fObj.isPlayer && enemyType === 'goblin') speedMult = 1.8;
-            if(!fObj.isPlayer && enemyType === 'giant') speedMult = 0.7;
-            if(!fObj.isPlayer && enemyType === 'slime') speedMult = 0.6;
-            
+            if(!fObj.isPlayer && enemyType === 'assassin') speedMult = 1.5; if(!fObj.isPlayer && enemyType === 'goblin') speedMult = 1.8; if(!fObj.isPlayer && enemyType === 'giant') speedMult = 0.7; if(!fObj.isPlayer && enemyType === 'slime') speedMult = 0.6;
             if(fObj.enraged) speedMult *= 1.5;
             let hitDelay = (move.hitDelay || 150) / speedMult;
             
             setTimeout(() => {
-                if(gameActive && fObj.hp > 0 && !isTransitioning && !move.fireProj && !move.archerStorm && !move.archerShoot && !move.beamProj) {
+                if(gameActive && fObj.hp > 0 && !isTransitioning && !isPaused && !move.fireProj && !move.archerStorm && !move.archerShoot && !move.beamProj) {
                     if(!isClone && fObj.currentMove === move) fObj.canHit = true;
                     if(isClone) triggerCloneDamage(fObj, finalDmg, move);
                 }
@@ -1780,8 +1711,7 @@
             if (!isClone) {
                 if (move.isUltimate) { fObj.isUltimate = true; isSlowMo = true; mainBody.classList.add('slow-mo'); moveFighter(fObj, 100); }
                 if (move.isSkill || move.isUltimate) {
-                    playSound('skill');
-                    announceSkill(move.name); skillDisplay.innerText = move.name;
+                    playSound('skill'); announceSkill(move.name); skillDisplay.innerText = move.name;
                     skillDisplay.style.color = move.isUltimate ? "#f1c40f" : (fObj === f1 ? "#00d2ff" : "#ff4757");
                     skillDisplay.style.textShadow = move.isUltimate ? "0 0 20px #e74c3c, 0 5px 0 #fff" : "0 0 20px #e74c3c, 0 5px 0 #c0392b";
                     skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), move.isUltimate ? 1500 : 800);
@@ -1792,50 +1722,32 @@
 
             if (move.beamProj) {
                 setTimeout(() => {
-                    if (gameActive && fObj.hp > 0 && !isTransitioning) {
-                        playSound('heavy'); playSound('clang');
-                        const beam = document.createElement('div');
-                        beam.className = 'energy-beam';
-                        beam.innerHTML = '<div class="beam-core"></div>';
-                        beam.style.setProperty('--beam-color', move.beamProj);
-                        beam.style.left = (fObj.id === 'p1' ? attackerRealX + 40 : 0) + 'px';
-                        beam.style.width = '800px';
-                        beam.style.top = (350 - fObj.y - 40) + 'px';
-                        propsLayer.appendChild(beam);
-                        
+                    if (gameActive && fObj.hp > 0 && !isTransitioning && !isPaused) {
+                        playSound('heavy'); playSound('clang'); const beam = document.createElement('div'); beam.className = 'energy-beam'; beam.innerHTML = '<div class="beam-core"></div>';
+                        beam.style.setProperty('--beam-color', move.beamProj); beam.style.left = (fObj.id === 'p1' ? attackerRealX + 40 : 0) + 'px'; beam.style.width = '800px'; beam.style.top = (350 - fObj.y - 40) + 'px'; propsLayer.appendChild(beam);
                         setTimeout(() => { beam.style.opacity = 1; }, 50);
-                        if(!isClone) fObj.canHit = true; 
-                        if(isClone) triggerCloneDamage(fObj, finalDmg, move);
-                        
+                        if(!isClone) fObj.canHit = true; if(isClone) triggerCloneDamage(fObj, finalDmg, move);
                         setTimeout(() => { beam.style.opacity = 0; setTimeout(()=>beam.remove(), 200); }, 500);
                     }
                 }, hitDelay);
             }
 
             if (move.archerShoot) {
-                setTimeout(() => { if (gameActive && fObj.hp > 0 && !isTransitioning) {
-                    playSound('jump');
-                    const proj = document.createElement('div'); proj.className = 'particle'; 
-                    let c = move.projColor || '#2ecc71';
-                    proj.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, ${c} 50%, #000 100%)`;
-                    proj.style.boxShadow = `0 5px 10px rgba(0,0,0,0.5), 0 0 15px ${c}`;
-                    let startX = attackerRealX + (fObj.id === 'p1' ? 20 : -20);
-                    proj.style.left = startX + 'px'; proj.style.top = (350 - fObj.y - 60) + 'px'; propsLayer.appendChild(proj);
-                    let pMult = 1 + (playerStats.prestige || 0);
-                    thrownProjectiles.push({ el: proj, x: startX, y: 350 - fObj.y - 60, velX: fObj.id === 'p1' ? 20 : -20, owner: fObj, dmg: (move.dmg * pMult) * (isClone?0.5:1), isLaser: true, color: c });
+                setTimeout(() => { if (gameActive && fObj.hp > 0 && !isTransitioning && !isPaused) {
+                    playSound('jump'); const proj = document.createElement('div'); proj.className = 'particle'; let c = move.projColor || '#2ecc71';
+                    proj.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, ${c} 50%, #000 100%)`; proj.style.boxShadow = `0 5px 10px rgba(0,0,0,0.5), 0 0 15px ${c}`;
+                    let startX = attackerRealX + (fObj.id === 'p1' ? 20 : -20); proj.style.left = startX + 'px'; proj.style.top = (350 - fObj.y - 60) + 'px'; propsLayer.appendChild(proj);
+                    let pMult = 1 + (playerStats.prestige || 0); thrownProjectiles.push({ el: proj, x: startX, y: 350 - fObj.y - 60, velX: fObj.id === 'p1' ? 20 : -20, owner: fObj, dmg: (move.dmg * pMult) * (isClone?0.5:1), isLaser: true, color: c });
                 } }, hitDelay);
             }
             
             if (move.fireProj) {
                 setTimeout(() => {
-                    if(!gameActive || isTransitioning) return;
+                    if(!gameActive || isTransitioning || isPaused) return;
                     for(let i=0; i<3; i++) {
-                        let proj = document.createElement('div'); proj.className = 'particle'; 
-                        proj.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, #ff4757 50%, #000 100%)`;
-                        proj.style.boxShadow = '0 5px 10px rgba(0,0,0,0.5), 0 0 15px #ff4757';
-                        proj.style.width='25px'; proj.style.height='25px';
-                        let startX = attackerRealX + (fObj.id === 'p1' ? 40 : -40);
-                        proj.style.left = startX + 'px'; proj.style.top = (350 - fObj.y - 80 + (i*25)) + 'px'; propsLayer.appendChild(proj);
+                        let proj = document.createElement('div'); proj.className = 'particle'; proj.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, #ff4757 50%, #000 100%)`;
+                        proj.style.boxShadow = '0 5px 10px rgba(0,0,0,0.5), 0 0 15px #ff4757'; proj.style.width='25px'; proj.style.height='25px';
+                        let startX = attackerRealX + (fObj.id === 'p1' ? 40 : -40); proj.style.left = startX + 'px'; proj.style.top = (350 - fObj.y - 80 + (i*25)) + 'px'; propsLayer.appendChild(proj);
                         let pDmg = move.dmg * (fObj.isPlayer ? 1 + (playerStats.prestige || 0) : 1) * (isClone?0.5:1);
                         thrownProjectiles.push({ el: proj, x: startX, y: parseInt(proj.style.top), velX: fObj.id === 'p1' ? 15 : -15, owner: fObj, dmg: pDmg, isLaser: false, color: '#ff4757' });
                     }
@@ -1844,14 +1756,12 @@
             
             if (move.archerStorm) {
                 setTimeout(() => {
-                    if(!gameActive || isTransitioning) return;
+                    if(!gameActive || isTransitioning || isPaused) return;
                     for(let i=0; i<5; i++) {
                         setTimeout(() => {
-                            if(!gameActive || isTransitioning) return;
-                            playSound('jump'); let proj = document.createElement('div'); proj.className = 'particle'; 
-                            proj.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, #2ecc71 50%, #000 100%)`;
-                            proj.style.boxShadow = '0 5px 10px rgba(0,0,0,0.5), 0 0 15px #2ecc71';
-                            let startX = attackerRealX + (fObj.id === 'p1' ? 20 : -20);
+                            if(!gameActive || isTransitioning || isPaused) return;
+                            playSound('jump'); let proj = document.createElement('div'); proj.className = 'particle'; proj.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, #2ecc71 50%, #000 100%)`;
+                            proj.style.boxShadow = '0 5px 10px rgba(0,0,0,0.5), 0 0 15px #2ecc71'; let startX = attackerRealX + (fObj.id === 'p1' ? 20 : -20);
                             proj.style.left = startX + 'px'; proj.style.top = (350 - fObj.y - 80 + (Math.random()*60-30)) + 'px'; propsLayer.appendChild(proj);
                             let pDmg = move.dmg * (fObj.isPlayer ? 1 + (playerStats.prestige || 0) : 1) * (isClone?0.5:1);
                             thrownProjectiles.push({ el: proj, x: startX, y: parseInt(proj.style.top), velX: fObj.id === 'p1' ? 30 : -30, owner: fObj, dmg: pDmg, isLaser: true, color: '#2ecc71' });
@@ -1863,25 +1773,31 @@
 
         const triggerCloneDamage = (fObj, dmg, move) => {
             let defender = fObj === f1 ? f2 : f1;
-            let attackerRealX = fObj.id === 'p1' ? fObj.baseX : 800 - fObj.baseX;
-            let defenderRealX = defender.id === 'p1' ? defender.baseX : 800 - defender.baseX;
-            let shift = move ? (move.shift || 0) : 0;
-            let effX = attackerRealX + (fObj.id === 'p1' ? shift : -shift);
-            let dist = Math.abs(effX - defenderRealX);
-            let yDist = Math.abs(fObj.y - defender.y);
-            let range = (move ? (move.range || 160) : 160) + (playerStats.weapon !== 'none' ? 50 : 0);
+            let attackerRealX = fObj.id === 'p1' ? fObj.baseX : 800 - fObj.baseX; let defenderRealX = defender.id === 'p1' ? defender.baseX : 800 - defender.baseX;
+            let shift = move ? (move.shift || 0) : 0; let effX = attackerRealX + (fObj.id === 'p1' ? shift : -shift);
+            let dist = Math.abs(effX - defenderRealX); let yDist = Math.abs(fObj.y - defender.y); let range = (move ? (move.range || 160) : 160) + (playerStats.weapon !== 'none' ? 50 : 0);
             
             if (dist <= range && yDist <= 160) {
-                let sparkX = (attackerRealX + defenderRealX) / 2;
-                let sparkY = 350 - Math.max(fObj.y, defender.y) - 50;
+                let sparkX = (attackerRealX + defenderRealX) / 2; let sparkY = 350 - Math.max(fObj.y, defender.y) - 50;
                 spawnGravityParticles(sparkX, sparkY, '#00d2ff', false); 
                 let dummyAttacker = { id: 'clone', isPlayer: true, isUltimate: move.isUltimate, isCrit: false, color: '#00d2ff', dmg: dmg };
                 triggerDamage(dummyAttacker, defender, false);
             }
         };
 
+        function runAILoop() {
+            if (!gameActive) return;
+            if (isPaused) { aiLoopTimer = setTimeout(runAILoop, 500); return; }
+            aiDecision(f1); aiDecision(f2);
+            let aiBaseSpeed = Math.max(250, 750 - (playerStats.stage * 50));
+            if (enemyType === 'ninja' || enemyType === 'assassin' || enemyType === 'goblin') aiBaseSpeed *= 0.5; 
+            if (enemyType === 'slime') aiBaseSpeed *= 1.5;
+            let delay = isSlowMo ? 1800 : Math.random() * 300 + aiBaseSpeed; 
+            aiLoopTimer = setTimeout(runAILoop, delay);
+        }
+
         const aiDecision = (fObj) => {
-            if (!gameActive || fObj.hp <= 0 || isTimeStopped || isTransitioning || (fObj.isPlayer && playerStats.manualMode) || isFatalityPromptActive) return; 
+            if (!gameActive || fObj.hp <= 0 || isTimeStopped || isTransitioning || (fObj.isPlayer && playerStats.manualMode) || isFatalityPromptActive || isPaused) return; 
             if (fObj.status === 'frozen' && Math.random() < 0.5) return; 
 
             let hpPercent = (fObj.hp / fObj.maxHp) * 100;
@@ -1897,9 +1813,8 @@
 
             const dist = 800 - f1.baseX - f2.baseX;
             if (dist > 180) {
-                if (enemyType === 'mage' && fObj.mp >= 30 && Math.random() > 0.5) {
-                     executeMove(fObj, roleMoves['mage'].skills[0]); 
-                } else if (Math.random() > 0.2) moveFighter(fObj, (enemyType === 'assassin' || enemyType === 'goblin') ? 120 : 80); 
+                if (enemyType === 'mage' && fObj.mp >= 30 && Math.random() > 0.5) executeMove(fObj, roleMoves['mage'].skills[0]); 
+                else if (Math.random() > 0.2) moveFighter(fObj, (enemyType === 'assassin' || enemyType === 'goblin') ? 120 : 80); 
                 else executeMove(fObj, {id:'charge'});
             } else {
                 updateMana(fObj, 5); const r = Math.random();
@@ -1909,48 +1824,37 @@
                 if (r < dodgeChance) { moveFighter(fObj, -80); executeMove(fObj, {id:'dodge'}); }
                 else if (r < dodgeChance + 0.1 && enemyType !== 'giant' && enemyType !== 'slime') executeMove(fObj, {id:'block'}); 
                 else { 
-                    let move;
-                    let activeRole = fObj.isPlayer ? playerStats.role : (enemyType === 'boss' ? 'tank' : (roleMoves[enemyType] ? enemyType : 'balanced'));
+                    let move; let activeRole = fObj.isPlayer ? playerStats.role : (enemyType === 'boss' ? 'tank' : (roleMoves[enemyType] ? enemyType : 'balanced'));
                     
                     if (hpPercent <= 30 && fObj.mp >= 50 && Math.random() > 0.2) move = roleMoves[activeRole].ultimate;
                     else if (Math.random() > 0.5) { const s = roleMoves[activeRole].skills; move = (fObj.mp >= s[0].cost) ? s[Math.floor(Math.random() * s.length)] : basics_pool[Math.floor(Math.random() * basics_pool.length)]; } 
                     else move = basics_pool[Math.floor(Math.random() * basics_pool.length)]; 
                     
                     if (!fObj.isPlayer && (move.isSkill || move.isUltimate)) {
-                        const warning = document.createElement('div');
-                        warning.innerText = '❕';
+                        const warning = document.createElement('div'); warning.innerText = '❕';
                         warning.style.cssText = `position:absolute; top:-40px; font-size:30px; left:50%; transform:translateX(-50%); z-index:100; animation: bounce-indicator 0.3s infinite; filter: drop-shadow(0 0 10px red);`;
                         fObj.el.appendChild(warning);
-                        
-                        setTimeout(() => {
-                            warning.remove();
-                            if (gameActive && !isTransitioning) executeMove(fObj, move);
-                        }, 400); 
-                    } else {
-                        executeMove(fObj, move);
-                    }
+                        setTimeout(() => { warning.remove(); if (gameActive && !isTransitioning && !isPaused) executeMove(fObj, move); }, 400); 
+                    } else executeMove(fObj, move);
                 }
             }
         };
 
         // --- CONTROLS ---
         document.addEventListener('keydown', (e) => {
-            if (!gameActive || !playerStats.manualMode || f1.hp <= 0 || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
+            if (!gameActive || !playerStats.manualMode || f1.hp <= 0 || isTimeStopped || isTransitioning || isFatalityPromptActive || isPaused) return;
             const k = e.key.toLowerCase();
             if (['a', 'd'].includes(k)) {
-                if (moveCooldown) return;
-                let mCd = (playerStats.role === 'assassin') ? 80 : (playerStats.role === 'tank' ? 250 : 150);
+                if (moveCooldown) return; let mCd = (playerStats.role === 'assassin') ? 80 : (playerStats.role === 'tank' ? 250 : 150);
                 if (k === 'a') moveFighter(f1, -60); if (k === 'd') moveFighter(f1, 60);
                 moveCooldown = true; setTimeout(() => moveCooldown = false, mCd); return;
             }
-            if (manualCooldown) return;
-            let acted = false;
+            if (manualCooldown) return; let acted = false;
             if (k === 'w') { executeMove(f1, {id:'block'}); acted = true; }
             if (k === 's') { executeMove(f1, {id: Math.random()>0.5?'dodge':'charge'}); acted = true; }
             if (k === 'j') { 
                 if (Math.random() > 0.6) {
-                    let s = roleMoves[playerStats.role].skills;
-                    let move = s[Math.floor(Math.random() * s.length)];
+                    let s = roleMoves[playerStats.role].skills; let move = s[Math.floor(Math.random() * s.length)];
                     if (f1.mp >= move.cost) executeMove(f1, move); else executeMove(f1, basics_pool[Math.floor(Math.random() * basics_pool.length)]);
                 } else executeMove(f1, basics_pool[Math.floor(Math.random() * basics_pool.length)]); 
                 acted = true; 
@@ -1961,10 +1865,7 @@
                 else { let s = roleMoves[playerStats.role].skills[0]; if(f1.mp >= s.cost) executeMove(f1, s); }
                 acted = true;
             }
-            if (acted) { 
-                let cooldownTime = 350 / (playerStats.atkSpd || 1);
-                manualCooldown = true; setTimeout(() => manualCooldown = false, cooldownTime); 
-            }
+            if (acted) { let cooldownTime = 350 / (playerStats.atkSpd || 1); manualCooldown = true; setTimeout(() => manualCooldown = false, cooldownTime); }
         });
 
         const bindTouch = (id, actionDown, actionUp = null) => {
@@ -1980,44 +1881,26 @@
         bindTouch('m-right', () => holdRight = true, () => holdRight = false);
         
         const applyManualCooldown = () => {
-            let cooldownTime = 350 / (playerStats.atkSpd || 1);
-            manualCooldown = true; 
-            
-            const actionBtns = document.querySelectorAll('.action-pad .ctrl-btn');
-            actionBtns.forEach(btn => btn.classList.add('on-cooldown'));
-            
-            setTimeout(() => {
-                manualCooldown = false;
-                actionBtns.forEach(btn => btn.classList.remove('on-cooldown'));
-            }, cooldownTime);
+            let cooldownTime = 350 / (playerStats.atkSpd || 1); manualCooldown = true; 
+            const actionBtns = document.querySelectorAll('.action-pad .ctrl-btn'); actionBtns.forEach(btn => btn.classList.add('on-cooldown'));
+            setTimeout(() => { manualCooldown = false; actionBtns.forEach(btn => btn.classList.remove('on-cooldown')); }, cooldownTime);
         };
         
-        bindTouch('m-block', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning && !isFatalityPromptActive) { executeMove(f1, {id:'block'}); applyManualCooldown(); }});
-        bindTouch('m-charge', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning && !isFatalityPromptActive) { executeMove(f1, {id: Math.random()>0.5?'dodge':'charge'}); applyManualCooldown(); }});
-        bindTouch('m-attack', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning && !isFatalityPromptActive) { 
+        bindTouch('m-block', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning && !isFatalityPromptActive && !isPaused) { executeMove(f1, {id:'block'}); applyManualCooldown(); }});
+        bindTouch('m-charge', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning && !isFatalityPromptActive && !isPaused) { executeMove(f1, {id: Math.random()>0.5?'dodge':'charge'}); applyManualCooldown(); }});
+        bindTouch('m-attack', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && !isTimeStopped && !isTransitioning && !isFatalityPromptActive && !isPaused) { 
             let move = basics_pool[Math.floor(Math.random() * basics_pool.length)];
             if(Math.random()>0.6) { let s = roleMoves[playerStats.role].skills; let sm = s[Math.floor(Math.random()*s.length)]; if(f1.mp>=sm.cost) move=sm; }
             executeMove(f1, move); applyManualCooldown(); 
         }});
-        bindTouch('m-throw', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && f1.hasBox && !isTimeStopped && !isTransitioning && !isFatalityPromptActive) { executeMove(f1, {id:'throw'}); applyManualCooldown(); }});
+        bindTouch('m-throw', () => { if(gameActive && playerStats.manualMode && !manualCooldown && f1.hp>0 && f1.hasBox && !isTimeStopped && !isTransitioning && !isFatalityPromptActive && !isPaused) { executeMove(f1, {id:'throw'}); applyManualCooldown(); }});
         bindTouch('m-ult', () => { 
-            if(!gameActive || !playerStats.manualMode || manualCooldown || f1.hp<=0 || isTimeStopped || isTransitioning || isFatalityPromptActive) return;
+            if(!gameActive || !playerStats.manualMode || manualCooldown || f1.hp<=0 || isTimeStopped || isTransitioning || isFatalityPromptActive || isPaused) return;
             if (f1.hp <= 30 && f1.mp >= 50) executeMove(f1, roleMoves[playerStats.role].ultimate);
             else { let s = roleMoves[playerStats.role].skills[0]; if(f1.mp >= s.cost) executeMove(f1, s); }
             applyManualCooldown();
         });
 
-        function runAILoop() {
-            if (!gameActive) return;
-            aiDecision(f1); aiDecision(f2);
-            let aiBaseSpeed = Math.max(250, 750 - (playerStats.stage * 50));
-            if (enemyType === 'ninja' || enemyType === 'assassin' || enemyType === 'goblin') aiBaseSpeed *= 0.5; 
-            if (enemyType === 'slime') aiBaseSpeed *= 1.5;
-            let delay = isSlowMo ? 1800 : Math.random() * 300 + aiBaseSpeed; 
-            aiLoopTimer = setTimeout(runAILoop, delay);
-        }
-
-        // Projectile specific collision
         function checkProjCollision(projOwner, projRect, defender, pad = 15) { 
             let p = pad * scaleFactor; 
             const headBox = defender.el.querySelector('.head').getBoundingClientRect(); const torsoBox = defender.el.querySelector('.torso').getBoundingClientRect();
@@ -2029,65 +1912,30 @@
             playSound('clang'); mainBody.classList.add('parry-flash'); setTimeout(()=>mainBody.classList.remove('parry-flash'), 100);
             skillDisplay.innerText = "PERFECT PARRY!"; skillDisplay.style.color = "#66fcf1"; skillDisplay.style.textShadow = "0 0 20px #00d2ff, 0 5px 0 #fff"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 800);
             updateMana(defender, 100); removeStates(attacker.el); attacker.el.classList.add('hit'); 
-            setTimeout(() => { if(gameActive && !isTransitioning && !isFatalityPromptActive) attacker.el.classList.remove('hit'); }, 1000);
+            setTimeout(() => { if(gameActive && !isTransitioning && !isFatalityPromptActive && !isPaused) attacker.el.classList.remove('hit'); }, 1000);
         }
 
-        // --- MANUAL FATALITY LOGIC ---
         const promptFatality = (attacker, defender) => {
-            isFatalityPromptActive = true;
-            isTimeStopped = true; // Pause physics
-            mainBody.classList.add('slow-mo');
-            
-            announceSkill("FINISH HIM!");
-            skillDisplay.innerText = "FINISH HIM!"; 
-            skillDisplay.style.color = "#ff0000"; 
-            skillDisplay.style.textShadow = "0 0 20px #ff0000, 0 5px 0 #fff"; 
-            skillDisplay.classList.add('show-skill');
-            
+            isFatalityPromptActive = true; isTimeStopped = true; mainBody.classList.add('slow-mo');
+            announceSkill("FINISH HIM!"); skillDisplay.innerText = "FINISH HIM!"; skillDisplay.style.color = "#ff0000"; skillDisplay.style.textShadow = "0 0 20px #ff0000, 0 5px 0 #fff"; skillDisplay.classList.add('show-skill');
             document.getElementById('in-fight-controls').style.display = 'none';
-            
-            const promptUI = document.getElementById('fatality-prompt');
-            promptUI.style.display = 'flex';
-            
-            const timerBar = document.getElementById('fatality-timer-bar');
-            timerBar.style.transition = 'none';
-            timerBar.style.width = '100%';
-            
-            // Force reflow to restart animation safely
-            void timerBar.offsetWidth;
-            
-            timerBar.style.transition = 'width 3s linear';
-            timerBar.style.width = '0%';
-
-            let promptTimeout = setTimeout(() => {
-                if (isFatalityPromptActive) {
-                    cancelFatalityPrompt(defender);
-                }
-            }, 3000);
+            const promptUI = document.getElementById('fatality-prompt'); promptUI.style.display = 'flex';
+            const timerBar = document.getElementById('fatality-timer-bar'); timerBar.style.transition = 'none'; timerBar.style.width = '100%';
+            void timerBar.offsetWidth; timerBar.style.transition = 'width 3s linear'; timerBar.style.width = '0%';
+            let promptTimeout = setTimeout(() => { if (isFatalityPromptActive && !isPaused) cancelFatalityPrompt(defender); }, 3000);
 
             document.getElementById('fatality-btn').onclick = () => {
-                if (isFatalityPromptActive) {
-                    clearTimeout(promptTimeout);
-                    isFatalityPromptActive = false;
-                    promptUI.style.display = 'none';
-                    skillDisplay.classList.remove('show-skill');
-                    triggerFatality(attacker, defender);
+                if (isFatalityPromptActive && !isPaused) {
+                    clearTimeout(promptTimeout); isFatalityPromptActive = false; promptUI.style.display = 'none';
+                    skillDisplay.classList.remove('show-skill'); triggerFatality(attacker, defender);
                 }
             };
         };
 
         const cancelFatalityPrompt = (defender) => {
-            isFatalityPromptActive = false;
-            document.getElementById('fatality-prompt').style.display = 'none';
-            skillDisplay.classList.remove('show-skill');
-            
-            isTimeStopped = false;
-            mainBody.classList.remove('slow-mo');
-            
-            isTransitioning = true;
-            defender.hp = 0;
-            updateHealthBar(defender);
-            endMatch(true); // Player won, normal death
+            isFatalityPromptActive = false; document.getElementById('fatality-prompt').style.display = 'none'; skillDisplay.classList.remove('show-skill');
+            isTimeStopped = false; mainBody.classList.remove('slow-mo');
+            isTransitioning = true; defender.hp = 0; updateHealthBar(defender); endMatch(true); 
         };
 
         function finishFatality(attacker, defender) {
@@ -2095,18 +1943,12 @@
             const fatText = document.createElement('div'); fatText.className = 'fatality-text show-fatality'; fatText.innerText = "FATALITY"; mainBody.appendChild(fatText);
             playerStats.coins += (isBossStage ? 300 : 100) + (playerStats.stage * 20); updateUI();
             
-            // Check for Boss Loot
             if(isBossStage && attacker.isPlayer && Math.random() < 0.25) {
                 setTimeout(() => {
-                    const weapons = ['katana', 'greatsword', 'staff', 'trident', 'titanhammer'];
-                    let dropped = weapons[Math.floor(Math.random() * weapons.length)];
-                    
-                    if (!playerStats.unlockedWeapons.includes(dropped)) playerStats.unlockedWeapons.push(dropped);
-                    playerStats.weapon = dropped;
-                    
+                    const weapons = ['katana', 'greatsword', 'staff', 'trident', 'titanhammer']; let dropped = weapons[Math.floor(Math.random() * weapons.length)];
+                    if (!playerStats.unlockedWeapons.includes(dropped)) playerStats.unlockedWeapons.push(dropped); playerStats.weapon = dropped;
                     document.getElementById('loot-alert').innerText = `🌟 LEGENDARY WEAPON DROP: ${allWeapons[dropped].toUpperCase()}! 🌟`;
-                    document.getElementById('loot-alert').style.animation = 'none';
-                    void document.getElementById('loot-alert').offsetWidth; 
+                    document.getElementById('loot-alert').style.animation = 'none'; void document.getElementById('loot-alert').offsetWidth; 
                     document.getElementById('loot-alert').style.animation = 'lootPop 4s ease-in forwards';
                     saveProgress(); updateUI(); renderInventory(); playSound('coin');
                 }, 1000);
@@ -2114,37 +1956,20 @@
 
             setTimeout(() => {
                 mainBody.classList.remove('fatality-mode'); fatText.remove(); defender.el.style.display = 'flex';
-                document.getElementById('combat-hud').style.opacity = 1;
-                defender.hp = 0; 
-                updateHealthBar(defender);
-                isTransitioning = false; // clear state before calling endMatch to ensure it fires
-                endMatch(attacker.isPlayer, true);
+                document.getElementById('combat-hud').style.opacity = 1; defender.hp = 0; updateHealthBar(defender);
+                isTransitioning = false; endMatch(attacker.isPlayer, true);
             }, 3000);
         }
 
         function triggerFatality(attacker, defender) {
             gameActive = false; isSlowMo = false; isTimeStopped = false;
-            
-            // STOP ALL BGM FOR FATALITY SCENE
             bgm.normal.stop(); bgm.boss.stop(); bgm.abyss.stop();
-
-            document.getElementById('combat-hud').style.opacity = 0;
-            document.getElementById('in-fight-controls').style.display = 'none';
-            mainBody.classList.add('fatality-mode');
-            removeStates(attacker.el); removeStates(defender.el); defender.el.classList.add('hit');
-
-            defender.hp = 0;
-            updateHealthBar(defender);
-
-            let role = attacker.isPlayer ? playerStats.role : 'balanced';
+            document.getElementById('combat-hud').style.opacity = 0; document.getElementById('in-fight-controls').style.display = 'none';
+            mainBody.classList.add('fatality-mode'); removeStates(attacker.el); removeStates(defender.el); defender.el.classList.add('hit');
+            defender.hp = 0; updateHealthBar(defender); let role = attacker.isPlayer ? playerStats.role : 'balanced';
             
-            // Force defender to exact middle of the stage
-            defender.baseX = 400;
-            defender.y = 0;
-            defender.el.style[defender.id === 'p1' ? 'left' : 'right'] = '400px';
-            defender.el.style.bottom = '0px';
+            defender.baseX = 400; defender.y = 0; defender.el.style[defender.id === 'p1' ? 'left' : 'right'] = '400px'; defender.el.style.bottom = '0px';
 
-            // Helper to safely position attacker relative to the screen
             const setAttackerX = (visualX) => {
                 attacker.baseX = attacker.id === 'p1' ? visualX : 800 - visualX;
                 attacker.el.style[attacker.id === 'p1' ? 'left' : 'right'] = attacker.baseX + 'px';
@@ -2159,264 +1984,145 @@
                     defender.el.style.display = 'none'; setTimeout(() => finishFatality(attacker, defender), 800);
                 }, 1200);
             } else if (role === 'assassin') {
-                // REMASTERED ASSASSIN FATALITY
-                attacker.el.classList.add('phantom-strike');
-                playSound('charge');
-                
-                // Darken background for anime effect
-                mainBody.style.background = '#000';
-                defender.el.style.filter = 'brightness(0)';
-                attacker.el.style.filter = 'brightness(200%) hue-rotate(-50deg)';
-                
-                let slashes = 0;
-                let slashAngles = [0, 45, 90, 135, -45, -90];
-                
+                attacker.el.classList.add('phantom-strike'); playSound('charge'); mainBody.style.background = '#000'; defender.el.style.filter = 'brightness(0)'; attacker.el.style.filter = 'brightness(200%) hue-rotate(-50deg)';
+                let slashes = 0; let slashAngles = [0, 45, 90, 135, -45, -90];
                 let slashInterval = setInterval(() => {
-                    playSound('slice'); 
-                    setAttackerX(400 + (Math.random() * 300 - 150)); 
-                    attacker.y = Math.random() * 200;
-                    attacker.el.style.bottom = attacker.y + 'px';
-                    slashes++;
-                    
-                    let slash = document.createElement('div'); 
-                    slash.className = 'slash-mark';
-                    slash.style.left = (300 + Math.random()*200) + 'px'; 
-                    slash.style.top = (50 + Math.random()*200) + 'px';
-                    slash.style.width = '500px';
-                    slash.style.setProperty('--rot', `${slashAngles[slashes % slashAngles.length]}deg`); 
-                    slash.style.boxShadow = '0 0 30px #fff, 0 0 50px #8e44ad, inset 0 0 20px #fff';
-                    mainBody.appendChild(slash); 
-                    
+                    if (isPaused) return;
+                    playSound('slice'); setAttackerX(400 + (Math.random() * 300 - 150)); attacker.y = Math.random() * 200; attacker.el.style.bottom = attacker.y + 'px'; slashes++;
+                    let slash = document.createElement('div'); slash.className = 'slash-mark'; slash.style.left = (300 + Math.random()*200) + 'px'; slash.style.top = (50 + Math.random()*200) + 'px';
+                    slash.style.width = '500px'; slash.style.setProperty('--rot', `${slashAngles[slashes % slashAngles.length]}deg`); slash.style.boxShadow = '0 0 30px #fff, 0 0 50px #8e44ad, inset 0 0 20px #fff'; mainBody.appendChild(slash); 
                     if (slashes > 15) {
-                        clearInterval(slashInterval); 
-                        attacker.el.classList.remove('phantom-strike'); 
-                        setAttackerX(attacker.id === 'p1' ? 250 : 550);
-                        attacker.y = 0; attacker.el.style.bottom = '0px';
-                        attacker.el.classList.add('dodge'); // pose like sheathing sword
-                        
+                        clearInterval(slashInterval); attacker.el.classList.remove('phantom-strike'); setAttackerX(attacker.id === 'p1' ? 250 : 550); attacker.y = 0; attacker.el.style.bottom = '0px'; attacker.el.classList.add('dodge'); 
                         setTimeout(() => { 
-                            playSound('clang'); playSound('heavy');
-                            mainBody.classList.add('heavy-shake'); setTimeout(()=>mainBody.classList.remove('heavy-shake'), 600);
-                            for(let i=0;i<5;i++) {
-                                spawnGravityParticles(400, 100+Math.random()*100, '#ff0000', true); 
-                                spawnGravityParticles(400, 100+Math.random()*100, '#8e44ad', true);
-                            }
-                            defender.el.style.display = 'none'; 
-                            
-                            // Clean up slashes & restore bg
-                            document.querySelectorAll('.slash-mark').forEach(s=>s.remove());
-                            mainBody.style.background = '';
-                            
+                            playSound('clang'); playSound('heavy'); mainBody.classList.add('heavy-shake'); setTimeout(()=>mainBody.classList.remove('heavy-shake'), 600);
+                            for(let i=0;i<5;i++) { spawnGravityParticles(400, 100+Math.random()*100, '#ff0000', true); spawnGravityParticles(400, 100+Math.random()*100, '#8e44ad', true); }
+                            defender.el.style.display = 'none'; document.querySelectorAll('.slash-mark').forEach(s=>s.remove()); mainBody.style.background = '';
                             setTimeout(()=>finishFatality(attacker, defender), 1000);
-                        }, 1200); // Dramatic pause
+                        }, 1200); 
                     }
                 }, 60); 
             } else if (role === 'mage') {
-                setAttackerX(attacker.id === 'p1' ? 250 : 550);
-                attacker.el.classList.add('palm-flurry'); playSound('charge');
-                let fInt = setInterval(() => { spawnGravityParticles(400, 50+Math.random()*150, '#ff4757', true); playSound('hit'); }, 80);
+                setAttackerX(attacker.id === 'p1' ? 250 : 550); attacker.el.classList.add('palm-flurry'); playSound('charge');
+                let fInt = setInterval(() => { if(!isPaused) { spawnGravityParticles(400, 50+Math.random()*150, '#ff4757', true); playSound('hit'); } }, 80);
                 setTimeout(() => {
-                    clearInterval(fInt); playSound('heavy'); mainBody.classList.add('shake-screen');
-                    spawnGravityParticles(400, 150, '#ff4757', true); defender.el.style.display = 'none'; finishFatality(attacker, defender);
+                    clearInterval(fInt); playSound('heavy'); mainBody.classList.add('shake-screen'); spawnGravityParticles(400, 150, '#ff4757', true); defender.el.style.display = 'none'; finishFatality(attacker, defender);
                 }, 1500);
             } else if (role === 'witch') {
-                setAttackerX(attacker.id === 'p1' ? 300 : 500);
-                attacker.el.classList.add('crane'); defender.y = 150; defender.el.style.bottom = '150px'; defender.el.style.filter = 'hue-rotate(270deg) brightness(2)';
-                playSound('heal');
-                let sInt = setInterval(() => { spawnGravityParticles(400, 200, '#9b59b6', false); }, 100);
-                setTimeout(() => {
-                    clearInterval(sInt); playSound('smite'); defender.el.style.display = 'none'; finishFatality(attacker, defender);
-                }, 1500);
+                setAttackerX(attacker.id === 'p1' ? 300 : 500); attacker.el.classList.add('crane'); defender.y = 150; defender.el.style.bottom = '150px'; defender.el.style.filter = 'hue-rotate(270deg) brightness(2)'; playSound('heal');
+                let sInt = setInterval(() => { if(!isPaused) spawnGravityParticles(400, 200, '#9b59b6', false); }, 100);
+                setTimeout(() => { clearInterval(sInt); playSound('smite'); defender.el.style.display = 'none'; finishFatality(attacker, defender); }, 1500);
             } else if (role === 'archer') {
-                setAttackerX(attacker.id === 'p1' ? 50 : 750);
-                attacker.el.classList.add('palm'); playSound('charge');
-                let laser = document.createElement('div'); laser.style.cssText = `position:absolute; width:800px; height:4px; background:#2ecc71; top:${350 - attacker.y - 60}px; left:0; z-index:200; opacity:0.5; box-shadow:0 0 10px #2ecc71;`;
-                propsLayer.appendChild(laser);
+                setAttackerX(attacker.id === 'p1' ? 50 : 750); attacker.el.classList.add('palm'); playSound('charge');
+                let laser = document.createElement('div'); laser.style.cssText = `position:absolute; width:800px; height:4px; background:#2ecc71; top:${350 - attacker.y - 60}px; left:0; z-index:200; opacity:0.5; box-shadow:0 0 10px #2ecc71;`; propsLayer.appendChild(laser);
                 setTimeout(() => {
-                    laser.style.opacity = 1; laser.style.height = '25px'; playSound('clang'); playSound('heavy');
-                    mainBody.classList.add('heavy-shake'); setTimeout(()=>mainBody.classList.remove('heavy-shake'), 400);
+                    laser.style.opacity = 1; laser.style.height = '25px'; playSound('clang'); playSound('heavy'); mainBody.classList.add('heavy-shake'); setTimeout(()=>mainBody.classList.remove('heavy-shake'), 400);
                     spawnGravityParticles(400, 100, '#2ecc71', true); spawnGravityParticles(400, 100, '#2ecc71', true); defender.el.style.display = 'none';
                     setTimeout(() => { laser.remove(); finishFatality(attacker, defender); }, 500);
                 }, 1000);
             } else if (role === 'paladin') {
-                setAttackerX(attacker.id === 'p1' ? 400 : 400);
-                attacker.el.classList.add('block'); playSound('charge');
-                let holyLight = document.createElement('div'); holyLight.style.cssText = `position:absolute; width:150px; height:600px; background:linear-gradient(to right, transparent, #fff, transparent); top:-200px; left:325px; z-index:200; opacity:0; box-shadow:0 0 30px #f1c40f;`;
-                propsLayer.appendChild(holyLight);
+                setAttackerX(attacker.id === 'p1' ? 400 : 400); attacker.el.classList.add('block'); playSound('charge');
+                let holyLight = document.createElement('div'); holyLight.style.cssText = `position:absolute; width:150px; height:600px; background:linear-gradient(to right, transparent, #fff, transparent); top:-200px; left:325px; z-index:200; opacity:0; box-shadow:0 0 30px #f1c40f;`; propsLayer.appendChild(holyLight);
                 setTimeout(() => {
-                    holyLight.style.opacity = 1; playSound('smite'); mainBody.classList.add('heavy-shake');
-                    spawnGravityParticles(400, 50, '#f1c40f', true); spawnGravityParticles(400, 150, '#fff', true); defender.el.style.display = 'none';
+                    holyLight.style.opacity = 1; playSound('smite'); mainBody.classList.add('heavy-shake'); spawnGravityParticles(400, 50, '#f1c40f', true); spawnGravityParticles(400, 150, '#fff', true); defender.el.style.display = 'none';
                     setTimeout(() => { holyLight.remove(); finishFatality(attacker, defender); }, 1500);
                 }, 1000);
             } else {
-                // Balanced
                 setAttackerX(attacker.id === 'p1' ? 340 : 460);
                 setTimeout(() => {
-                    attacker.el.classList.add('fatality-strikes'); let t = 0; for(let i=0; i<20; i++) { setTimeout(() => { playSound('hit'); spawnGravityParticles(400, 100+Math.random()*100, '#f1c40f', false); }, t); t += 80; }
+                    attacker.el.classList.add('fatality-strikes'); let t = 0; for(let i=0; i<20; i++) { setTimeout(() => { if(!isPaused) { playSound('hit'); spawnGravityParticles(400, 100+Math.random()*100, '#f1c40f', false); } }, t); t += 80; }
                     setTimeout(() => {
                         attacker.el.classList.remove('fatality-strikes'); attacker.el.classList.add('uppercut'); 
-                        
-                        // Beam finisher
-                        playSound('heavy'); playSound('clang');
-                        const beam = document.createElement('div');
-                        beam.className = 'energy-beam';
-                        beam.innerHTML = '<div class="beam-core"></div>';
-                        beam.style.setProperty('--beam-color', '#00d2ff');
-                        beam.style.left = (attacker.id === 'p1' ? 340 : 0) + 'px';
-                        beam.style.width = '800px';
-                        beam.style.top = (350 - attacker.y - 80) + 'px';
-                        propsLayer.appendChild(beam);
+                        playSound('heavy'); playSound('clang'); const beam = document.createElement('div'); beam.className = 'energy-beam'; beam.innerHTML = '<div class="beam-core"></div>'; beam.style.setProperty('--beam-color', '#00d2ff');
+                        beam.style.left = (attacker.id === 'p1' ? 340 : 0) + 'px'; beam.style.width = '800px'; beam.style.top = (350 - attacker.y - 80) + 'px'; propsLayer.appendChild(beam);
                         setTimeout(() => { beam.style.opacity = 1; mainBody.classList.add('heavy-shake'); }, 50);
-                        
                         defender.el.style.display = 'none'; spawnGravityParticles(400, 200, '#00d2ff', true);
-                        
                         setTimeout(() => { beam.remove(); finishFatality(attacker, defender); }, 1000);
                     }, 1800);
                 }, 500);
             }
         }
 
-        // GLOBAL FLAG TO PREVENT MULTI-KILL BUGS
-        let isTransitioning = false;
-
         function triggerDamage(attacker, defender, isProj, flatDmg = null) {
-            if (!gameActive || defender.hp <= 0 || attacker.hp <= 0 || isTransitioning || isFatalityPromptActive) return false;
+            if (!gameActive || defender.hp <= 0 || attacker.hp <= 0 || isTransitioning || isFatalityPromptActive || isPaused) return false;
             
-            // PERFECT DODGE CHECK
             if (defender.isPlayer && playerStats.manualMode && defender.dodgeTime) {
                 let timeSinceDodge = performance.now() - defender.dodgeTime;
-                if (timeSinceDodge < 400 && !attacker.isUltimate) { // 400ms window
-                    defender.dodgeTime = 0; // consume dodge
+                if (timeSinceDodge < 400 && !attacker.isUltimate) { 
+                    defender.dodgeTime = 0; 
                     playSound('clang'); mainBody.classList.add('parry-flash'); setTimeout(()=>mainBody.classList.remove('parry-flash'), 100);
                     skillDisplay.innerText = "PERFECT DODGE!"; skillDisplay.style.color = "#9b59b6"; skillDisplay.style.textShadow = "0 0 20px #8e44ad, 0 5px 0 #fff"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 800);
                     
-                    // Dodge Healing Perk
                     if(playerStats.perks.healDodge) {
-                        let hAmt = Math.floor(defender.maxHp * 0.1);
-                        defender.hp = Math.min(defender.maxHp, defender.hp + hAmt);
-                        updateHealthBar(defender);
+                        let hAmt = Math.floor(defender.maxHp * 0.1); defender.hp = Math.min(defender.maxHp, defender.hp + hAmt); updateHealthBar(defender);
                         spawnDamageText(defender.id === 'p1' ? defender.baseX : 800 - defender.baseX, 350 - defender.y - 100, `+${hAmt}`, '#2ecc71');
                     }
-
-                    // Slow enemy down & buff player
-                    attacker.el.style.filter = "grayscale(100%) blur(2px)";
-                    attacker.el.style.animationPlayState = 'paused';
-                    defender.tempBonusDmg += 50 * (1 + (playerStats.prestige || 0)); // Huge damage boost for next hit
-                    
+                    attacker.el.style.filter = "grayscale(100%) blur(2px)"; attacker.el.style.animationPlayState = 'paused'; defender.tempBonusDmg += 50 * (1 + (playerStats.prestige || 0)); 
                     setTimeout(() => {
-                        if(gameActive && !isTransitioning && !isFatalityPromptActive) {
-                            attacker.el.style.filter = "";
-                            attacker.el.style.animationPlayState = 'running';
-                            defender.tempBonusDmg = 0; // Remove boost
+                        if(gameActive && !isTransitioning && !isFatalityPromptActive && !isPaused) {
+                            attacker.el.style.filter = ""; attacker.el.style.animationPlayState = 'running'; defender.tempBonusDmg = 0; 
                         }
-                    }, 1500);
-                    return false; // Evade all damage
+                    }, 1500); return false; 
                 }
             }
             
-            let finalDmg = flatDmg !== null ? flatDmg : attacker.dmg;
-            finalDmg = isNaN(finalDmg) ? 15 : finalDmg; 
-            const isUlt = attacker.isUltimate && !isProj;
-            
+            let finalDmg = flatDmg !== null ? flatDmg : attacker.dmg; finalDmg = isNaN(finalDmg) ? 15 : finalDmg; const isUlt = attacker.isUltimate && !isProj;
             if (defender.isInvincible) return false;
 
-            // ELEMENTAL WEAKNESS LOGIC
-            let isWeakness = false;
-            let moveInfo = attacker.currentMove || {};
+            let isWeakness = false; let moveInfo = attacker.currentMove || {};
             if (defenderWeakness === 'ice' && (playerStats.role === 'mage' && moveInfo.isIce)) isWeakness = true;
             if (defenderWeakness === 'earth' && playerStats.role === 'tank') isWeakness = true;
             if (defenderWeakness === 'holy' && playerStats.role === 'paladin') isWeakness = true;
-            if (isWeakness && attacker.isPlayer) {
-                finalDmg = Math.floor(finalDmg * 1.5);
-                spawnDamageText((defender.id === 'p1' ? defender.baseX : 800 - defender.baseX) + 20, 350 - defender.y - 100, "WEAKNESS!", "#66fcf1");
-            }
+            if (isWeakness && attacker.isPlayer) { finalDmg = Math.floor(finalDmg * 1.5); spawnDamageText((defender.id === 'p1' ? defender.baseX : 800 - defender.baseX) + 20, 350 - defender.y - 100, "WEAKNESS!", "#66fcf1"); }
 
-            // FATALITY CHECK - Trigger prompt instead of immediate fatality
             if (attacker.isPlayer && !defender.isPlayer && (defender.hp - finalDmg <= defender.maxHp * 0.15)) {
-                if(!isTransitioning && !isFatalityPromptActive) {
-                    defender.hp = Math.max(1, defender.hp - finalDmg); // Leave them at 1 HP to stay alive during prompt
-                    updateHealthBar(defender);
-                    promptFatality(attacker, defender); 
-                }
+                if(!isTransitioning && !isFatalityPromptActive) { defender.hp = Math.max(1, defender.hp - finalDmg); updateHealthBar(defender); promptFatality(attacker, defender); }
                 return true;
             }
 
             if (defender.isBlocking) {
                 let timeSinceBlock = performance.now() - defender.blockTime;
-                if (timeSinceBlock < 300) { triggerParry(defender, attacker); return false; } 
-                else { finalDmg = Math.max(1, Math.floor(finalDmg * 0.2)); playSound('dodge'); } 
+                if (timeSinceBlock < 300) { triggerParry(defender, attacker); return false; } else { finalDmg = Math.max(1, Math.floor(finalDmg * 0.2)); playSound('dodge'); } 
             } else {
                 playSound(isUlt ? 'heavy' : 'hit'); hitStopFrames = isUlt ? 15 : 5; 
-
                 if (!defender.superArmor || isUlt) { removeStates(defender.el); defender.el.classList.add('hit'); defender.combo = 0; }
-
                 let inflictsFire = playerStats.element === 'fire' || (attacker.isPlayer && playerStats.role === 'mage' && moveInfo.isFire);
                 let inflictsIce = playerStats.element === 'ice' || (attacker.isPlayer && playerStats.role === 'mage' && moveInfo.isIce);
                 let inflictsLightning = playerStats.element === 'lightning';
-                
-                // NEW PERKS SYSTEM
-                let hasVamp = (attacker.isPlayer && playerStats.relics.vamp) || (attacker.currentMove && attacker.currentMove.vamp);
-                let hasThorns = defender.isPlayer && playerStats.relics.thorns;
+                let hasVamp = (attacker.isPlayer && playerStats.relics.vamp) || (attacker.currentMove && attacker.currentMove.vamp); let hasThorns = defender.isPlayer && playerStats.relics.thorns;
 
                 if (attacker.isPlayer && !isProj) {
                     if (inflictsFire && Math.random() < 0.4) { defender.status = 'on-fire'; defender.statusTimer = 60; defender.el.classList.add('on-fire'); }
                     if (inflictsIce && Math.random() < 0.4) { defender.status = 'frozen'; defender.statusTimer = 60; defender.el.classList.add('frozen'); }
                     if (inflictsLightning && Math.random() < 0.2) { defender.status = 'frozen'; defender.statusTimer = 30; defender.el.style.filter = "brightness(2) sepia(1) hue-rotate(180deg)"; } 
                     if (hasVamp) { 
-                        let heal = Math.floor(finalDmg * 0.15);
-                        attacker.hp += heal; if(attacker.hp>attacker.maxHp)attacker.hp=attacker.maxHp; updateHealthBar(attacker); 
+                        let heal = Math.floor(finalDmg * 0.15); attacker.hp += heal; if(attacker.hp>attacker.maxHp)attacker.hp=attacker.maxHp; updateHealthBar(attacker); 
                         spawnDamageText(attacker.id === 'p1' ? attacker.baseX : 800 - attacker.baseX, 350 - attacker.y - 100, `+${heal}`, '#2ecc71');
                     }
                 }
                 
                 if (hasThorns && !isProj && !attacker.isPlayer) { 
-                    let reflect = Math.floor(finalDmg * 0.15);
-                    attacker.hp -= reflect; 
-                    if (attacker.hp < 0) attacker.hp = 0; // Prevent Negative Thorns HP
-                    updateHealthBar(attacker); 
+                    let reflect = Math.floor(finalDmg * 0.15); attacker.hp -= reflect; if (attacker.hp < 0) attacker.hp = 0; updateHealthBar(attacker); 
                     spawnDamageText(attacker.id === 'p1' ? attacker.baseX : 800 - attacker.baseX, 350 - attacker.y - 70, reflect, '#2ecc71');
-                    if(attacker.hp <= 0 && !isTransitioning) { 
-                        isTransitioning = true;
-                        endMatch(true); 
-                        return true; 
-                    } 
+                    if(attacker.hp <= 0 && !isTransitioning) { isTransitioning = true; endMatch(true); return true; } 
                 }
             }
             
-            defender.hp -= finalDmg; 
-            if (defender.hp < 0) defender.hp = 0; // Ensure no negative HP
+            defender.hp -= finalDmg; if (defender.hp < 0) defender.hp = 0;
 
-            // BOSS ENRAGE MECHANIC
             if (enemyType === 'boss' && !defender.isPlayer && defender.hp <= defender.maxHp * 0.3 && !defender.enraged) {
-                defender.enraged = true;
-                defender.mp = 100;
-                defender.el.classList.add('boss-enraged');
-                announceSkill("ENRAGE!");
+                defender.enraged = true; defender.mp = 100; defender.el.classList.add('boss-enraged'); announceSkill("ENRAGE!");
                 skillDisplay.innerText = "BOSS ENRAGE!"; skillDisplay.style.color = "#ff0000"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 1500);
-                playSound('heavy'); playSound('smite');
-                mainBody.classList.add('za-warudo');
-                setTimeout(() => mainBody.classList.remove('za-warudo'), 800);
+                playSound('heavy'); playSound('smite'); mainBody.classList.add('za-warudo'); setTimeout(() => mainBody.classList.remove('za-warudo'), 800);
             }
             
-            // LIMIT BREAK & SECOND WIND 
             if (defender.id === 'p1' && defender.hp < defender.maxHp * 0.15 && !defender.usedLimitBreak && defender.hp > 0) {
-                defender.usedLimitBreak = true;
-                defender.isInvincible = true;
-                updateMana(defender, 100);
-                defender.el.classList.add('limit-break');
-                announceSkill("LIMIT BREAK!");
+                defender.usedLimitBreak = true; defender.isInvincible = true; updateMana(defender, 100); defender.el.classList.add('limit-break'); announceSkill("LIMIT BREAK!");
                 skillDisplay.innerText = "LIMIT BREAK!"; skillDisplay.style.color = "#ff0000"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 1000);
-                playSound('heavy'); playSound('smite');
-                setTimeout(() => {
-                    defender.isInvincible = false;
-                    defender.el.classList.remove('limit-break');
-                }, 5000);
+                playSound('heavy'); playSound('smite'); setTimeout(() => { defender.isInvincible = false; defender.el.classList.remove('limit-break'); }, 5000);
             }
 
             if (defender.hp <= 0 && defender.isPlayer && playerStats.relics.secondWind && !defender.usedSecondWind) {
-                defender.usedSecondWind = true;
-                defender.hp = defender.maxHp * 0.3;
-                playSound('smite');
+                defender.usedSecondWind = true; defender.hp = defender.maxHp * 0.3; playSound('smite');
                 spawnGravityParticles(defender.id === 'p1' ? defender.baseX : 800 - defender.baseX, 50, '#f1c40f', true);
                 skillDisplay.innerText = "SECOND WIND!"; skillDisplay.style.color = "#f1c40f"; skillDisplay.classList.add('show-skill'); setTimeout(() => skillDisplay.classList.remove('show-skill'), 1000);
                 announceSkill("SECOND WIND!");
@@ -2424,39 +2130,19 @@
             
             updateHealthBar(defender);
             
-            let realX = defender.id === 'p1' ? defender.baseX : 800 - defender.baseX;
-            let dmgColor = isUlt ? '#f1c40f' : '#ff4757';
-            let dmgText = finalDmg;
+            let realX = defender.id === 'p1' ? defender.baseX : 800 - defender.baseX; let dmgColor = isUlt ? '#f1c40f' : '#ff4757'; let dmgText = finalDmg;
             if (attacker.isCrit) { 
-                dmgColor = '#9b59b6'; 
-                dmgText = finalDmg + ' CRIT!'; 
-                playSound('heavy'); 
-                
-                // Add micro-shake for normal crits to make them feel impactful
-                mainBody.classList.add('shake-screen'); 
-                setTimeout(() => mainBody.classList.remove('shake-screen'), 150);
+                dmgColor = '#9b59b6'; dmgText = finalDmg + ' CRIT!'; playSound('heavy'); 
+                mainBody.classList.add('shake-screen'); setTimeout(() => mainBody.classList.remove('shake-screen'), 150);
             }
-            
-            // 30% Chance for Anime Impact Frames on Ultimate Crit
-            if (isUlt && Math.random() < 0.3) {
-                document.body.classList.add('impact-frame');
-                playSound('smite');
-                setTimeout(() => document.body.classList.remove('impact-frame'), 150);
-            }
-
+            if (isUlt && Math.random() < 0.3) { document.body.classList.add('impact-frame'); playSound('smite'); setTimeout(() => document.body.classList.remove('impact-frame'), 150); }
             spawnDamageText(realX, 350 - defender.y - 70, dmgText, dmgColor);
 
             if (attacker.isPlayer || attacker === f1 || attacker.id === 'clone') { 
                 let earned = Math.floor(finalDmg / 2);
-                if (earned > 0) {
-                    playerStats.coins += earned; 
-                    updateUI(); 
-                    spawnDamageText(realX + 30, 350 - defender.y - 50, `+${earned} 💰`, '#f1c40f');
-                }
-                // Fill God Meter
+                if (earned > 0) { playerStats.coins += earned; updateUI(); spawnDamageText(realX + 30, 350 - defender.y - 50, `+${earned} 💰`, '#f1c40f'); }
                 f1.godMeter += 5; updateGodMeter();
             } else if (defender.isPlayer) {
-                // Take damage fills God Meter slightly
                 f1.godMeter += 2; updateGodMeter();
             }
             
@@ -2471,65 +2157,50 @@
             }
 
             if (defender.hp <= 0) { 
-                if(!isTransitioning) {
-                    isTransitioning = true;
-                    endMatch(defender === f2); 
-                }
-                return true; 
+                if(!isTransitioning) { isTransitioning = true; endMatch(defender === f2); } return true; 
             }
-            setTimeout(() => { if(gameActive && !defender.superArmor && !isTransitioning && !isFatalityPromptActive) defender.el.classList.remove('hit'); }, 200); return false;
+            setTimeout(() => { if(gameActive && !defender.superArmor && !isTransitioning && !isFatalityPromptActive && !isPaused) defender.el.classList.remove('hit'); }, 200); return false;
         }
 
         function endMatch(playerWon, fromFatality = false) {
             if (!gameActive && !fromFatality) return;
             gameActive = false; isSlowMo = false; isTimeStopped = false; isFatalityPromptActive = false; mainBody.classList.remove('slow-mo'); 
-            
-            // STOP BGM
             bgm.normal.stop(); bgm.boss.stop(); bgm.abyss.stop();
 
             clearTimeout(aiLoopTimer); clearTimeout(spawnerTimer); clearInterval(droneTimer); clearInterval(petTimer); clearTimeout(hazardTimer); clearTimeout(bossAttackTimer); clearTimeout(weatherTimer);
-            document.querySelectorAll('.hazard-warning, .hazard-spikes, .slash-mark, .energy-beam, .boss-warning').forEach(e => e.remove());
+            document.querySelectorAll('.hazard-warning, .hazard-spikes, .slash-mark, .energy-beam, .boss-warning, .particle').forEach(e => e.remove());
+            
+            // WIPE PROJECTILES
+            thrownProjectiles.forEach(p => { if(p.el) p.el.remove(); }); thrownProjectiles = [];
+            activeProps.forEach(p => { if(p.el) p.el.remove(); }); activeProps = [];
+
             holdLeft = false; holdRight = false; updateUI(); 
             document.getElementById('in-fight-controls').style.display = 'none';
             document.getElementById('fatality-prompt').style.display = 'none';
             
             let loser = playerWon ? f2 : f1;
             setTimeout(() => { 
-                loser.el.classList.add('ko'); 
-                let realX = loser.id === 'p1' ? loser.baseX : 800 - loser.baseX;
-                spawnGravityParticles(realX, 100, loser.color, true); 
-                spawnGravityParticles(realX, 100, '#fff', false); 
-                playSound('heavy');
+                loser.el.classList.add('ko'); let realX = loser.id === 'p1' ? loser.baseX : 800 - loser.baseX;
+                spawnGravityParticles(realX, 100, loser.color, true); spawnGravityParticles(realX, 100, '#fff', false); playSound('heavy');
             }, 200);
             
             if(!fromFatality) {
                 announceSkill(playerWon ? "YOU WIN" : "YOU LOSE"); playSound('heavy');
-                skillDisplay.innerText = playerWon ? "VICTORY!" : "DEFEAT"; 
-                skillDisplay.style.color = playerWon ? "#2ecc71" : "#e74c3c";
-                skillDisplay.classList.add('show-skill');
+                skillDisplay.innerText = playerWon ? "VICTORY!" : "DEFEAT"; skillDisplay.style.color = playerWon ? "#2ecc71" : "#e74c3c"; skillDisplay.classList.add('show-skill');
             }
 
             if (playerWon) { 
-                playerStats.coins += (isBossStage ? 150 : 50) + (playerStats.stage * 10); 
-                playSound('coin'); 
-                
+                playerStats.coins += (isBossStage ? 150 : 50) + (playerStats.stage * 10); playSound('coin'); 
                 playerStats.missions.dailyKills++;
                 if (isBossStage) playerStats.missions.monthlyBosses++;
-                
                 if(!inAbyss) playerStats.stage++; 
                 
-                // Boss Drop
-                if (isBossStage && Math.random() < 0.5) { // Increased drop chance
+                if (isBossStage && Math.random() < 0.5) { 
                     setTimeout(() => {
-                        const weapons = ['katana', 'greatsword', 'staff', 'trident', 'titanhammer'];
-                        let dropped = weapons[Math.floor(Math.random() * weapons.length)];
-                        
-                        if (!playerStats.unlockedWeapons.includes(dropped)) playerStats.unlockedWeapons.push(dropped);
-                        playerStats.weapon = dropped;
-                        
+                        const weapons = ['katana', 'greatsword', 'staff', 'trident', 'titanhammer']; let dropped = weapons[Math.floor(Math.random() * weapons.length)];
+                        if (!playerStats.unlockedWeapons.includes(dropped)) playerStats.unlockedWeapons.push(dropped); playerStats.weapon = dropped;
                         document.getElementById('loot-alert').innerText = `🌟 BOSS DROP: ${allWeapons[dropped].toUpperCase()}! 🌟`;
-                        document.getElementById('loot-alert').style.animation = 'none';
-                        void document.getElementById('loot-alert').offsetWidth; 
+                        document.getElementById('loot-alert').style.animation = 'none'; void document.getElementById('loot-alert').offsetWidth; 
                         document.getElementById('loot-alert').style.animation = 'lootPop 4s ease-in forwards';
                         saveProgress(); updateUI(); renderInventory(); playSound('coin');
                     }, 1000);
@@ -2540,30 +2211,18 @@
 
             setTimeout(() => {
                 skillDisplay.classList.remove('show-skill'); 
-                
                 if (inAbyss) {
-                    if (playerWon) {
-                        abyssKills++;
-                        document.getElementById('top-abyss').innerText = abyssKills;
-                        closeShopAndStart();
-                    } else {
+                    if (playerWon) { abyssKills++; document.getElementById('top-abyss').innerText = abyssKills; closeShopAndStart(); } 
+                    else {
                         inAbyss = false;
                         if(abyssKills >= 10) { alert("You survived 10 rounds in the Abyss! Enjoy a FREE MYTHIC PULL!"); pullGacha(true); }
-                        document.getElementById('combat-hud').style.opacity = 0;
-                        document.getElementById('main-shop-view').style.display = 'block';
-                        document.getElementById('shop-overlay').style.display = 'flex';
-                        updateUI();
+                        document.getElementById('combat-hud').style.opacity = 0; document.getElementById('main-shop-view').style.display = 'block'; document.getElementById('shop-overlay').style.display = 'flex'; updateUI();
                     }
                 } else if (playerWon && playerStats.autoNext) {
-                    autoUpgrade(); 
-                    closeShopAndStart();
+                    autoUpgrade(); closeShopAndStart();
                 } else {
-                    document.getElementById('combat-hud').style.opacity = 0;
-                    document.getElementById('main-shop-view').style.display = 'block';
-                    document.getElementById('inventory-view').style.display = 'none';
-                    document.getElementById('tree-view').style.display = 'none';
-                    document.getElementById('missions-view').style.display = 'none';
-                    document.getElementById('shop-overlay').style.display = 'flex';
+                    document.getElementById('combat-hud').style.opacity = 0; document.getElementById('main-shop-view').style.display = 'block'; document.getElementById('inventory-view').style.display = 'none';
+                    document.getElementById('tree-view').style.display = 'none'; document.getElementById('missions-view').style.display = 'none'; document.getElementById('shop-overlay').style.display = 'flex';
                     document.getElementById('next-stage-btn').innerText = playerWon ? "FIGHT NEXT ENEMY" : "RETRY STAGE"; 
                     updateUI();
                 }
@@ -2580,7 +2239,7 @@
                 if (p.life <= 0) { p.el.remove(); gravityParticles.splice(i, 1); }
             }
 
-            if (!gameActive || isFatalityPromptActive) { physicsFrame = requestAnimationFrame(physicsLoop); return; }
+            if (!gameActive || isFatalityPromptActive || isPaused) { physicsFrame = requestAnimationFrame(physicsLoop); return; }
             if (hitStopFrames > 0) { hitStopFrames--; physicsFrame = requestAnimationFrame(physicsLoop); return; }
 
             if (playerStats.manualMode && f1.hp > 0 && !moveCooldown && !isTimeStopped && !isTransitioning) {
@@ -2611,39 +2270,21 @@
                 f.el.style.bottom = f.y + 'px'; f.el.style.setProperty('--y', f.y); 
             });
             
-            // Sync Clone
-            if(playerStats.hasClone) {
-                p1Clone.style.bottom = f1.y + 'px';
-                p1Clone.style.left = (f1.baseX - 40) + 'px';
-            }
-
-            if (playerStats.hasDrone) {
-                const drone = document.getElementById('drone'); drone.style.display = 'block';
-                drone.style.left = (f1.baseX - 40) + 'px'; drone.style.bottom = (f1.y + 60) + 'px';
-            }
+            if(playerStats.hasClone) { p1Clone.style.bottom = f1.y + 'px'; p1Clone.style.left = (f1.baseX - 40) + 'px'; }
+            if (playerStats.hasDrone) { const drone = document.getElementById('drone'); drone.style.display = 'block'; drone.style.left = (f1.baseX - 40) + 'px'; drone.style.bottom = (f1.y + 60) + 'px'; }
 
             const pets = document.querySelectorAll('#pets-container .pet');
-            pets.forEach((petEl, index) => {
-                let targetX = f1.baseX - 40 - (index * 25);
-                petEl.style.left = targetX + 'px';
-            });
+            pets.forEach((petEl, index) => { let targetX = f1.baseX - 40 - (index * 25); petEl.style.left = targetX + 'px'; });
 
-            // REMASTERED COLLISION (REAL SCREEN X COORDINATES)
             [f1, f2].forEach(attacker => {
                 let defender = attacker === f1 ? f2 : f1;
                 if (!attacker.canHit) return;
-                attacker.canHit = false; // consume hit frame
+                attacker.canHit = false; 
                 
-                let attackerRealX = attacker.id === 'p1' ? attacker.baseX : 800 - attacker.baseX;
-                let defenderRealX = defender.id === 'p1' ? defender.baseX : 800 - defender.baseX;
-                
-                let shift = attacker.currentMove ? (attacker.currentMove.shift || 0) : 0;
-                let wepRangeBonus = (attacker.isPlayer && playerStats.weapon !== 'none') ? 50 : 0;
-                let effX = attackerRealX + (attacker.id === 'p1' ? shift : -shift);
-                let dist = Math.abs(effX - defenderRealX);
-                let yDist = Math.abs(attacker.y - defender.y);
+                let attackerRealX = attacker.id === 'p1' ? attacker.baseX : 800 - attacker.baseX; let defenderRealX = defender.id === 'p1' ? defender.baseX : 800 - defender.baseX;
+                let shift = attacker.currentMove ? (attacker.currentMove.shift || 0) : 0; let wepRangeBonus = (attacker.isPlayer && playerStats.weapon !== 'none') ? 50 : 0;
+                let effX = attackerRealX + (attacker.id === 'p1' ? shift : -shift); let dist = Math.abs(effX - defenderRealX); let yDist = Math.abs(attacker.y - defender.y);
                 let range = (attacker.currentMove ? (attacker.currentMove.range || 160) : 160) + wepRangeBonus; 
-                
                 if (attacker.isUltimate) range = Math.max(range, 800); 
 
                 if (dist <= range && yDist <= 160) { 
@@ -2653,8 +2294,7 @@
                         if(enemyType === 'slime' || enemyType === 'giant') dChance = 0.05;
                     }
                     if (defender.isPlayer && playerStats.role === 'assassin') dChance += 0.10;
-                    if (defender.status === 'frozen') dChance /= 2; 
-                    if (isTimeStopped) dChance = 0; 
+                    if (defender.status === 'frozen') dChance /= 2; if (isTimeStopped) dChance = 0; 
                     
                     if (Math.random() < dChance && !defender.isBlocking && !attacker.isUltimate) { 
                         removeStates(defender.el); defender.el.classList.add('dodge'); moveFighter(defender, -40); updateMana(defender, 10); playSound('dodge');
@@ -2662,9 +2302,7 @@
                         return; 
                     }
                     
-                    let sparkX = (attackerRealX + defenderRealX) / 2;
-                    let sparkY = 350 - Math.max(attacker.y, defender.y) - 50;
-
+                    let sparkX = (attackerRealX + defenderRealX) / 2; let sparkY = 350 - Math.max(attacker.y, defender.y) - 50;
                     spark.style.left = sparkX + 'px'; spark.style.top = sparkY + 'px'; 
                     if (attacker.isUltimate) spark.classList.add('mega-spark');
                     spark.classList.add('show-spark'); setTimeout(() => spark.classList.remove('show-spark', 'mega-spark'), 150);
@@ -2731,19 +2369,19 @@
                 
                 // AUDIO: Play Abyss Theme
                 bgm.normal.stop(); bgm.boss.stop();
-                if (!bgm.abyss.playing()) bgm.abyss.play();
+                if (!bgm.abyss.timer) bgm.abyss.play();
                 
             } else {
                 if (isBossStage) {
                     enemyType = 'boss'; 
                     // AUDIO: Play Boss Theme
                     bgm.normal.stop(); bgm.abyss.stop();
-                    if (!bgm.boss.playing()) bgm.boss.play();
+                    if (!bgm.boss.timer) bgm.boss.play();
                 } else {
                     enemyType = enemyPool[(playerStats.stage - 1) % enemyPool.length];
                     // AUDIO: Play Normal Theme
                     bgm.boss.stop(); bgm.abyss.stop();
-                    if (!bgm.normal.playing()) bgm.normal.play();
+                    if (!bgm.normal.timer) bgm.normal.play();
                 }
             }
 
@@ -2897,6 +2535,8 @@
             loadProgress(); 
             updateUI();
             
+            checkDailyReward();
+
             // Generate inventory on load
             renderInventory();
 
@@ -2906,6 +2546,32 @@
             
             requestAnimationFrame(physicsLoop);
         };
+        
+        // --- AUTO PAUSE WHEN TAB IS HIDDEN ---
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                isPaused = true;
+                mainBody.classList.add('is-paused');
+                if(audioCtx && audioCtx.state === 'running') audioCtx.suspend();
+                
+                // Show Pause Text
+                if (gameActive && !isTransitioning && !isFatalityPromptActive) {
+                    skillDisplay.innerText = "PAUSED";
+                    skillDisplay.style.color = "#aaa";
+                    skillDisplay.style.textShadow = "0 5px 0 #000";
+                    skillDisplay.classList.add('show-skill');
+                }
+            } else {
+                isPaused = false;
+                mainBody.classList.remove('is-paused');
+                if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+                
+                // Hide Pause Text
+                if (gameActive && !isTransitioning && !isFatalityPromptActive) {
+                    skillDisplay.classList.remove('show-skill');
+                }
+            }
+        });
     </script>
 </body>
 </html>

@@ -371,6 +371,92 @@
         .ko { animation: death-shatter 1.5s cubic-bezier(0.1, 0.9, 0.2, 1) forwards !important; pointer-events: none; }
         @keyframes death-shatter { 0% { filter: brightness(2) drop-shadow(0 0 10px #fff); transform: scaleX(var(--facing, 1)) rotate(-10deg); opacity: 1; } 20% { filter: brightness(4) drop-shadow(0 0 30px #ff4757); transform: scaleX(var(--facing, 1)) rotate(-90deg) translateY(20px); opacity: 1; } 100% { filter: brightness(0) blur(10px); transform: scaleX(var(--facing, 1)) rotate(-90deg) translateY(50px) scale(0.2); opacity: 0; } }
         .charge { --shift: 0; } .charge .torso { transform: rotate(10deg); } .charge .front-arm { transform: rotate(-20deg); } .charge .front-arm .lower { transform: rotate(-30deg); } .charge .back-arm { transform: rotate(20deg); } .charge .back-arm .lower { transform: rotate(-30deg); } .charge .front-leg { transform: rotate(30deg); } .charge .front-leg .lower { transform: rotate(-30deg); } .charge .back-leg { transform: rotate(-30deg); } .charge .back-leg .lower { transform: rotate(30deg); }
+
+        /* ==========================================
+           RESPONSIVE BUTTON SIZING (PC, Tablet, Mobile)
+        ========================================== */
+        
+        /* Prevent zoom delay on mobile taps */
+        button, .ctrl-btn { 
+            touch-action: manipulation; 
+            box-sizing: border-box; 
+        } 
+
+        /* Fatality Button */
+        #fatality-btn { 
+            font-size: clamp(1.8rem, 6vw, 3.5rem) !important; 
+            padding: clamp(15px, 4vw, 25px) clamp(20px, 8vw, 50px) !important; 
+        }
+
+        /* Top Audio Button */
+        #audio-btn { 
+            padding: clamp(6px, 2vw, 10px) clamp(12px, 3vw, 20px) !important; 
+            font-size: clamp(0.7rem, 2.5vw, 0.9rem) !important; 
+        }
+
+        /* In-Fight Controls */
+        #in-fight-controls { 
+            bottom: clamp(60px, 15vh, 90px) !important; 
+            right: clamp(10px, 3vw, 20px) !important; 
+            gap: clamp(6px, 1.5vh, 12px) !important; 
+        }
+        #in-fight-controls button { 
+            padding: clamp(8px, 2vh, 12px) clamp(12px, 3vw, 18px) !important; 
+            font-size: clamp(0.75rem, 2.5vw, 0.95rem) !important; 
+        }
+
+        /* Main Shop Action Buttons (Inventory, Tree, Missions, Abyss) */
+        .main-action-btns { 
+            gap: clamp(5px, 1.5vw, 10px) !important; 
+        }
+        .main-action-btns button { 
+            padding: clamp(8px, 2vw, 12px) !important; 
+            font-size: clamp(0.65rem, 2.5vw, 0.9rem) !important; 
+            min-width: calc(50% - 10px) !important; 
+            flex: 1 1 calc(50% - 10px) !important; 
+        }
+
+        /* Buy & Next Buttons */
+        .buy-btn { 
+            padding: clamp(6px, 1.5vw, 8px) !important; 
+            font-size: clamp(0.7rem, 2.5vw, 0.85rem) !important; 
+        }
+        .next-btn { 
+            padding: clamp(10px, 3vw, 15px) !important; 
+            font-size: clamp(0.9rem, 3.5vw, 1.2rem) !important; 
+        }
+
+        /* Mobile Action Pads */
+        @media (max-width: 600px) {
+            #mobile-controls { 
+                padding: 0 10px !important; 
+                bottom: 10px !important; 
+            }
+            .ctrl-btn { 
+                width: clamp(45px, 12vw, 60px) !important; 
+                height: clamp(45px, 12vw, 60px) !important; 
+                font-size: clamp(18px, 5vw, 24px) !important; 
+            }
+            .mini-btn { 
+                width: clamp(35px, 10vw, 48px) !important; 
+                height: clamp(35px, 10vw, 48px) !important; 
+                font-size: clamp(14px, 4vw, 18px) !important; 
+            }
+            .d-pad, .action-pad { 
+                gap: clamp(6px, 2vw, 12px) !important; 
+            }
+            
+            /* Make shop grid 2 columns instead of 3 on small phones to save space */
+            .shop-grid { grid-template-columns: 1fr 1fr !important; }
+            .shop-item.magic, .shop-item.gacha, .shop-item.cosmetic { grid-column: span 2 !important; }
+        }
+        
+        @media (max-width: 380px) {
+            /* For very small phones, stack the shop items and buttons vertically */
+            .shop-grid { grid-template-columns: 1fr !important; }
+            .shop-item.magic, .shop-item.gacha, .shop-item.cosmetic { grid-column: span 1 !important; }
+            .main-action-btns button { min-width: 100% !important; flex: 1 1 100% !important; }
+        }
     </style>
 </head>
 <body id="main-body">

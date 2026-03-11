@@ -1274,12 +1274,45 @@
                 playerStats.coins -= cost;
                 playerStats.missions.dailyGacha++;
                 
-                const pool = ['dualdaggers', 'scythe', 'trident', 'titanhammer', 'keris', 'galaxy', 'inferno', 'thunder', 'void', 'kitsune'];
-                const drop = pool[Math.floor(Math.random() * pool.length)];
+                // 1. Define the Rarity Pools
+                const normalPool = ['dualdaggers', 'keris', 'titanhammer'];
+                const rarePool = ['trident', 'scythe'];
+                const epicPool = ['galaxy', 'thunder'];
+                const legendaryPool = ['inferno', 'void', 'kitsune'];
+                
+                // 2. Roll a number between 0 and 100
+                let roll = Math.random() * 100;
+                let drop = '';
+                let rarityName = '';
+                let rarityColor = '';
+                
+                // 3. Determine Rarity and Color
+                if (roll <= 5) { 
+                    // 5% chance for Legendary
+                    drop = legendaryPool[Math.floor(Math.random() * legendaryPool.length)];
+                    rarityName = "LEGENDARY";
+                    rarityColor = "#f1c40f"; // Gold
+                } else if (roll <= 20) { 
+                    // 15% chance for Epic (5 to 20)
+                    drop = epicPool[Math.floor(Math.random() * epicPool.length)];
+                    rarityName = "EPIC";
+                    rarityColor = "#9b59b6"; // Purple
+                } else if (roll <= 50) { 
+                    // 30% chance for Rare (20 to 50)
+                    drop = rarePool[Math.floor(Math.random() * rarePool.length)];
+                    rarityName = "RARE";
+                    rarityColor = "#3498db"; // Blue
+                } else { 
+                    // 50% chance for Normal (50 to 100)
+                    drop = normalPool[Math.floor(Math.random() * normalPool.length)];
+                    rarityName = "NORMAL";
+                    rarityColor = "#bdc3c7"; // Silver
+                }
                 
                 let isAura = ['galaxy', 'inferno', 'thunder', 'void'].includes(drop);
                 let isTail = drop === 'kitsune';
                 
+                // 4. Add to Inventory
                 if (isTail) {
                     if (!playerStats.unlockedCosmetics.tails.includes(drop)) playerStats.unlockedCosmetics.tails.push(drop);
                 } else if (!isAura) {
@@ -1290,10 +1323,15 @@
                 
                 let dropName = isTail ? "Kitsune Nine Tails" : (isAura ? allAuras[drop] : allWeapons[drop]);
                 
-                document.getElementById('loot-alert').innerText = `🎰 MYTHIC DROP: ${dropName.toUpperCase()}! 🎰`;
-                document.getElementById('loot-alert').style.animation = 'none';
-                void document.getElementById('loot-alert').offsetWidth; 
-                document.getElementById('loot-alert').style.animation = 'lootPop 4s ease-in forwards';
+                // 5. Update the UI with Rarity Colors
+                const alertBox = document.getElementById('loot-alert');
+                alertBox.innerText = `🎰 ${rarityName} DROP: ${dropName.toUpperCase()}! 🎰`;
+                alertBox.style.color = rarityColor;
+                alertBox.style.textShadow = `0 0 30px ${rarityColor}, 0 5px 0 #000`; // Dynamic glow
+                
+                alertBox.style.animation = 'none';
+                void alertBox.offsetWidth; // Trigger reflow to restart animation
+                alertBox.style.animation = 'lootPop 4s ease-in forwards';
                 
                 updateUI(); renderInventory(); renderCosmetics(); saveProgress(); playSound('coin');
             } else {
@@ -1306,7 +1344,11 @@
             let hudStats = "";
             if (playerStats.weapon !== 'none') {
                 let wLvl = playerStats.weaponLevels[playerStats.weapon] || 1;
-                hudStats += `${allWeapons[playerStats.weapon]} ${wLvl>=10?'MAX':'+'+(wLvl-1)}`;
+                if (wLvl >= 10) {
+                    hudStats += `<span style="color:#ff4757; text-shadow: 0 0 10px #ff4757;">[SUPER LEGENDARY] ${allWeapons[playerStats.weapon]} MAX</span>`;
+                } else {
+                    hudStats += `${allWeapons[playerStats.weapon]} +${(wLvl-1)}`;
+                }
             } else {
                 hudStats += "Unarmed";
             }
@@ -1314,7 +1356,7 @@
             else if (playerStats.prestige > 0) hudStats += ` | God Aura`;
             
             let displayEl = document.getElementById('p1-equip-display');
-            if(displayEl) displayEl.innerText = hudStats;
+            if(displayEl) displayEl.innerHTML = hudStats; // Changed to innerHTML to allow color styling
 
             let finalDmgEst = getTotalDamageEst();
             let actStats = getActiveStats();
@@ -1437,7 +1479,14 @@
             for(let key in allWeapons) {
                 if (playerStats.unlockedWeapons.includes(key)) {
                     let lvl = playerStats.weaponLevels[key] || 1;
-                    let html = `<div class="inv-item unlocked ${playerStats.weapon === key ? 'equipped' : ''}"><div><h4>${allWeapons[key]}</h4><p style="margin:0;font-size:0.7rem;">+${(lvl-1)*20}% DMG Lvl ${lvl}</p></div>`;
+                    let isMax = lvl >= 10;
+                    
+                    // Style it as Super Legendary if Maxed
+                    let rarityText = isMax ? `<span style="color:#ff4757; font-weight:900; text-shadow:0 0 5px #ff4757; letter-spacing:1px;">SUPER LEGENDARY</span>` : `Lvl ${lvl}`;
+                    let nameColor = isMax ? '#ff4757' : '#fff';
+                    let borderStyle = isMax ? 'border-color:#ff4757; box-shadow: inset 0 0 15px rgba(255,71,87,0.3);' : '';
+                    
+                    let html = `<div class="inv-item unlocked ${playerStats.weapon === key ? 'equipped' : ''}" style="${borderStyle}"><div><h4 style="color:${nameColor}; text-shadow:0 2px 4px #000;">${allWeapons[key]}</h4><p style="margin:0;font-size:0.75rem;">+${(lvl-1)*20}% DMG | ${rarityText}</p></div>`;
                     if (playerStats.weapon !== key) html += `<button class="buy-btn" onclick="equipWeapon('${key}')">Equip</button>`;
                     else html += `<span style="color:#2ecc71; font-weight:bold;">Equipped</span>`;
                     html += `</div>`;
@@ -1522,8 +1571,25 @@
                 playerStats.coins -= costC;
                 playerStats.ironOres -= costO;
                 playerStats.weaponLevels[w] = (playerStats.weaponLevels[w] || 1) + 1;
+                let newLvl = playerStats.weaponLevels[w];
+                
                 playSound('clang');
-                showAutoToast(`🔨 ${allWeapons[w]} upgraded to Level ${playerStats.weaponLevels[w]}!`);
+
+                // Trigger SUPER LEGENDARY popup if hitting Max Level (10)
+                if (newLvl >= 10) {
+                    const alertBox = document.getElementById('loot-alert');
+                    alertBox.innerText = `🔥 SUPER LEGENDARY: ${allWeapons[w].toUpperCase()} MAXED! 🔥`;
+                    alertBox.style.color = "#ff4757"; // Red color
+                    alertBox.style.textShadow = `0 0 30px #ff4757, 0 5px 0 #000`; 
+                    
+                    alertBox.style.animation = 'none';
+                    void alertBox.offsetWidth; // Trigger reflow
+                    alertBox.style.animation = 'lootPop 4s ease-in forwards';
+                    showAutoToast(`🔨 ${allWeapons[w]} reached MAX LEVEL!`);
+                } else {
+                    showAutoToast(`🔨 ${allWeapons[w]} upgraded to Level ${newLvl}!`);
+                }
+                
                 saveProgress();
                 updateUI();
                 renderForge();
@@ -1543,6 +1609,17 @@
             if(role === 'archer') return "Passive: High Range, Evasive Skills";
             if(role === 'mercenary') return "Passive: Tech Damage, Stun Skills";
             return "Passive: Balanced (No Extra Stats)";
+        };
+
+         const getPlayerRank = (stage) => {
+            if (stage >= 2000) return { name: 'GOD', color: '#f1c40f', glow: '#f39c12' }; 
+            if (stage >= 1000) return { name: 'MYTHIC', color: '#ff00ff', glow: '#cc00cc' }; 
+            if (stage >= 500)  return { name: 'LEGEND', color: '#e74c3c', glow: '#c0392b' }; 
+            if (stage >= 250)  return { name: 'GRANDMASTER', color: '#9b59b6', glow: '#8e44ad' }; 
+            if (stage >= 100)  return { name: 'MASTER', color: '#3498db', glow: '#2980b9' }; 
+            if (stage >= 50)   return { name: 'WARRIOR', color: '#2ecc71', glow: '#27ae60' }; 
+            if (stage >= 20)   return { name: 'FIGHTER', color: '#bdc3c7', glow: '#95a5a6' }; 
+            return { name: 'NOVICE', color: '#cd7f32', glow: '#8b4513' }; 
         };
 
         const updateUI = () => {
@@ -1567,8 +1644,9 @@
             
             let rText = document.getElementById('role-stats-text');
             if(rText) rText.innerText = getRoleStatsText(playerStats.role || 'balanced');
-            
-            document.getElementById('stage-number').innerText = playerStats.stage; document.getElementById('stat-hp').innerText = playerStats.maxHp;
+            let currentRank = getPlayerRank(playerStats.stage);
+            document.getElementById('stage-number').innerHTML = `${playerStats.stage} <span style="font-size: 0.75em; color: ${currentRank.color}; text-shadow: 0 0 10px ${currentRank.glow};">(${currentRank.name})</span>`;
+            document.getElementById('stat-hp').innerText = playerStats.maxHp;
             document.getElementById('stat-dmg').innerText = playerStats.baseDmgBonus; document.getElementById('stat-dodge').innerText = Math.round(playerStats.dodgeChance * 100);
             document.getElementById('stat-crit').innerText = Math.round(playerStats.critChance * 100); document.getElementById('stat-mana').innerText = playerStats.manaRegen;
             document.getElementById('stat-atkspd').innerText = playerStats.atkSpd.toFixed(1);
@@ -2901,7 +2979,8 @@
                 if(f.id === 'p2') f.el.style.opacity = 1;
             });
 
-            document.getElementById('p1-name-display').innerText = "SydaR";
+            let combatRank = getPlayerRank(playerStats.stage);
+            document.getElementById('p1-name-display').innerHTML = `SydaR <span style="font-size: 0.6em; color: ${combatRank.color}; text-shadow: 0 0 10px ${combatRank.glow}; vertical-align: middle; letter-spacing: 0;">[${combatRank.name}]</span>`;
             document.getElementById('enemy-name-display').innerText = isBossStage ? "BOSS" : enemyType.toUpperCase();
             
             updateHUDStats();

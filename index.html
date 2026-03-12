@@ -35,28 +35,68 @@
         .stage-display { font-size: 1.3rem; color: #fff; text-shadow: 0 2px 5px #000, 0 0 10px rgba(255,255,255,0.5); text-align: center; letter-spacing: 1px; }
         .weakness-hint { font-size: 0.9rem; color: #66fcf1; text-shadow: 0 0 8px #00d2ff, 0 2px 3px #000; margin-left: 10px; font-style: italic; }
 
-        /* Combat HUD */
-        #combat-hud { position: absolute; top: 65px; left: 0; width: 100%; height: 90px; display: flex; justify-content: space-between; align-items: flex-start; padding: 15px 30px; box-sizing: border-box; z-index: 500; pointer-events: none; opacity: 0; transition: opacity 0.5s; background: linear-gradient(to bottom, rgba(11, 12, 16, 0.8) 0%, transparent 100%); }
-        .hud-side { width: 40%; display: flex; flex-direction: column; gap: 4px; }
-        .hud-side.right { align-items: flex-end; text-align: right; }
-        .hud-name { font-size: 1.5rem; color: #fff; text-shadow: 2px 2px 4px #000, 0 0 15px rgba(255,255,255,0.6); font-style: italic; margin-bottom: -2px; letter-spacing: 1px; }
-        .hud-equip-stats { font-size: 0.8rem; color: #f1c40f; text-shadow: 1px 1px 3px #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-weight: bold; letter-spacing: 0.5px; }
-        .timer-vs { font-size: 2.8rem; color: #f1c40f; text-shadow: 0 5px 15px #000, 0 0 25px #f39c12; font-weight: 900; margin-top: 5px; font-style: italic; }
+        /* REMASTERED COMBAT HUD */
+        #combat-hud { 
+            position: absolute; top: 60px; left: 0; width: 100%; height: auto; 
+            display: flex; justify-content: space-between; padding: 15px 4vw; 
+            box-sizing: border-box; z-index: 500; pointer-events: none; opacity: 0; 
+            transition: opacity 0.5s; 
+        }
         
-        .bar-bg { position: relative; width: 100%; height: 24px; background: rgba(0,0,0,0.8); border-radius: 6px; overflow: hidden; display: flex; align-items: center; box-shadow: inset 0 3px 8px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5); border: 2px solid rgba(102, 252, 241, 0.5); }
-        .hud-side.right .bar-bg { border-color: rgba(231, 76, 60, 0.5); justify-content: flex-end; }
-        .hp-bar { position: absolute; left: 0; height: 100%; width: 100%; background: linear-gradient(to bottom, #4cd137 0%, #2ecc71 40%, #27ae60 100%); transition: width 0.2s ease, background 0.3s; z-index: 1; box-shadow: inset 0 2px 5px rgba(255,255,255,0.6), inset 0 -2px 5px rgba(0,0,0,0.4); border-radius: 4px; }
-        .hud-side.right .hp-bar, .hud-side.right .mp-bar { right: 0; left: auto; }
-        .hp-text { position: relative; z-index: 2; font-size: 15px; color: white; text-shadow: 1px 1px 4px black, 0 0 8px black; font-weight: 900; padding: 0 12px; }
-        .mp-bar { position: absolute; left: 0; height: 100%; width: 100%; background: linear-gradient(to bottom, #00f2fe 0%, #4facfe 50%, #0099cc 100%); transition: width 0.2s ease; box-shadow: inset 0 2px 5px rgba(255,255,255,0.6), inset 0 -2px 5px rgba(0,0,0,0.4), 0 0 15px #00d2ff; }
-        .god-bar { position: absolute; left: 0; height: 100%; width: 0%; background: linear-gradient(to bottom, #fff 0%, #f1c40f 50%, #d35400 100%); transition: width 0.2s ease; box-shadow: 0 0 20px #f1c40f; }
+        .timer-vs { 
+            position: absolute; left: 50%; top: 15px; transform: translateX(-50%); 
+            font-size: 2.5rem; color: #f1c40f; text-shadow: 0 5px 15px #000, 0 0 25px #f39c12; 
+            font-weight: 900; font-style: italic; z-index: 10; 
+            background: rgba(11, 12, 16, 0.7); border: 2px solid rgba(241,196,15,0.5); 
+            padding: 5px 20px; border-radius: 20px; backdrop-filter: blur(5px);
+        }
 
-        @keyframes god-ready-pulse { 0% { box-shadow: 0 0 15px #f1c40f; filter: brightness(1); } 50% { box-shadow: 0 0 30px #fff, 0 0 20px #f1c40f; filter: brightness(1.5); } 100% { box-shadow: 0 0 15px #f1c40f; filter: brightness(1); } }
+        .hud-side { width: 42%; display: flex; flex-direction: column; gap: 6px; }
+        .hud-side.right-side { align-items: flex-end; text-align: right; }
+        
+        .hud-header { display: flex; justify-content: flex-start; align-items: flex-end; }
+        .hud-header.right { justify-content: flex-end; }
+        .hud-name { 
+            font-size: 1.3rem; color: #fff; text-shadow: 2px 2px 4px #000; font-style: italic; 
+            letter-spacing: 1px; background: rgba(0,0,0,0.6); padding: 4px 15px; 
+            border-radius: 8px 8px 0 0; border: 1px solid rgba(102,252,241,0.3); border-bottom: none; 
+            display: inline-block; margin-bottom: -6px; z-index: 2; 
+        }
+        .right-side .hud-name { border-color: rgba(231,76,60,0.3); }
+        .hud-rank { font-size: 0.65em; display: inline-block; margin-left: 8px; vertical-align: middle; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.5); letter-spacing: 0; }
+
+        .bar-bg { position: relative; width: 100%; background: rgba(0,0,0,0.8); overflow: hidden; display: flex; align-items: center; box-shadow: 0 5px 15px rgba(0,0,0,0.8); z-index: 3; }
+        .hp-bg-left { height: 30px; border: 2px solid #45a29e; border-radius: 0 15px 15px 0; border-left: none; }
+        .hp-bg-right { height: 30px; border: 2px solid #e74c3c; border-radius: 15px 0 0 15px; border-right: none; justify-content: flex-end; }
+        
+        .hp-bar { position: absolute; top:0; left: 0; height: 100%; width: 100%; background: linear-gradient(to right, #27ae60, #4cd137); transition: width 0.2s ease, background 0.3s; z-index: 1; box-shadow: inset 0 2px 5px rgba(255,255,255,0.4); }
+        .hp-bar-right { left: auto; right: 0; background: linear-gradient(to left, #8b0000, #ff4757) !important; transform-origin: right; }
+        
+        .hp-text { position: relative; z-index: 2; font-size: 16px; color: white; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 8px black; font-weight: 900; padding: 0 15px; letter-spacing: 1px; }
+
+        .sub-bars { width: 80%; display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
+        .sub-bars.right { align-items: flex-end; }
+        .sub-bg { height: 10px; border: 1px solid rgba(0, 210, 255, 0.5); border-radius: 0 0 8px 8px; border-top: none; }
+        .right-side .sub-bg { border-radius: 0 0 8px 8px; border-top: none; justify-content: flex-end; }
+        
+        .mp-bar { position: absolute; left: 0; height: 100%; width: 100%; background: linear-gradient(to right, #0099cc, #00f2fe); transition: width 0.2s ease; box-shadow: inset 0 2px 5px rgba(255,255,255,0.4); }
+        .right-mp { left: auto; right: 0; background: linear-gradient(to left, #0099cc, #00f2fe); }
+        
+        .god-bar { position: absolute; left: 0; height: 100%; width: 0%; background: linear-gradient(to right, #d35400, #f1c40f); transition: width 0.2s ease; box-shadow: inset 0 2px 5px rgba(255,255,255,0.4), 0 0 10px #f1c40f; }
+
+        .hud-equip-stats { 
+            font-size: 0.8rem; color: #f1c40f; text-shadow: 1px 1px 3px #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-weight: bold; letter-spacing: 0.5px; background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 5px; 
+            display: inline-block; width: fit-content; border: 1px solid rgba(255,255,255,0.1); margin-top: 2px; 
+        }
+        .right-side .hud-equip-stats { margin-left: auto; }
+
+        @keyframes god-ready-pulse { 0% { box-shadow: inset 0 2px 5px rgba(255,255,255,0.4), 0 0 15px #f1c40f; filter: brightness(1); } 50% { box-shadow: inset 0 2px 5px rgba(255,255,255,0.4), 0 0 30px #fff, 0 0 20px #f1c40f; filter: brightness(1.5); } 100% { box-shadow: inset 0 2px 5px rgba(255,255,255,0.4), 0 0 15px #f1c40f; filter: brightness(1); } }
         .god-bar.ready { animation: god-ready-pulse 0.5s infinite; }
 
-        #combat-hud.boss-active .hud-side.right .bar-bg { height: 38px; border: 3px solid #e74c3c; box-shadow: 0 0 25px rgba(231, 76, 60, 0.6), inset 0 0 15px rgba(0,0,0,0.9); }
-        #combat-hud.boss-active .hud-side.right .hp-bar { background: linear-gradient(to bottom, #ff4757 0%, #c0392b 50%, #8b0000 100%) !important; }
-        #combat-hud.boss-active .hud-side.right .hp-text { font-size: 20px; font-style: italic; }
+        #combat-hud.boss-active .hp-bg-right { height: 40px; border: 3px solid #e74c3c; box-shadow: 0 0 25px rgba(231, 76, 60, 0.6), inset 0 0 15px rgba(0,0,0,0.9); }
+        #combat-hud.boss-active .hp-bar-right { background: linear-gradient(to left, #8b0000, #ff4757) !important; }
+        #combat-hud.boss-active .right-side .hp-text { font-size: 24px; font-style: italic; }
 
         #danger-vignette { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 450; opacity: 0; box-shadow: inset 0 0 120px rgba(231, 76, 60, 0); transition: opacity 0.5s; }
         .danger-active { opacity: 1 !important; animation: pulse-danger 0.8s infinite alternate ease-in-out; }
@@ -135,8 +175,8 @@
         .beam-core { width: 100%; height: 100%; background: linear-gradient(to bottom, transparent, #fff 40%, #fff 60%, transparent); border-radius: 30px; animation: beam-pulse 0.1s infinite alternate; }
         @keyframes beam-pulse { 0% { transform: scaleY(0.8); opacity: 0.8; } 100% { transform: scaleY(1.2); opacity: 1; } }
 
-        /* V3 Action Buttons */
-        #in-fight-controls { position: absolute; bottom: 90px; right: 20px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
+        /* V3 Action Buttons - MOVED UP TO AVOID HUD/MOBILE CONTROLS BLOCKING */
+        #in-fight-controls { position: absolute; top: 170px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; bottom: auto; }
         #flee-btn, #manual-god-btn, #quick-potion-btn, #quick-inv-btn, #quick-abyss-btn { background: rgba(31, 40, 51, 0.85); backdrop-filter: blur(5px); color: #fff; border: 2px solid #45a29e; padding: 12px 18px; font-family: 'Arial Black', sans-serif; font-size: 0.95rem; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); font-style: italic; letter-spacing: 1px; text-transform: uppercase; }
         #flee-btn { border-color: #e74c3c; color: #ff7979; }
         #flee-btn:hover { background: rgba(231, 76, 60, 0.2); transform: translateX(-5px); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
@@ -156,7 +196,7 @@
         #fatality-prompt { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; flex-direction: column; align-items: center; display: none; }
         #fatality-btn { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; border: 4px solid #fff; font-size: 3.5rem; font-family: 'Arial Black', sans-serif; font-style: italic; padding: 25px 50px; cursor: pointer; text-shadow: 0 5px 10px #000; box-shadow: 0 10px 40px rgba(231, 76, 60, 0.8), inset 0 0 20px rgba(255,255,255,0.5); border-radius: 20px; animation: pulse-danger 0.5s infinite alternate; transition: transform 0.1s; letter-spacing: 3px; }
         #fatality-btn:active { transform: scale(0.9); }
-        .fatality-timer-container { width: 100%; height: 12px; background: rgba(0,0,0,0.8); margin-margin: 20px; border-radius: 6px; overflow: hidden; box-shadow: 0 0 15px #000; border: 1px solid #555;}
+        .fatality-timer-container { width: 100%; height: 12px; background: rgba(0,0,0,0.8); margin-top: 20px; border-radius: 6px; overflow: hidden; box-shadow: 0 0 15px #000; border: 1px solid #555;}
         #fatality-timer-bar { width: 100%; height: 100%; background: linear-gradient(to right, #f1c40f, #e74c3c); }
 
         /* V3 SHOP OVERLAY & GLASSMORPHISM */
@@ -223,6 +263,9 @@
         
         .text-left { text-align: left; }
 
+        /* Sticky Close Buttons */
+        .sticky-close-btn { position: sticky; bottom: 10px; z-index: 100; border: 2px solid #fff; }
+
         /* V3 Mobile Controls */
         #mobile-controls { position: absolute; bottom: 20px; width: 100%; max-width: 800px; display: none; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 1000; pointer-events: none; transition: opacity 0.5s; }
         .d-pad, .action-pad { display: flex; gap: 12px; pointer-events: auto; align-items: center; }
@@ -238,7 +281,7 @@
         .ult-btn { background: rgba(231, 76, 60, 0.15); border-color: rgba(231, 76, 60, 0.5); box-shadow: 0 6px 0 rgba(146, 43, 33, 0.6), inset 0 0 15px rgba(231, 76, 60, 0.2); }
         .ult-btn:active { box-shadow: 0 0 0 transparent, inset 0 0 20px rgba(231, 76, 60, 0.5); border-color: #e74c3c; }
 
-        .combo-counter { position: absolute; top: 140px; font-size: 3.5rem; color: #f1c40f; text-shadow: 0 5px 0 #c0392b, 0 0 30px #f1c40f; opacity: 0; transform: scale(0.5); transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; font-style: italic; pointer-events: none; }
+        .combo-counter { position: absolute; top: 230px; font-size: 3.5rem; color: #f1c40f; text-shadow: 0 5px 0 #c0392b, 0 0 30px #f1c40f; opacity: 0; transform: scale(0.5); transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 100; font-style: italic; pointer-events: none; }
         #combo-p1 { left: 8%; } #combo-p2 { right: 8%; }
         .show-combo { opacity: 1; transform: scale(1) rotate(-8deg); }
         #skill-display { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%) scale(0.5); font-size: 4rem; font-weight: 900; color: #fff; text-shadow: 0 0 30px #e74c3c, 0 8px 0 #c0392b; opacity: 0; z-index: 100; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-align: center; pointer-events: none; width: 100%; letter-spacing: 2px; }
@@ -418,7 +461,7 @@
 
         #fatality-btn { font-size: clamp(1.8rem, 6vw, 3.5rem) !important; padding: clamp(15px, 4vw, 25px) clamp(20px, 8vw, 50px) !important; }
         #audio-btn { padding: clamp(6px, 2vw, 10px) clamp(12px, 3vw, 20px) !important; font-size: clamp(0.7rem, 2.5vw, 0.9rem) !important; }
-        #in-fight-controls { bottom: clamp(60px, 15vh, 90px) !important; right: clamp(10px, 3vw, 20px) !important; gap: clamp(6px, 1.5vh, 12px) !important; }
+        #in-fight-controls { position: absolute; top: 170px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; bottom: auto; }
         #in-fight-controls button { padding: clamp(8px, 2vh, 12px) clamp(12px, 3vw, 18px) !important; font-size: clamp(0.75rem, 2.5vw, 0.95rem) !important; }
         .main-action-btns { gap: clamp(5px, 1.5vw, 10px) !important; }
         .main-action-btns button { padding: clamp(8px, 2vw, 12px) !important; font-size: clamp(0.65rem, 2.5vw, 0.9rem) !important; min-width: calc(50% - 10px) !important; flex: 1 1 calc(50% - 10px) !important; }
@@ -443,12 +486,12 @@
         @media (max-width: 820px) {
             .top-bar { padding: 6px 10px !important; gap: 5px !important; flex-wrap: nowrap !important; overflow-x: auto !important; white-space: nowrap !important; }
             .stats-display, .stage-display { font-size: clamp(0.75rem, 2.5vw, 1rem) !important; gap: 10px !important; }
-            #combat-hud { padding: 10px 15px !important; top: 50px !important; height: 70px !important; }
-            .hud-name { font-size: clamp(1rem, 4vw, 1.5rem) !important; }
+            #combat-hud { padding: 10px 15px !important; top: 50px !important; }
+            .hud-name { font-size: clamp(0.9rem, 3vw, 1.3rem) !important; }
             .timer-vs { font-size: clamp(1.2rem, 5vw, 2.8rem) !important; margin-top: 8px !important; }
             .hp-text { font-size: clamp(10px, 3vw, 15px) !important; padding: 0 5px !important; }
             .hud-equip-stats { font-size: clamp(0.55rem, 2vw, 0.8rem) !important; }
-            #in-fight-controls { bottom: 130px !important; transform: scale(0.85); transform-origin: bottom right; }
+            #in-fight-controls { top: 140px !important; right: 10px !important; transform: scale(0.85); transform-origin: top right; }
             .shop-panel { padding: 15px 10px !important; border-radius: 12px !important; max-height: 92vh !important; }
             .shop-panel h1 { font-size: clamp(1.4rem, 6vw, 2.2rem) !important; }
             .shop-tabs { margin-bottom: 10px !important; padding-bottom: 2px !important; }
@@ -456,7 +499,7 @@
             .shop-item h3 { font-size: clamp(0.85rem, 3.5vw, 1rem) !important; }
             .shop-item p { font-size: clamp(0.7rem, 2.5vw, 0.8rem) !important; }
             #skill-display { font-size: clamp(1.8rem, 8vw, 4rem) !important; top: 25% !important; }
-            .combo-counter { font-size: clamp(1.8rem, 6vw, 3.5rem) !important; top: 90px !important; }
+            .combo-counter { font-size: clamp(1.8rem, 6vw, 3.5rem) !important; top: 180px !important; }
             .loot-banner { font-size: clamp(1.2rem, 5vw, 2.2rem) !important; width: 90% !important; }
             #reward-popup, #afk-popup { width: 90% !important; padding: 20px !important; }
             #reward-popup h2, #afk-popup h2 { font-size: clamp(1.5rem, 6vw, 2rem) !important; }
@@ -464,7 +507,6 @@
         
         @media (max-width: 480px) {
             #mobile-controls { bottom: 10px !important; }
-            #in-fight-controls { bottom: 110px !important; transform: scale(0.75); }
             .ctrl-btn { width: 50px !important; height: 50px !important; font-size: 20px !important; }
             .mini-btn { width: 40px !important; height: 40px !important; font-size: 16px !important; }
             .d-pad, .action-pad { gap: 8px !important; }
@@ -492,21 +534,36 @@
     </div>
 
     <div id="combat-hud">
-        <div class="hud-side">
-            <div class="hud-name" id="p1-name-display">SydaR</div>
-            <div class="hud-equip-stats" id="p1-equip-display"></div>
-            <div class="hud-equip-stats" id="p1-combat-stats" style="color:#2ecc71; font-size: 0.75rem; text-shadow: 1px 1px 2px #000; margin-bottom: 2px;"></div>
-            <div class="bar-bg" style="margin-top:2px;"><div class="hp-bar" id="hp-bar-1"></div><div class="hp-text" id="hp-text-1">100</div></div>
-            <div class="bar-bg" style="height:8px; margin-top:4px; border-color: rgba(0, 210, 255, 0.5);"><div class="mp-bar" id="mp-bar-1"></div></div>
-            <div class="bar-bg" style="height:4px; margin-top:4px; background:rgba(0,0,0,0.8); border: 1px solid rgba(241, 196, 15, 0.5);"><div class="god-bar" id="god-bar-1"></div></div>
-        </div>
         <div class="timer-vs">VS</div>
-        <div class="hud-side right">
-            <div class="hud-name" id="enemy-name-display">ENEMY</div>
-            <div class="hud-equip-stats" style="visibility:hidden; height:12px;">&nbsp;</div>
-            <div class="hud-equip-stats" style="visibility:hidden; margin-bottom: 2px; height:12px;">&nbsp;</div>
-            <div class="bar-bg" style="margin-top:2px;"><div class="hp-bar" id="hp-bar-2"></div><div class="hp-text" id="hp-text-2">100</div></div>
-            <div class="bar-bg" style="height:8px; margin-top:4px; border-color: rgba(0, 210, 255, 0.5);"><div class="mp-bar" id="mp-bar-2"></div></div>
+        <div class="hud-side left-side">
+            <div class="hud-header">
+                <div class="hud-name" id="p1-name-display">SydaR</div>
+            </div>
+            <div class="bar-bg hp-bg-left">
+                <div class="hp-bar hp-bar-left" id="hp-bar-1"></div>
+                <div class="hp-text" id="hp-text-1">100</div>
+            </div>
+            <div class="sub-bars">
+                <div class="bar-bg sub-bg"><div class="mp-bar" id="mp-bar-1"></div></div>
+                <div class="bar-bg sub-bg" style="border-color:#f1c40f;"><div class="god-bar" id="god-bar-1"></div></div>
+            </div>
+            <div class="hud-equip-stats" id="p1-equip-display"></div>
+            <div class="hud-equip-stats" id="p1-combat-stats" style="color:#2ecc71;"></div>
+        </div>
+
+        <div class="hud-side right-side">
+            <div class="hud-header right">
+                <div class="hud-name" id="enemy-name-display">ENEMY</div>
+            </div>
+            <div class="bar-bg hp-bg-right">
+                <div class="hp-bar hp-bar-right" id="hp-bar-2"></div>
+                <div class="hp-text" id="hp-text-2">100</div>
+            </div>
+            <div class="sub-bars right">
+                <div class="bar-bg sub-bg"><div class="mp-bar right-mp" id="mp-bar-2"></div></div>
+            </div>
+            <div class="hud-equip-stats" style="visibility:hidden;">&nbsp;</div>
+            <div class="hud-equip-stats" style="visibility:hidden;">&nbsp;</div>
         </div>
     </div>
     
@@ -639,6 +696,7 @@
                         <select id="custom-s1" onchange="updateCustomSkills()" style="background:#1f2833; color:#fff; border:1px solid #45a29e; padding:5px; border-radius:5px; font-family:'Arial Black'; font-size:0.8rem;"></select>
                         <select id="custom-s2" onchange="updateCustomSkills()" style="background:#1f2833; color:#fff; border:1px solid #45a29e; padding:5px; border-radius:5px; font-family:'Arial Black'; font-size:0.8rem;"></select>
                         <select id="custom-ult" onchange="updateCustomSkills()" style="background:#1f2833; color:#f1c40f; border:1px solid #f1c40f; padding:5px; border-radius:5px; font-family:'Arial Black'; font-size:0.8rem;"></select>
+                        <select id="custom-fatality" onchange="updateCustomSkills()" style="background:#1f2833; color:#ff4757; border:1px solid #ff4757; padding:5px; border-radius:5px; font-family:'Arial Black'; font-size:0.8rem; margin-top:5px;"></select>
                     </div>
                 </div>
             </div>
@@ -706,7 +764,7 @@
         
         <div class="shop-panel" id="inventory-view">
             <h1 style="color: #e67e22;">🎒 INVENTORY</h1>
-            <p style="color: #ccc; margin-bottom: 20px; font-weight: bold;">Equip your unlocked Boss Drops and Mythic Gacha Pulls to counter Element Weaknesses!</p>
+            <p style="color: #ccc; margin-bottom: 20px; font-weight: bold;">Equip your unlocked items to counter Element Weaknesses!</p>
             
             <div class="inv-section">
                 <h3 style="color:#fff; margin-top:0;">🗡️ WEAPONS</h3>
@@ -717,10 +775,14 @@
                 <div class="inv-grid" id="inv-auras"></div>
             </div>
             <div class="inv-section" style="margin-top:15px;">
-                <h3 style="color:#fff; margin-top:0;">🦊 COSMETICS (Tails)</h3>
+                <h3 style="color:#fff; margin-top:0;">🎩 HATS</h3>
+                <div class="inv-grid" id="inv-hats"></div>
+            </div>
+            <div class="inv-section" style="margin-top:15px;">
+                <h3 style="color:#fff; margin-top:0;">🦊 TAILS</h3>
                 <div class="inv-grid" id="inv-tails"></div>
             </div>
-            <button class="next-btn" onclick="toggleInventory(false)" style="background: linear-gradient(to bottom, #3498db, #2980b9); box-shadow: 0 6px 0 #1a5276, 0 10px 20px rgba(0,0,0,0.5);">CLOSE INVENTORY</button>
+            <button class="next-btn sticky-close-btn" onclick="toggleInventory(false)" style="background: linear-gradient(to bottom, #3498db, #2980b9); box-shadow: 0 6px 0 #1a5276, 0 10px 20px rgba(0,0,0,0.5);">CLOSE INVENTORY</button>
         </div>
 
         <div class="shop-panel" id="tree-view">
@@ -749,8 +811,20 @@
                     <div><h4 style="color:#e74c3c">Limitless Potential</h4><p style="margin:0;font-size:0.8rem;">Unlocks Custom (Mix & Match) Class.</p></div>
                     <button class="buy-btn" id="perk-custom" onclick="buyPerk('customClass', 15)">Unlock (15)</button>
                 </div>
+                <div class="inv-item" style="margin-top:10px;">
+                    <div><h4 style="color:#3498db">Fatality: Orbital Strike</h4><p style="margin:0;font-size:0.8rem;">Custom Class Execution</p></div>
+                    <button class="buy-btn" id="perk-cfat1" onclick="buyPerk('customFatality1', 20)">Unlock (20)</button>
+                </div>
+                <div class="inv-item" style="margin-top:10px;">
+                    <div><h4 style="color:#9b59b6">Fatality: The Backrooms</h4><p style="margin:0;font-size:0.8rem;">Custom Class Execution</p></div>
+                    <button class="buy-btn" id="perk-cfat2" onclick="buyPerk('customFatality2', 25)">Unlock (25)</button>
+                </div>
+                <div class="inv-item" style="margin-top:10px;">
+                    <div><h4 style="color:#f1c40f">Fatality: Proton Saga Crash</h4><p style="margin:0;font-size:0.8rem;">Custom Class Execution</p></div>
+                    <button class="buy-btn" id="perk-cfat3" onclick="buyPerk('customFatality3', 30)">Unlock (30)</button>
+                </div>
             </div>
-            <button class="next-btn" onclick="toggleTree(false)" style="background: linear-gradient(to bottom, #3498db, #2980b9); box-shadow: 0 6px 0 #1a5276, 0 10px 20px rgba(0,0,0,0.5);">BACK TO SHOP</button>
+            <button class="next-btn sticky-close-btn" onclick="toggleTree(false)" style="background: linear-gradient(to bottom, #3498db, #2980b9); box-shadow: 0 6px 0 #1a5276, 0 10px 20px rgba(0,0,0,0.5);">BACK TO SHOP</button>
         </div>
 
         <div class="shop-panel" id="missions-view" style="display:none;">
@@ -803,7 +877,7 @@
                 
                 <div class="shop-grid" id="bp-rewards-grid">
                     <div class="shop-item utility"><div><h3>Tier 1</h3><p>Reward: 1000 Coins</p></div><button class="buy-btn bp-claim" id="btn-bp-1" onclick="claimBP(1)">Claim</button></div>
-                    <div class="shop-item cosmetic" style="border-left-color: #f1c40f;"><div><h3 style="color:#f1c40f;">Tier 2</h3><p>Reward: Ronin Hat (+5% Crit)</p></div><button class="buy-btn bp-claim" id="btn-bp-2" onclick="claimBP(2)">Claim</button></div>
+                    <div class="shop-item cosmetic" style="border-left-color: #3498db;"><div><h3 style="color:#3498db;">Tier 2</h3><p>Reward: Ronin Hat (+5% Crit)</p></div><button class="buy-btn bp-claim" id="btn-bp-2" onclick="claimBP(2)">Claim</button></div>
                     <div class="shop-item magic" style="border-left-color: #9b59b6;"><div><h3 style="color:#9b59b6;">Tier 3</h3><p>Reward: Tengkolok Hat (+10% DMG)</p></div><button class="buy-btn bp-claim" id="btn-bp-3" onclick="claimBP(3)">Claim</button></div>
                 </div>
             </div>
@@ -820,7 +894,7 @@
                 </div>
             </div>
 
-            <button class="next-btn" onclick="toggleMissions(false)" style="background: linear-gradient(to bottom, #3498db, #2980b9); box-shadow: 0 6px 0 #1a5276, 0 10px 20px rgba(0,0,0,0.5);">BACK TO SHOP</button>
+            <button class="next-btn sticky-close-btn" onclick="toggleMissions(false)" style="background: linear-gradient(to bottom, #3498db, #2980b9); box-shadow: 0 6px 0 #1a5276, 0 10px 20px rgba(0,0,0,0.5);">BACK TO SHOP</button>
         </div>
     </div>
 
@@ -862,8 +936,8 @@
             relics: { vamp: false, thorns: false, secondWind: false },
             costs: { hp: 30, dmg: 50, dodge: 100, crit: 100, mana: 100, atkspd: 150, drone: 200, pet: 500, vamp: 300, thorns: 300, secondWind: 500, clone: 2000 },
             godSouls: 0,
-            perks: { freePet: false, healDodge: false, cheapGacha: false, paladin: false, customClass: false },
-            customSkills: { s1: 'fireball', s2: 'shadow-kick', ult: 'proton-saga' },
+            perks: { freePet: false, healDodge: false, cheapGacha: false, paladin: false, customClass: false, customFatality1: false, customFatality2: false, customFatality3: false },
+            customSkills: { s1: 'fireball', s2: 'shadow-kick', ult: 'proton-saga', fatality: 'default' },
             stats: { bossesKilled: 0, perfectDodges: 0 },
             lastLoginDate: "",
             lastLogoutTime: 0,
@@ -1019,7 +1093,7 @@
                 ultimate: { id: 'omega-burst', name: 'TACTICAL NUKE!', limb: '.front-arm .lower', dmg: 100, cost: 60, isSkill: true, isUltimate: true, jump: 0, shift: 0, range: 800, hitDelay: 300, fireProj: true, isFire: true }
             },
             'custom': {
-                skills: [], // Dynamically populated
+                skills: [], 
                 ultimate: null
             }
         };
@@ -1057,6 +1131,15 @@
 
         const allWeapons = { 'katana': 'Katana', 'greatsword': 'Greatsword', 'staff': 'Magic Staff', 'dualdaggers': 'Dual Daggers', 'scythe': 'Reaper Scythe', 'trident': 'Ocean Trident', 'titanhammer': 'Titan Hammer', 'keris': 'Keris Dagger' };
         const allAuras = { 'galaxy': 'Galaxy Aura', 'inferno': 'Inferno Aura', 'thunder': 'Thunder Aura', 'void': 'Void Aura', 'ghost': 'Ghost Aura' };
+        const allHats = { 'ronin': 'Ronin Hat', 'tengkolok': 'Tengkolok Hat' };
+
+        const getRarity = (item) => {
+            if(['dualdaggers','keris','titanhammer','none'].includes(item)) return {name: 'Normal', color: '#bdc3c7'};
+            if(['trident','scythe','ronin'].includes(item)) return {name: 'Rare', color: '#3498db'};
+            if(['galaxy','thunder','tengkolok'].includes(item)) return {name: 'Epic', color: '#9b59b6'};
+            if(['inferno','void','kitsune'].includes(item)) return {name: 'Legendary', color: '#f1c40f'};
+            return {name: 'Common', color: '#fff'};
+        };
 
         const loadProgress = () => {
             const saved = localStorage.getItem('stickmanRpgSave');
@@ -1091,6 +1174,7 @@
                         
                         parsedSave.unlockedWeapons = parsedSave.unlockedWeapons || [];
                         parsedSave.unlockedAuras = parsedSave.unlockedAuras || [];
+                        parsedSave.unlockedCosmetics.hats = parsedSave.unlockedCosmetics.hats || [];
                         
                         playerStats = { ...playerStats, ...parsedSave };
                     }
@@ -1101,7 +1185,7 @@
                     document.getElementById('hud-auto-next').checked = playerStats.autoNext;
                 } catch (e) { console.warn("Save load failed, using defaults.", e); }
             }
-            playerStats.customSkills = playerStats.customSkills || { s1: 'fireball', s2: 'shadow-kick', ult: 'proton-saga' };
+            playerStats.customSkills = playerStats.customSkills || { s1: 'fireball', s2: 'shadow-kick', ult: 'proton-saga', fatality: 'default' };
             populateCustomSelects();
             applyCustomSkillsToRole();
         };
@@ -1117,6 +1201,7 @@
             const s1 = document.getElementById('custom-s1');
             const s2 = document.getElementById('custom-s2');
             const ult = document.getElementById('custom-ult');
+            const cfat = document.getElementById('custom-fatality');
             
             let getEffectStr = (m) => {
                 let eff = [];
@@ -1127,28 +1212,35 @@
                 return eff.length > 0 ? ` [${eff.join(', ')}]` : "";
             };
 
-            s1.innerHTML = ''; s2.innerHTML = ''; ult.innerHTML = '';
+            if(s1.options.length === 0) {
+                allSkillsList.forEach(s => {
+                    let statText = `(DMG: ${s.move.dmg} | MP: ${s.move.cost}${getEffectStr(s.move)})`;
+                    s1.innerHTML += `<option value="${s.id}">S1: ${s.name} ${statText}</option>`;
+                    s2.innerHTML += `<option value="${s.id}">S2: ${s.name} ${statText}</option>`;
+                });
+                allUltimatesList.forEach(u => {
+                    let statText = `(DMG: ${u.move.dmg} | MP: ${u.move.cost}${getEffectStr(u.move)})`;
+                    ult.innerHTML += `<option value="${u.id}">ULT: ${u.name} ${statText}</option>`;
+                });
+            }
             
-            allSkillsList.forEach(s => {
-                let statText = `(DMG: ${s.move.dmg} | MP: ${s.move.cost}${getEffectStr(s.move)})`;
-                s1.innerHTML += `<option value="${s.id}">S1: ${s.name} ${statText}</option>`;
-                s2.innerHTML += `<option value="${s.id}">S2: ${s.name} ${statText}</option>`;
-            });
-            allUltimatesList.forEach(u => {
-                let statText = `(DMG: ${u.move.dmg} | MP: ${u.move.cost}${getEffectStr(u.move)})`;
-                ult.innerHTML += `<option value="${u.id}">ULT: ${u.name} ${statText}</option>`;
-            });
+            cfat.innerHTML = `<option value="default">FATALITY: Default</option>`;
+            if (playerStats.perks.customFatality1) cfat.innerHTML += `<option value="orbital">FATALITY: Orbital Strike</option>`;
+            if (playerStats.perks.customFatality2) cfat.innerHTML += `<option value="backrooms">FATALITY: The Backrooms</option>`;
+            if (playerStats.perks.customFatality3) cfat.innerHTML += `<option value="saga">FATALITY: Proton Saga Crash</option>`;
             
             s1.value = playerStats.customSkills.s1;
             s2.value = playerStats.customSkills.s2;
             ult.value = playerStats.customSkills.ult;
+            cfat.value = playerStats.customSkills.fatality || 'default';
         };
 
         const updateCustomSkills = () => {
             playerStats.customSkills = {
                 s1: document.getElementById('custom-s1').value,
                 s2: document.getElementById('custom-s2').value,
-                ult: document.getElementById('custom-ult').value
+                ult: document.getElementById('custom-ult').value,
+                fatality: document.getElementById('custom-fatality').value
             };
             saveProgress();
             applyCustomSkillsToRole();
@@ -1319,14 +1411,20 @@
         };
 
         const claimMission = (missionId) => {
-            if (missionId === 'dailyKills' && !playerStats.missions.dailyKillsClaimed) {
-                playerStats.missions.dailyKillsClaimed = true; addBPExp(500); playSound('coin');
+            let claimedSomething = false;
+            if (missionId === 'dailyKills' && !playerStats.missions.dailyKillsClaimed && playerStats.missions.dailyKills >= 10) {
+                playerStats.missions.dailyKillsClaimed = true; addBPExp(500); playSound('coin'); claimedSomething = true;
             }
-            if (missionId === 'dailyGacha' && !playerStats.missions.dailyGachaClaimed) {
-                playerStats.missions.dailyGachaClaimed = true; addBPExp(500); playSound('coin');
+            if (missionId === 'dailyGacha' && !playerStats.missions.dailyGachaClaimed && playerStats.missions.dailyGacha >= 1) {
+                playerStats.missions.dailyGachaClaimed = true; addBPExp(500); playSound('coin'); claimedSomething = true;
             }
-            if (missionId === 'monthlyBosses' && !playerStats.missions.monthlyBossesClaimed) {
-                playerStats.missions.monthlyBossesClaimed = true; playerStats.coins += 5000; updateUI(); playSound('coin');
+            if (missionId === 'monthlyBosses' && !playerStats.missions.monthlyBossesClaimed && playerStats.missions.monthlyBosses >= 5) {
+                playerStats.missions.monthlyBossesClaimed = true; playerStats.coins += 5000; playSound('coin'); claimedSomething = true;
+            }
+            if (claimedSomething) {
+                updateUI();
+                updateMissionUI();
+                saveProgress();
             }
         };
 
@@ -1336,7 +1434,7 @@
                 if (tier === 1) { playerStats.coins += 1000; showAutoToast("Claimed 1000 Coins!"); }
                 if (tier === 2) { playerStats.unlockedCosmetics.hats.push('ronin'); playerStats.equippedCosmetics.hat = 'ronin'; showAutoToast("Claimed Ronin Hat!"); }
                 if (tier === 3) { playerStats.unlockedCosmetics.hats.push('tengkolok'); playerStats.equippedCosmetics.hat = 'tengkolok'; showAutoToast("Claimed Tengkolok Hat!"); }
-                playSound('coin'); updateMissionUI(); renderCosmetics(); saveProgress();
+                playSound('coin'); updateMissionUI(); renderCosmetics(); saveProgress(); updateUI();
             }
         };
 
@@ -1504,6 +1602,10 @@
         const equipTail = (t) => { 
             playerStats.equippedCosmetics.tail = t; saveProgress(); renderInventory(); renderCosmetics(); updateHUDStats(); updateUI();
         };
+        
+        const equipHat = (h) => { 
+            playerStats.equippedCosmetics.hat = h; saveProgress(); renderInventory(); renderCosmetics(); updateHUDStats(); updateUI();
+        };
 
         const toggleInventory = (show) => {
             if(gameActive) {
@@ -1530,13 +1632,15 @@
         const buyPerk = (perkId, cost) => {
             if(playerStats.godSouls >= cost && !playerStats.perks[perkId]) {
                 playerStats.godSouls -= cost; playerStats.perks[perkId] = true;
-                playSound('smite'); saveProgress(); updateUI();
+                playSound('smite'); saveProgress(); updateUI(); populateCustomSelects();
             }
         };
 
         const renderInventory = () => {
-            const wContainer = document.getElementById('inv-weapons'); const aContainer = document.getElementById('inv-auras'); const tContainer = document.getElementById('inv-tails');
-            if(wContainer) wContainer.innerHTML = ''; if(aContainer) aContainer.innerHTML = ''; if(tContainer) tContainer.innerHTML = '';
+            const wContainer = document.getElementById('inv-weapons'); const aContainer = document.getElementById('inv-auras'); 
+            const hContainer = document.getElementById('inv-hats'); const tContainer = document.getElementById('inv-tails');
+            if(wContainer) wContainer.innerHTML = ''; if(aContainer) aContainer.innerHTML = ''; 
+            if(hContainer) hContainer.innerHTML = ''; if(tContainer) tContainer.innerHTML = '';
 
             let wHtml = `<div class="inv-item ${playerStats.weapon === 'none' ? 'equipped' : ''}"><h4>Unarmed</h4>`;
             if (playerStats.weapon !== 'none') wHtml += `<button class="buy-btn" onclick="equipWeapon('none')">Equip</button>`; else wHtml += `<span style="color:#2ecc71; font-weight:bold;">Equipped</span>`;
@@ -1545,8 +1649,11 @@
             for(let key in allWeapons) {
                 if (playerStats.unlockedWeapons.includes(key)) {
                     let lvl = playerStats.weaponLevels[key] || 1; let isMax = lvl >= 10;
-                    let rarityText = isMax ? `<span style="color:#ff4757; font-weight:900; text-shadow:0 0 5px #ff4757; letter-spacing:1px;">SUPER LEGENDARY</span>` : `Lvl ${lvl}`;
-                    let nameColor = isMax ? '#ff4757' : '#fff'; let borderStyle = isMax ? 'border-color:#ff4757; box-shadow: inset 0 0 15px rgba(255,71,87,0.3);' : '';
+                    let rarity = getRarity(key);
+                    let rarityText = isMax ? `<span style="color:#ff4757; font-weight:900; text-shadow:0 0 5px #ff4757; letter-spacing:1px;">SUPER LEGENDARY</span>` : `<span style="color:${rarity.color}">${rarity.name}</span> | Lvl ${lvl}`;
+                    let nameColor = isMax ? '#ff4757' : rarity.color; 
+                    let borderStyle = isMax ? 'border-color:#ff4757; box-shadow: inset 0 0 15px rgba(255,71,87,0.3);' : `border-color:${rarity.color};`;
+                    
                     let html = `<div class="inv-item unlocked ${playerStats.weapon === key ? 'equipped' : ''}" style="${borderStyle}"><div><h4 style="color:${nameColor}; text-shadow:0 2px 4px #000;">${allWeapons[key]}</h4><p style="margin:0;font-size:0.75rem;">+${(lvl-1)*20}% DMG | ${rarityText}</p></div>`;
                     if (playerStats.weapon !== key) html += `<button class="buy-btn" onclick="equipWeapon('${key}')">Equip</button>`; else html += `<span style="color:#2ecc71; font-weight:bold;">Equipped</span>`;
                     html += `</div>`; if(wContainer) wContainer.innerHTML += html;
@@ -1562,10 +1669,25 @@
                 if (playerStats.unlockedAuras.includes(key)) {
                     let statsTxt = "";
                     if(key==='galaxy') statsTxt="+10% Dodge"; if(key==='inferno') statsTxt="+15% DMG"; if(key==='thunder') statsTxt="+20% Atk Spd"; if(key==='void') statsTxt="+15% Crit"; if(key==='ghost') statsTxt="+20% Dodge, +10% DMG";
-                    let html = `<div class="inv-item unlocked ${playerStats.aura === key ? 'equipped' : ''}"><div><h4>${allAuras[key]}</h4><p style="margin:0;font-size:0.75rem;color:#f1c40f;">${statsTxt}</p></div>`;
+                    let rarity = getRarity(key);
+                    let html = `<div class="inv-item unlocked ${playerStats.aura === key ? 'equipped' : ''}" style="border-color:${rarity.color};"><div><h4 style="color:${rarity.color};">${allAuras[key]}</h4><p style="margin:0;font-size:0.75rem;color:#ccc;">${rarity.name} | ${statsTxt}</p></div>`;
                     if (playerStats.aura !== key) html += `<button class="buy-btn" onclick="equipAura('${key}')">Equip</button>`; else html += `<span style="color:#2ecc71; font-weight:bold;">Equipped</span>`;
                     html += `</div>`; if(aContainer) aContainer.innerHTML += html;
                 } 
+            }
+            
+            let hHtml = `<div class="inv-item ${playerStats.equippedCosmetics.hat === 'none' ? 'equipped' : ''}"><h4>No Hat</h4>`;
+            if (playerStats.equippedCosmetics.hat !== 'none') hHtml += `<button class="buy-btn" onclick="equipHat('none')">Equip</button>`; else hHtml += `<span style="color:#2ecc71; font-weight:bold;">Equipped</span>`;
+            hHtml += `</div>`; if(hContainer) hContainer.innerHTML += hHtml;
+
+            for(let key in allHats) {
+                if (playerStats.unlockedCosmetics.hats.includes(key)) {
+                    let rarity = getRarity(key);
+                    let statsTxt = key === 'ronin' ? "+5% Crit" : "+10% DMG";
+                    let html = `<div class="inv-item unlocked ${playerStats.equippedCosmetics.hat === key ? 'equipped' : ''}" style="border-color:${rarity.color};"><div><h4 style="color:${rarity.color}; text-shadow:0 2px 4px #000;">${allHats[key]}</h4><p style="margin:0;font-size:0.75rem;color:#ccc;">${rarity.name} | ${statsTxt}</p></div>`;
+                    if (playerStats.equippedCosmetics.hat !== key) html += `<button class="buy-btn" onclick="equipHat('${key}')">Equip</button>`; else html += `<span style="color:#2ecc71; font-weight:bold;">Equipped</span>`;
+                    html += `</div>`; if(hContainer) hContainer.innerHTML += html;
+                }
             }
 
             let tHtml = `<div class="inv-item ${playerStats.equippedCosmetics.tail === 'none' ? 'equipped' : ''}"><h4>No Tail</h4>`;
@@ -1573,7 +1695,8 @@
             tHtml += `</div>`; if(tContainer) tContainer.innerHTML += tHtml;
 
             if (playerStats.unlockedCosmetics.tails.includes('kitsune')) {
-                let html = `<div class="inv-item unlocked ${playerStats.equippedCosmetics.tail === 'kitsune' ? 'equipped' : ''}"><div><h4>Kitsune Nine Tails</h4><p style="margin:0;font-size:0.75rem;color:#f1c40f;">+10% Dodge</p></div>`;
+                let rarity = getRarity('kitsune');
+                let html = `<div class="inv-item unlocked ${playerStats.equippedCosmetics.tail === 'kitsune' ? 'equipped' : ''}" style="border-color:${rarity.color};"><div><h4 style="color:${rarity.color};">Kitsune Nine Tails</h4><p style="margin:0;font-size:0.75rem;color:#ccc;">${rarity.name} | +10% Dodge</p></div>`;
                 if (playerStats.equippedCosmetics.tail !== 'kitsune') html += `<button class="buy-btn" onclick="equipTail('kitsune')">Equip</button>`; else html += `<span style="color:#2ecc71; font-weight:bold;">Equipped</span>`;
                 html += `</div>`; if(tContainer) tContainer.innerHTML += html;
             }
@@ -1675,8 +1798,8 @@
             if ((playerStats.petCount || 0) >= 5) { document.getElementById('buy-pet').innerText = "MAXED"; document.getElementById('buy-pet').disabled = true; }
             
             document.getElementById('tree-souls').innerText = playerStats.godSouls;
-            ['pet', 'heal', 'gacha', 'paladin', 'custom'].forEach(p => {
-                let idMap = { 'pet': 'freePet', 'heal': 'healDodge', 'gacha': 'cheapGacha', 'paladin': 'paladin', 'custom': 'customClass'};
+            ['pet', 'heal', 'gacha', 'paladin', 'custom', 'cfat1', 'cfat2', 'cfat3'].forEach(p => {
+                let idMap = { 'pet': 'freePet', 'heal': 'healDodge', 'gacha': 'cheapGacha', 'paladin': 'paladin', 'custom': 'customClass', 'cfat1': 'customFatality1', 'cfat2': 'customFatality2', 'cfat3': 'customFatality3'};
                 if(playerStats.perks[idMap[p]]) {
                     let btn = document.getElementById(`perk-${p}`);
                     if(btn){ btn.innerText = "UNLOCKED"; btn.disabled = true; btn.style.background = "linear-gradient(to bottom, #2ecc71, #27ae60)"; btn.style.boxShadow = "0 4px 0 #1e8449"; }
@@ -1811,18 +1934,26 @@
         const removeStates = (f) => f.classList.remove('palm','crane','uppercut','spin-kick','dragon-punch','shadow-kick','omega-burst','titan-smash','phantom-strike','dodge','block','hit','charge','charging','throw','fatality-strikes','hook','sweep','tornado-kick','meteor-strike','palm-flurry','meteor-drop','bull-rush');
         const updateMana = (f, a) => { f.mp = Math.max(0, Math.min(100, f.mp + a)); f.mpBar.style.width = f.mp + '%'; };
         const updateGodMeter = () => { let p = Math.min(100, f1.godMeter); let b = document.getElementById('god-bar-1'), btn = document.getElementById('manual-god-btn'); b.style.width = p + '%'; if(p >= 100){ b.classList.add('ready'); if(btn){ btn.disabled = false; btn.classList.add('ready-to-click'); } } else { b.classList.remove('ready'); if(btn){ btn.disabled = true; btn.classList.remove('ready-to-click'); } } };
+        
         const updateHealthBar = (f) => {
             let d = Math.max(0, f.hp); let p = Math.max(0, (d / f.maxHp) * 100); f.hpBar.style.width = p + '%';
-            if (f.id === 'p2' && isBossStage) f.hpBar.style.background = 'linear-gradient(to bottom, #ff4757 0%, #c0392b 50%, #8b0000 100%)';
-            else {
-                if (p > 50) f.hpBar.style.background = 'linear-gradient(to bottom, #4cd137 0%, #2ecc71 40%, #27ae60 100%)';
-                else if (p > 30) f.hpBar.style.background = 'linear-gradient(to bottom, #f5f6fa 0%, #f1c40f 40%, #e67e22 100%)';
-                else f.hpBar.style.background = 'linear-gradient(to bottom, #ff7979 0%, #e74c3c 40%, #c0392b 100%)';
+            
+            // Adjust gradient directions to match the new Symmetrical UI
+            let gradDir = f.id === 'p1' ? 'to right' : 'to left';
+            
+            if (f.id === 'p2' && isBossStage) {
+                f.hpBar.style.background = `linear-gradient(${gradDir}, #8b0000, #ff4757)`;
+            } else {
+                if (p > 50) f.hpBar.style.background = `linear-gradient(${gradDir}, #27ae60, #4cd137)`;
+                else if (p > 30) f.hpBar.style.background = `linear-gradient(${gradDir}, #d35400, #f1c40f)`;
+                else f.hpBar.style.background = `linear-gradient(${gradDir}, #c0392b, #ff7979)`;
             }
+            
             document.getElementById(`hp-text-${f.id === 'p1' ? '1' : '2'}`).innerText = Math.floor(d);
             if (f.id === 'p1') { const v = document.getElementById('danger-vignette'); if (p <= 25 && p > 0) v.classList.add('danger-active'); else v.classList.remove('danger-active'); }
             if (p <= 30 && p > 0) f.el.classList.add('rage-mode'); else f.el.classList.remove('rage-mode');
         };
+
         const moveFighter = (f, d) => {
             if (f.status === 'stunned') return;
             f.baseX += d; if (f.baseX < 30) f.baseX = 30;
@@ -1832,6 +1963,7 @@
         };
 
         const triggerManualGodMode = () => { if (f1.godMeter >= 100 && gameActive && !isTimeStopped && !isTransitioning) { let b = document.getElementById('manual-god-btn'); if (b) { b.classList.remove('ready-to-click'); b.disabled = true; } activateGodMode(); } };
+        
         const fleeFight = () => {
             if (!gameActive || isTransitioning || isFatalityPromptActive) return;
             if (confirm("Retreat back to the Dojo? You will lose 10% of your coins.")) {
@@ -2303,10 +2435,57 @@
             gameActive = false; isSlowMo = false; isTimeStopped = false; bgm.normal.stop(); bgm.boss.stop(); bgm.abyss.stop();
             document.getElementById('combat-hud').style.opacity = 0; document.getElementById('in-fight-controls').style.display = 'none';
             mainBody.classList.add('fatality-mode'); removeStates(attacker.el); removeStates(defender.el); defender.el.classList.add('hit'); defender.hp = 0; updateHealthBar(defender);
-            let roleName = attacker.isPlayer ? playerStats.role : 'balanced'; defender.baseX = 400; defender.y = 0; defender.el.style[defender.id === 'p1' ? 'left' : 'right'] = '400px'; defender.el.style.bottom = '0px';
+            let roleName = attacker.isPlayer ? playerStats.role : 'balanced'; 
+            let customFatalityType = attacker.isPlayer && playerStats.role === 'custom' ? (playerStats.customSkills.fatality || 'default') : 'default';
+
+            defender.baseX = 400; defender.y = 0; defender.el.style[defender.id === 'p1' ? 'left' : 'right'] = '400px'; defender.el.style.bottom = '0px';
             const setX = (x) => { attacker.baseX = attacker.id === 'p1' ? x : 800 - x; attacker.el.style[attacker.id === 'p1' ? 'left' : 'right'] = attacker.baseX + 'px'; };
             
-            if (roleName === 'tank') {
+            if (roleName === 'custom' && customFatalityType === 'orbital') {
+                setX(attacker.id === 'p1' ? 100 : 700); attacker.el.classList.add('block'); playSound('charge');
+                let targetReticle = document.createElement('div');
+                targetReticle.style.cssText = `position:absolute; width:100px; height:20px; border:2px solid red; border-radius:50%; top:340px; left:350px; z-index:200; box-shadow:0 0 20px red; animation: flash-warning 0.2s infinite;`;
+                propsLayer.appendChild(targetReticle);
+                setTimeout(() => {
+                    targetReticle.remove();
+                    let beam = document.createElement('div');
+                    beam.style.cssText = `position:absolute; width:150px; height:800px; background:linear-gradient(to right, transparent, #00d2ff, #fff, #00d2ff, transparent); top:-400px; left:325px; z-index:200; box-shadow:0 0 50px #00d2ff;`;
+                    propsLayer.appendChild(beam);
+                    playSound('heavy'); playSound('smite'); mainBody.classList.add('heavy-shake');
+                    spawnGravityParticles(400, 100, '#00d2ff', true); spawnGravityParticles(400, 200, '#fff', true);
+                    defender.el.style.display = 'none';
+                    setTimeout(() => { beam.remove(); finishFatality(attacker, defender); }, 1500);
+                }, 1500);
+            } else if (roleName === 'custom' && customFatalityType === 'backrooms') {
+                setX(attacker.id === 'p1' ? 250 : 550); attacker.el.classList.add('palm'); playSound('charge');
+                setTimeout(() => {
+                    mainBody.style.background = '#8B8000'; // Yellowish backrooms color
+                    mainBody.style.filter = 'sepia(1) contrast(1.5) hue-rotate(-20deg)';
+                    playSound('heavy');
+                    let hole = document.createElement('div');
+                    hole.style.cssText = `position:absolute; width:150px; height:30px; background:#000; border-radius:50%; top:340px; left:325px; z-index:0; box-shadow:inset 0 0 20px #000;`;
+                    propsLayer.appendChild(hole);
+                    defender.el.style.transition = 'bottom 1s ease-in';
+                    defender.el.style.bottom = '-150px';
+                    setTimeout(() => {
+                        hole.remove(); mainBody.style.background = ''; mainBody.style.filter = ''; defender.el.style.display = 'none';
+                        finishFatality(attacker, defender);
+                    }, 1500);
+                }, 1000);
+            } else if (roleName === 'custom' && customFatalityType === 'saga') {
+                setX(attacker.id === 'p1' ? 100 : 700); attacker.el.classList.add('uppercut'); playSound('charge');
+                setTimeout(() => {
+                    let car = document.createElement('div'); car.innerHTML = '🚗';
+                    car.style.cssText = `position:absolute; font-size:180px; left:${attacker.id === 'p1' ? -300 : 1100}px; top:150px; transition:left 0.5s ease-in; z-index:500; filter:drop-shadow(0 0 30px #ff4757); transform: scaleX(${attacker.id === 'p1' ? -1 : 1});`;
+                    propsLayer.appendChild(car);
+                    setTimeout(() => {
+                        car.style.left = '300px'; playSound('heavy'); playSound('hit'); mainBody.classList.add('heavy-shake');
+                        spawnGravityParticles(400, 100, '#ff4757', true); spawnGravityParticles(400, 200, '#f1c40f', true);
+                        defender.el.style.display = 'none';
+                        setTimeout(() => { car.remove(); finishFatality(attacker, defender); }, 1500);
+                    }, 100);
+                }, 1000);
+            } else if (roleName === 'tank') {
                 setX(400); attacker.y = 500; attacker.el.style.bottom = attacker.y + 'px'; attacker.el.classList.add('titan-smash');
                 setTimeout(() => {
                     attacker.el.classList.add('meteor-drop'); attacker.y = 0; attacker.el.style.bottom = '0px'; playSound('heavy'); playSound('hit'); mainBody.classList.add('heavy-shake');
@@ -2537,11 +2716,14 @@
 
             if (playerWon) { 
                 playerStats.coins += (isBossStage ? 150 : 50) + (playerStats.stage * 10); playSound('coin'); 
+                
+                // Track Kills for Missions
                 playerStats.missions.dailyKills++;
                 if (isBossStage) {
                     playerStats.missions.monthlyBosses++;
                     playerStats.stats.bossesKilled = (playerStats.stats.bossesKilled || 0) + 1;
                 }
+                
                 if(!inAbyss) playerStats.stage++; 
                 
                 if (isBossStage) {
@@ -2560,6 +2742,11 @@
                         saveProgress(); updateUI(); renderInventory(); playSound('coin');
                     }, 1000);
                 }
+                
+                // Force mission UI to refresh background state so button unlocks real-time
+                updateMissionUI();
+                saveProgress();
+                
             } else if(!fromFatality) {
                 playerStats.coins += 20 + (playerStats.stage * 5); playSound('coin');
             }
@@ -2872,12 +3059,12 @@
             // Added Role Class & Rank into Health Bars explicitly as requested
             let combatRank = getPlayerRank(playerStats.stage);
             let roleDisplay = playerStats.role ? playerStats.role.toUpperCase() : 'BALANCED';
-            document.getElementById('p1-name-display').innerHTML = `SydaR <span style="font-size: 0.6em; color: ${combatRank.color}; text-shadow: 0 0 10px ${combatRank.glow}; vertical-align: middle; letter-spacing: 0;">[${combatRank.name} | ${roleDisplay}]</span>`;
+            document.getElementById('p1-name-display').innerHTML = `SydaR <span class="hud-rank" style="color: ${combatRank.color}; text-shadow: 0 0 10px ${combatRank.glow};">[${combatRank.name} | ${roleDisplay}]</span>`;
             
             let enemyRoleDisplay = enemyType.toUpperCase();
             if (isBossStage) enemyRoleDisplay = "BOSS";
             if (rivalBossName) enemyRoleDisplay = rivalBossName;
-            document.getElementById('enemy-name-display').innerHTML = `${enemyRoleDisplay} <span style="font-size: 0.6em; color: #ff4757; text-shadow: 0 0 10px #c0392b; vertical-align: middle; letter-spacing: 0;">[STAGE ${playerStats.stage}]</span>`;
+            document.getElementById('enemy-name-display').innerHTML = `<span class="hud-rank" style="color: #ff4757; text-shadow: 0 0 10px #c0392b;">[STAGE ${playerStats.stage}]</span> ${enemyRoleDisplay}`;
             
             updateHUDStats();
             

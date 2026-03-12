@@ -15,7 +15,7 @@
         ::-webkit-scrollbar-thumb { background: #45a29e; border-radius: 4px; border: 1px solid #1f2833; }
         ::-webkit-scrollbar-thumb:hover { background: #66fcf1; box-shadow: 0 0 10px #66fcf1; }
 
-        body { margin: 0; background: radial-gradient(circle at center, #1f2833 0%, #0b0c10 100%); display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; font-family: 'Arial Black', sans-serif; color: white; user-select: none; touch-action: none; transition: filter 0.05s, background 0.2s; }
+        body { margin: 0; background: radial-gradient(circle at center, #1f2833 0%, #0b0c10 100%); display: flex; flex-direction: column; align-items: center; height: 100dvh; min-height: 100vh; overflow: hidden; font-family: 'Arial Black', sans-serif; color: white; user-select: none; touch-action: none; transition: filter 0.05s, background 0.2s; }
         body.is-paused * { animation-play-state: paused !important; }
 
         /* Toast Notifications */
@@ -166,18 +166,27 @@
 
         .slow-mo { filter: contrast(1.2) brightness(0.6); }
         .slow-mo .stickman, .slow-mo .limb, .slow-mo .torso, .slow-mo .head, .slow-mo .lower { transition-duration: 1.5s !important; transition-timing-function: cubic-bezier(0.1, 0.9, 0.2, 1) !important; }
+        
+        /* Shake targeting ONLY the stage wrapper to prevent mobile pad shaking */
         @keyframes shake { 0%, 100% { transform: translate(0, 0); } 20% { transform: translate(-20px, 15px); } 40% { transform: translate(20px, -15px); } 60% { transform: translate(-20px, -15px); } 80% { transform: translate(20px, 15px); } }
-        .shake-screen { animation: shake 0.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
-        .heavy-shake { animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+        .shake-screen #stage-area { animation: shake 0.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+        .heavy-shake #stage-area { animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
 
         .limit-break { filter: drop-shadow(0 0 20px #ff0000) brightness(1.5) saturate(3) !important; }
         .energy-beam { position: absolute; height: 60px; top: 220px; z-index: 200; opacity: 0; pointer-events: none; filter: drop-shadow(0 0 20px var(--beam-color)) brightness(1.5); }
         .beam-core { width: 100%; height: 100%; background: linear-gradient(to bottom, transparent, #fff 40%, #fff 60%, transparent); border-radius: 30px; animation: beam-pulse 0.1s infinite alternate; }
         @keyframes beam-pulse { 0% { transform: scaleY(0.8); opacity: 0.8; } 100% { transform: scaleY(1.2); opacity: 1; } }
 
-        /* V3 Action Buttons - MOVED UP TO AVOID HUD/MOBILE CONTROLS BLOCKING */
-        #in-fight-controls { position: absolute; top: 170px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; bottom: auto; }
-        #flee-btn, #manual-god-btn, #quick-potion-btn, #quick-inv-btn, #quick-abyss-btn { background: rgba(31, 40, 51, 0.85); backdrop-filter: blur(5px); color: #fff; border: 2px solid #45a29e; padding: 12px 18px; font-family: 'Arial Black', sans-serif; font-size: 0.95rem; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); font-style: italic; letter-spacing: 1px; text-transform: uppercase; }
+        /* V3 Compact Action Buttons */
+        #in-fight-controls { position: absolute; top: 160px; right: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 1000; bottom: auto; }
+        .quick-btn {
+            display: flex; align-items: center; gap: 6px; justify-content: flex-start;
+            background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(5px); color: #fff; 
+            border: 2px solid #45a29e; padding: 10px 15px; font-family: 'Arial Black', sans-serif; 
+            font-size: 0.85rem; border-radius: 20px; cursor: pointer; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6); transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            font-style: italic; letter-spacing: 1px; text-transform: uppercase;
+        }
         #flee-btn { border-color: #e74c3c; color: #ff7979; }
         #flee-btn:hover { background: rgba(231, 76, 60, 0.2); transform: translateX(-5px); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
         #manual-god-btn { border-color: #f1c40f; color: #f1c40f; text-shadow: 0 0 8px #f1c40f; box-shadow: 0 0 20px rgba(241, 196, 15, 0.3); }
@@ -187,8 +196,8 @@
         #quick-inv-btn:hover { background: rgba(52, 152, 219, 0.2); transform: translateX(-5px); box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4); }
         #quick-abyss-btn { border-color: #9b59b6; color: #9b59b6; text-shadow: 0 0 5px #9b59b6; }
         #quick-abyss-btn:hover { background: rgba(155, 89, 182, 0.2); transform: translateX(-5px); box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4); }
-        #in-fight-controls button:active { transform: translateY(4px) translateX(-2px) !important; box-shadow: none !important; }
-        #in-fight-controls button:disabled { filter: grayscale(100%) brightness(0.4); cursor: not-allowed; box-shadow: none; text-shadow: none; transform: none !important; }
+        .quick-btn:active { transform: translateY(4px) translateX(-2px) !important; box-shadow: none !important; }
+        .quick-btn:disabled { filter: grayscale(100%) brightness(0.4); cursor: not-allowed; box-shadow: none; text-shadow: none; transform: none !important; }
         
         @keyframes btn-ready { 0% { transform: scale(1); box-shadow: 0 0 15px rgba(241, 196, 15, 0.4); } 50% { transform: scale(1.1); box-shadow: 0 0 25px rgba(241, 196, 15, 0.8), inset 0 0 15px #f1c40f; background: rgba(241, 196, 15, 0.2); } 100% { transform: scale(1); box-shadow: 0 0 15px rgba(241, 196, 15, 0.4); } }
         #manual-god-btn.ready-to-click { animation: btn-ready 0.6s infinite; border-color: #fff; color: #fff; text-shadow: 0 0 10px #fff, 0 0 20px #f1c40f; cursor: pointer; pointer-events: auto; }
@@ -201,19 +210,36 @@
 
         /* V3 SHOP OVERLAY & GLASSMORPHISM */
         #shop-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 12, 16, 0.7); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 15px; box-sizing: border-box; }
-        .shop-panel { background: linear-gradient(135deg, rgba(31, 40, 51, 0.9), rgba(11, 12, 16, 0.95)); padding: 25px; border-radius: 20px; border: 1px solid rgba(102, 252, 241, 0.3); box-shadow: 0 15px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(102, 252, 241, 0.05); width: 100%; max-width: 850px; text-align: center; max-height: 95vh; overflow-y: auto; position: relative; }
         
-        .shop-panel h1 { font-size: 2.2rem; margin-top: 0; color: #fff; text-shadow: 0 2px 10px rgba(255,255,255,0.5), 0 5px 5px #000; letter-spacing: 2px; }
+        .shop-panel { 
+            background: linear-gradient(135deg, rgba(31, 40, 51, 0.9), rgba(11, 12, 16, 0.95)); 
+            padding: 25px; padding-bottom: 5px; border-radius: 20px; border: 1px solid rgba(102, 252, 241, 0.3); 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(102, 252, 241, 0.05); 
+            width: 100%; max-width: 850px; text-align: center; 
+            max-height: 85vh; 
+            overflow: hidden; 
+            display: flex; flex-direction: column; position: relative; 
+        }
+        
+        .shop-panel h1 { font-size: 2.2rem; margin-top: 0; color: #fff; text-shadow: 0 2px 10px rgba(255,255,255,0.5), 0 5px 5px #000; letter-spacing: 2px; flex-shrink: 0; }
 
-        .shop-tabs { display: flex; justify-content: space-between; border-bottom: 2px solid rgba(69, 162, 158, 0.4); margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .shop-tabs { display: flex; justify-content: space-between; border-bottom: 2px solid rgba(69, 162, 158, 0.4); margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; flex-shrink: 0; }
         .tab-btn { background: transparent; color: #aaa; border: none; padding: 12px 15px; font-weight: bold; cursor: pointer; font-size: 1.05rem; transition: all 0.3s; border-bottom: 4px solid transparent; white-space: nowrap; text-transform: uppercase; letter-spacing: 1px; }
         .tab-btn:hover { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
         .tab-btn.active { color: #66fcf1; border-bottom-color: #66fcf1; text-shadow: 0 0 15px #66fcf1; }
-        .tab-content { display: none; animation: fadeIn 0.3s ease-in; }
-        .tab-content.active { display: block; }
+        
+        #main-shop-view .tab-content, #missions-view .tab-content { display: none; animation: fadeIn 0.3s ease-in; overflow-y: auto; padding-bottom: 10px;}
+        #main-shop-view .tab-content.active, #missions-view .tab-content.active { display: block; }
+        
+        /* Views */
+        #main-shop-view, #inventory-view, #tree-view, #missions-view {
+            width: 100%; height: 100%; overflow-y: auto; flex-grow: 1; padding-bottom: 10px;
+        }
+        #inventory-view, #tree-view, #missions-view { display: none; flex-direction: column; gap: 15px; }
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .ultimate-selector { background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; border: 1px solid rgba(241, 196, 15, 0.4); margin-bottom: 15px; width: 100%; box-sizing: border-box; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+        .ultimate-selector { background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; border: 1px solid rgba(241, 196, 15, 0.4); margin-bottom: 15px; width: 100%; box-sizing: border-box; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); flex-shrink: 0; }
         .ultimate-selector select { background: rgba(31, 40, 51, 0.9); color: #f1c40f; border: 1px solid #f1c40f; padding: 10px; font-size: 1rem; font-family: 'Arial Black', sans-serif; border-radius: 8px; width: 100%; cursor: pointer; outline: none; margin-top: 5px; transition: box-shadow 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         .ultimate-selector select:hover { box-shadow: 0 0 15px rgba(241, 196, 15, 0.5); }
         
@@ -234,24 +260,23 @@
         .buy-btn { background: linear-gradient(to bottom, #f1c40f, #d35400); color: #000; border: none; padding: 8px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; font-family: 'Arial Black', sans-serif; box-shadow: 0 4px 0 #9e3f00, 0 5px 10px rgba(0,0,0,0.5); transition: all 0.1s; text-transform: uppercase; letter-spacing: 0.5px; }
         .buy-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 0 0 #9e3f00, 0 2px 5px rgba(0,0,0,0.5); }
         .buy-btn:hover:not(:disabled) { filter: brightness(1.1); }
-        .buy-btn:disabled { background: linear-gradient(to bottom, #555, #333); color: #888; box-shadow: 0 4px 0 #111; cursor: not-allowed; }
+        .buy-btn:disabled { background: linear-gradient(to bottom, #555, #333) !important; color: #888 !important; box-shadow: 0 4px 0 #111 !important; cursor: not-allowed; }
         
-        .toggle-row { margin: 15px 0; display: flex; justify-content: space-around; background: rgba(0,0,0,0.5); padding: 12px; border-radius: 12px; color: #66fcf1; font-size: 0.95rem; border: 1px solid rgba(69, 162, 158, 0.3); box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+        .toggle-row { margin: 15px 0; display: flex; justify-content: space-around; background: rgba(0,0,0,0.5); padding: 12px; border-radius: 12px; color: #66fcf1; font-size: 0.95rem; border: 1px solid rgba(69, 162, 158, 0.3); box-shadow: inset 0 0 10px rgba(0,0,0,0.8); flex-shrink: 0; }
         .toggle-row label { display: flex; align-items: center; gap: 8px; transition: color 0.2s; }
         .toggle-row label:hover { color: #fff; text-shadow: 0 0 8px #66fcf1; }
         .toggle-row input { cursor: pointer; transform: scale(1.2); }
 
-        .next-btn { background: linear-gradient(to bottom, #2ecc71, #27ae60); color: #000; border: none; padding: 15px; font-size: 1.2rem; font-weight: bold; border-radius: 12px; cursor: pointer; margin-top: 20px; width: 100%; box-shadow: 0 6px 0 #1e8449, 0 10px 20px rgba(0,0,0,0.5); transition: all 0.1s; text-transform: uppercase; letter-spacing: 2px; font-family: 'Arial Black', sans-serif; }
+        .next-btn { background: linear-gradient(to bottom, #2ecc71, #27ae60); color: #000; border: none; padding: 15px; font-size: 1.2rem; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%; box-shadow: 0 6px 0 #1e8449, 0 10px 20px rgba(0,0,0,0.5); transition: all 0.1s; text-transform: uppercase; letter-spacing: 2px; font-family: 'Arial Black', sans-serif; flex-shrink: 0; margin-bottom: 5px; }
         .next-btn:active { transform: translateY(6px); box-shadow: 0 0 0 #1e8449, 0 2px 5px rgba(0,0,0,0.5); }
         .next-btn:hover { filter: brightness(1.1); }
         
-        .main-action-btns { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 10px; flex-wrap: wrap; }
+        .main-action-btns { display: flex; justify-content: space-between; margin-bottom: 15px; gap: 10px; flex-wrap: wrap; flex-shrink: 0; }
         .main-action-btns button { flex: 1; padding: 12px; border-radius: 10px; font-weight: bold; font-family: 'Arial Black', sans-serif; cursor: pointer; border: none; color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: transform 0.2s, filter 0.2s; text-transform: uppercase; letter-spacing: 1px; min-width: 150px; }
         .main-action-btns button:hover { transform: translateY(-3px); filter: brightness(1.2); }
         .main-action-btns button:active { transform: translateY(2px); }
 
-        #inventory-view, #tree-view, #missions-view { display: none; width: 100%; flex-direction: column; gap: 15px; }
-        .inv-section { text-align: left; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; border: 1px solid rgba(69, 162, 158, 0.4); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+        .inv-section { text-align: left; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; border: 1px solid rgba(69, 162, 158, 0.4); box-shadow: inset 0 0 20px rgba(0,0,0,0.8); flex-shrink: 0;}
         .inv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
         @media (max-width: 600px) { .inv-grid { grid-template-columns: 1fr; } }
         
@@ -263,8 +288,13 @@
         
         .text-left { text-align: left; }
 
-        /* Sticky Close Buttons */
-        .sticky-close-btn { position: sticky; bottom: 10px; z-index: 100; border: 2px solid #fff; }
+        /* Sticky Action Bar ensures Close / Next buttons are always visible */
+        .sticky-action-bar { 
+            position: sticky; bottom: -5px; z-index: 100; 
+            background: linear-gradient(to top, rgba(11,12,16,1) 50%, rgba(11,12,16,0));
+            padding-top: 25px; padding-bottom: 5px; 
+            display: flex; flex-direction: column; gap: 10px; margin-top: auto; 
+        }
 
         /* V3 Mobile Controls */
         #mobile-controls { position: absolute; bottom: 20px; width: 100%; max-width: 800px; display: none; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 1000; pointer-events: none; transition: opacity 0.5s; }
@@ -461,8 +491,7 @@
 
         #fatality-btn { font-size: clamp(1.8rem, 6vw, 3.5rem) !important; padding: clamp(15px, 4vw, 25px) clamp(20px, 8vw, 50px) !important; }
         #audio-btn { padding: clamp(6px, 2vw, 10px) clamp(12px, 3vw, 20px) !important; font-size: clamp(0.7rem, 2.5vw, 0.9rem) !important; }
-        #in-fight-controls { position: absolute; top: 170px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; bottom: auto; }
-        #in-fight-controls button { padding: clamp(8px, 2vh, 12px) clamp(12px, 3vw, 18px) !important; font-size: clamp(0.75rem, 2.5vw, 0.95rem) !important; }
+        
         .main-action-btns { gap: clamp(5px, 1.5vw, 10px) !important; }
         .main-action-btns button { padding: clamp(8px, 2vw, 12px) !important; font-size: clamp(0.65rem, 2.5vw, 0.9rem) !important; min-width: calc(50% - 10px) !important; flex: 1 1 calc(50% - 10px) !important; }
         .buy-btn { padding: clamp(6px, 1.5vw, 8px) !important; font-size: clamp(0.7rem, 2.5vw, 0.85rem) !important; }
@@ -491,8 +520,10 @@
             .timer-vs { font-size: clamp(1.2rem, 5vw, 2.8rem) !important; margin-top: 8px !important; }
             .hp-text { font-size: clamp(10px, 3vw, 15px) !important; padding: 0 5px !important; }
             .hud-equip-stats { font-size: clamp(0.55rem, 2vw, 0.8rem) !important; }
-            #in-fight-controls { top: 140px !important; right: 10px !important; transform: scale(0.85); transform-origin: top right; }
-            .shop-panel { padding: 15px 10px !important; border-radius: 12px !important; max-height: 92vh !important; }
+            
+            #in-fight-controls { top: 120px !important; right: 5px !important; transform: scale(0.85); transform-origin: top right; }
+            
+            .shop-panel { padding: 15px 10px !important; border-radius: 12px !important; max-height: 85vh !important; }
             .shop-panel h1 { font-size: clamp(1.4rem, 6vw, 2.2rem) !important; }
             .shop-tabs { margin-bottom: 10px !important; padding-bottom: 2px !important; }
             .tab-btn { padding: 8px !important; font-size: clamp(0.75rem, 3vw, 1.05rem) !important; }
@@ -507,6 +538,7 @@
         
         @media (max-width: 480px) {
             #mobile-controls { bottom: 10px !important; }
+            #in-fight-controls { top: 110px !important; transform: scale(0.75); }
             .ctrl-btn { width: 50px !important; height: 50px !important; font-size: 20px !important; }
             .mini-btn { width: 40px !important; height: 40px !important; font-size: 16px !important; }
             .d-pad, .action-pad { gap: 8px !important; }
@@ -568,11 +600,11 @@
     </div>
     
     <div id="in-fight-controls" style="display: none;">
-        <button id="quick-inv-btn" onclick="toggleInventory(true)">🎒 Quick Inv</button>
-        <button id="quick-potion-btn" onclick="useQuickPotion()">🧪 Potion (100)</button>
-        <button id="quick-abyss-btn" onclick="startAbyss()">🌌 Quick Abyss</button>
-        <button id="flee-btn" onclick="fleeFight()">🏃 Retreat</button>
-        <button id="manual-god-btn" onclick="triggerManualGodMode()" disabled>⏳ ZA WARUDO</button>
+        <button class="quick-btn" id="quick-inv-btn" onclick="toggleInventory(true)">🎒 Inv</button>
+        <button class="quick-btn" id="quick-potion-btn" onclick="useQuickPotion()">🧪 Potion</button>
+        <button class="quick-btn" id="quick-abyss-btn" onclick="startAbyss()">🌌 Abyss</button>
+        <button class="quick-btn" id="flee-btn" onclick="fleeFight()">🏃 Flee</button>
+        <button class="quick-btn" id="manual-god-btn" onclick="triggerManualGodMode()" disabled>⏳ God Mode</button>
     </div>
 
     <div id="fatality-prompt">
@@ -758,8 +790,10 @@
                     </div>
             </div>
 
-            <button class="next-btn" id="prestige-btn" onclick="doPrestige()" style="background: linear-gradient(to bottom, #f39c12, #d35400); box-shadow: 0 6px 0 #9e3f00, 0 10px 20px rgba(0,0,0,0.5); display:none;">🌟 TIME LEAP</button>
-            <button class="next-btn" id="next-stage-btn" onclick="closeShopAndStart()">FIGHT NEXT ENEMY</button>
+            <div class="sticky-action-bar">
+                <button class="next-btn" id="prestige-btn" onclick="doPrestige()" style="background: linear-gradient(to bottom, #f39c12, #d35400); box-shadow: 0 6px 0 #9e3f00, 0 10px 20px rgba(0,0,0,0.5); display:none;">🌟 TIME LEAP</button>
+                <button class="next-btn" id="next-stage-btn" onclick="closeShopAndStart()">FIGHT NEXT ENEMY</button>
+            </div>
         </div>
         
         <div class="shop-panel" id="inventory-view">
@@ -782,7 +816,10 @@
                 <h3 style="color:#fff; margin-top:0;">🦊 TAILS</h3>
                 <div class="inv-grid" id="inv-tails"></div>
             </div>
-            <button class="next-btn sticky-close-btn" onclick="toggleInventory(false)" style="background: linear-gradient(to bottom, #3498db, #2980b9); box-shadow: 0 6px 0 #1a5276, 0 10px 20px rgba(0,0,0,0.5);">CLOSE INVENTORY</button>
+
+            <div class="sticky-action-bar">
+                <button class="next-btn sticky-close-btn" onclick="toggleInventory(false)">CLOSE INVENTORY</button>
+            </div>
         </div>
 
         <div class="shop-panel" id="tree-view">
@@ -824,7 +861,10 @@
                     <button class="buy-btn" id="perk-cfat3" onclick="buyPerk('customFatality3', 30)">Unlock (30)</button>
                 </div>
             </div>
-            <button class="next-btn sticky-close-btn" onclick="toggleTree(false)" style="background: linear-gradient(to bottom, #3498db, #2980b9); box-shadow: 0 6px 0 #1a5276, 0 10px 20px rgba(0,0,0,0.5);">BACK TO SHOP</button>
+            
+            <div class="sticky-action-bar">
+                <button class="next-btn sticky-close-btn" onclick="toggleTree(false)">BACK TO SHOP</button>
+            </div>
         </div>
 
         <div class="shop-panel" id="missions-view" style="display:none;">
@@ -894,7 +934,9 @@
                 </div>
             </div>
 
-            <button class="next-btn sticky-close-btn" onclick="toggleMissions(false)" style="background: linear-gradient(to bottom, #3498db, #2980b9); box-shadow: 0 6px 0 #1a5276, 0 10px 20px rgba(0,0,0,0.5);">BACK TO SHOP</button>
+            <div class="sticky-action-bar">
+                <button class="next-btn sticky-close-btn" onclick="toggleMissions(false)">BACK TO SHOP</button>
+            </div>
         </div>
     </div>
 
@@ -1028,7 +1070,7 @@
 
         const basics_pool = [
             { id: 'palm', name: 'PALM STRIKE', limb: '.front-arm .lower', dmg: 8, cost: 0, jump: 0, shift: 80, range: 180, hitDelay: 100 }, 
-            { id: 'crane', name: 'CRANE KICK', limb: '.front-leg .lower', dmg: 10, cost: 0, jump: 0, shift: 70, range: 180, hitDelay: 120 }, 
+            { id: 'crane', name: 'CRANE KICK', limb: '.front-leg .lower', dmg:10, cost: 0, jump: 0, shift: 70, range: 180, hitDelay: 120 }, 
             { id: 'uppercut', name: 'UPPERCUT', limb: '.front-arm .lower', dmg: 12, cost: 0, jump: 15, shift: 60, range: 160, hitDelay: 150 }, 
             { id: 'spin-kick', name: 'SPIN KICK', limb: '.back-leg .lower', dmg: 14, cost: 0, jump: 0, shift: 80, range: 180, hitDelay: 150 },
             { id: 'hook', name: 'HOOK PUNCH', limb: '.back-arm .lower', dmg: 11, cost: 0, jump: 0, shift: 70, range: 160, hitDelay: 100 }, 
@@ -1351,14 +1393,24 @@
             document.getElementById('ui-bp-exp').innerText = expProgress;
             document.getElementById('bp-exp-bar').style.width = (expProgress / 1000 * 100) + '%';
             
-            document.getElementById('claim-daily-kills').disabled = playerStats.missions.dailyKills < 10 || playerStats.missions.dailyKillsClaimed;
-            if(playerStats.missions.dailyKillsClaimed) document.getElementById('claim-daily-kills').innerText = "Claimed";
+            // Hard force button text & disabled state real-time
+            let btnKills = document.getElementById('claim-daily-kills');
+            if (btnKills) {
+                btnKills.disabled = playerStats.missions.dailyKills < 10 || playerStats.missions.dailyKillsClaimed;
+                btnKills.innerText = playerStats.missions.dailyKillsClaimed ? "Claimed" : "Claim (500 BP XP)";
+            }
 
-            document.getElementById('claim-daily-gacha').disabled = playerStats.missions.dailyGacha < 1 || playerStats.missions.dailyGachaClaimed;
-            if(playerStats.missions.dailyGachaClaimed) document.getElementById('claim-daily-gacha').innerText = "Claimed";
+            let btnGacha = document.getElementById('claim-daily-gacha');
+            if (btnGacha) {
+                btnGacha.disabled = playerStats.missions.dailyGacha < 1 || playerStats.missions.dailyGachaClaimed;
+                btnGacha.innerText = playerStats.missions.dailyGachaClaimed ? "Claimed" : "Claim (500 BP XP)";
+            }
 
-            document.getElementById('claim-monthly-boss').disabled = playerStats.missions.monthlyBosses < 5 || playerStats.missions.monthlyBossesClaimed;
-            if(playerStats.missions.monthlyBossesClaimed) document.getElementById('claim-monthly-boss').innerText = "Claimed";
+            let btnBoss = document.getElementById('claim-monthly-boss');
+            if (btnBoss) {
+                btnBoss.disabled = playerStats.missions.monthlyBosses < 5 || playerStats.missions.monthlyBossesClaimed;
+                btnBoss.innerText = playerStats.missions.monthlyBossesClaimed ? "Claimed" : "Claim (5000 Coins)";
+            }
 
             [1, 2, 3].forEach(t => {
                 let btn = document.getElementById('btn-bp-' + t);
@@ -1923,6 +1975,7 @@
 
         const p1 = document.getElementById('fighter1'), p2 = document.getElementById('fighter2'), p1Clone = document.getElementById('p1-clone');
         const skillDisplay = document.getElementById('skill-display'), mainBody = document.getElementById('main-body'), stageArea = document.getElementById('stage-area'), propsLayer = document.getElementById('props-layer'), spark = document.getElementById('spark');
+        const gameWrapper = document.getElementById('game-wrapper');
         
         let f1 = { id: 'p1', el: p1, hpBar: document.getElementById('hp-bar-1'), mpBar: document.getElementById('mp-bar-1'), maxHp: 100, hp: 100, mp: 50, canHit: false, dmg: 0, isCrit: false, isUltimate: false, baseX: 150, y: 0, vy: 0, hasBox: false, tempBonusDmg: 0, combo: 0, comboText: document.getElementById('combo-p1'), color: '#00d2ff', isPlayer: true, status: 'none', statusTimer: 0, superArmor: false, isBlocking: false, blockTime: 0, dodgeTime: 0, manaAccumulator: 0, currentMove: null, usedLimitBreak: false, usedSecondWind: false, isInvincible: false, godMeter: 0, enraged: false };
         let f2 = { id: 'p2', el: p2, hpBar: document.getElementById('hp-bar-2'), mpBar: document.getElementById('mp-bar-2'), maxHp: 100, hp: 100, mp: 50, canHit: false, dmg: 0, isCrit: false, isUltimate: false, baseX: 150, y: 0, vy: 0, hasBox: false, tempBonusDmg: 0, combo: 0, comboText: document.getElementById('combo-p2'), color: '#ff0055', isPlayer: false, status: 'none', statusTimer: 0, superArmor: false, isBlocking: false, blockTime: 0, dodgeTime: 0, manaAccumulator: 0, currentMove: null, usedLimitBreak: false, usedSecondWind: false, isInvincible: false, enraged: false };
@@ -1938,7 +1991,6 @@
         const updateHealthBar = (f) => {
             let d = Math.max(0, f.hp); let p = Math.max(0, (d / f.maxHp) * 100); f.hpBar.style.width = p + '%';
             
-            // Adjust gradient directions to match the new Symmetrical UI
             let gradDir = f.id === 'p1' ? 'to right' : 'to left';
             
             if (f.id === 'p2' && isBossStage) {
@@ -2180,7 +2232,7 @@
                 
                 setTimeout(() => {
                     car.style.left = (fObj.id === 'p1' ? 900 : -200) + 'px';
-                    playSound('heavy'); mainBody.classList.add('heavy-shake');
+                    playSound('heavy'); gameWrapper.classList.add('heavy-shake');
                     let hitTarget = fObj === f1 ? f2 : f1;
                     let htI = setInterval(() => {
                         if (gameActive && !isPaused && hitTarget.hp > 0) {
@@ -2406,8 +2458,8 @@
             document.getElementById('in-fight-controls').style.display = 'none';
             const ui = document.getElementById('fatality-prompt'); ui.style.display = 'flex';
             const bar = document.getElementById('fatality-timer-bar'); bar.style.transition = 'none'; bar.style.width = '100%'; void bar.offsetWidth; bar.style.transition = 'width 3s linear'; bar.style.width = '0%';
-            let promptTimer = setTimeout(() => { if (isFatalityPromptActive && !isPaused) cancelFatalityPrompt(defender); }, 3000);
-            document.getElementById('fatality-btn').onclick = () => { if (isFatalityPromptActive && !isPaused) { clearTimeout(promptTimer); isFatalityPromptActive = false; ui.style.display = 'none'; skillDisplay.classList.remove('show-skill'); triggerFatality(attacker, defender); } }
+            let promptTimer = setTimeout(() => { if (isFatalityPromptActive) cancelFatalityPrompt(defender); }, 3000);
+            document.getElementById('fatality-btn').onclick = () => { if (isFatalityPromptActive) { clearTimeout(promptTimer); isFatalityPromptActive = false; ui.style.display = 'none'; skillDisplay.classList.remove('show-skill'); triggerFatality(attacker, defender); } }
         };
 
         const cancelFatalityPrompt = (defender) => {
@@ -2451,7 +2503,7 @@
                     let beam = document.createElement('div');
                     beam.style.cssText = `position:absolute; width:150px; height:800px; background:linear-gradient(to right, transparent, #00d2ff, #fff, #00d2ff, transparent); top:-400px; left:325px; z-index:200; box-shadow:0 0 50px #00d2ff;`;
                     propsLayer.appendChild(beam);
-                    playSound('heavy'); playSound('smite'); mainBody.classList.add('heavy-shake');
+                    playSound('heavy'); playSound('smite'); gameWrapper.classList.add('heavy-shake');
                     spawnGravityParticles(400, 100, '#00d2ff', true); spawnGravityParticles(400, 200, '#fff', true);
                     defender.el.style.display = 'none';
                     setTimeout(() => { beam.remove(); finishFatality(attacker, defender); }, 1500);
@@ -2479,7 +2531,7 @@
                     car.style.cssText = `position:absolute; font-size:180px; left:${attacker.id === 'p1' ? -300 : 1100}px; top:150px; transition:left 0.5s ease-in; z-index:500; filter:drop-shadow(0 0 30px #ff4757); transform: scaleX(${attacker.id === 'p1' ? -1 : 1});`;
                     propsLayer.appendChild(car);
                     setTimeout(() => {
-                        car.style.left = '300px'; playSound('heavy'); playSound('hit'); mainBody.classList.add('heavy-shake');
+                        car.style.left = '300px'; playSound('heavy'); playSound('hit'); gameWrapper.classList.add('heavy-shake');
                         spawnGravityParticles(400, 100, '#ff4757', true); spawnGravityParticles(400, 200, '#f1c40f', true);
                         defender.el.style.display = 'none';
                         setTimeout(() => { car.remove(); finishFatality(attacker, defender); }, 1500);
@@ -2488,8 +2540,8 @@
             } else if (roleName === 'tank') {
                 setX(400); attacker.y = 500; attacker.el.style.bottom = attacker.y + 'px'; attacker.el.classList.add('titan-smash');
                 setTimeout(() => {
-                    attacker.el.classList.add('meteor-drop'); attacker.y = 0; attacker.el.style.bottom = '0px'; playSound('heavy'); playSound('hit'); mainBody.classList.add('heavy-shake');
-                    setTimeout(() => mainBody.classList.remove('heavy-shake'), 600); spawnGravityParticles(400, 50, '#ff0000', true); for (let i = 0; i < 12; i++) spawnGravityParticles(400, 50 + Math.random() * 100, '#f1c40f', true);
+                    attacker.el.classList.add('meteor-drop'); attacker.y = 0; attacker.el.style.bottom = '0px'; playSound('heavy'); playSound('hit'); gameWrapper.classList.add('heavy-shake');
+                    setTimeout(() => gameWrapper.classList.remove('heavy-shake'), 600); spawnGravityParticles(400, 50, '#ff0000', true); for (let i = 0; i < 12; i++) spawnGravityParticles(400, 50 + Math.random() * 100, '#f1c40f', true);
                     defender.el.style.display = 'none'; setTimeout(() => finishFatality(attacker, defender), 800);
                 }, 1200);
             } else if (roleName === 'assassin') {
@@ -2501,7 +2553,7 @@
                     if (slashes > 15) {
                         clearInterval(slashInt); attacker.el.classList.remove('phantom-strike'); setX(attacker.id === 'p1' ? 250 : 550); attacker.y = 0; attacker.el.style.bottom = '0px'; attacker.el.classList.add('dodge');
                         setTimeout(() => {
-                            playSound('clang'); playSound('heavy'); mainBody.classList.add('heavy-shake'); setTimeout(() => mainBody.classList.remove('heavy-shake'), 600);
+                            playSound('clang'); playSound('heavy'); gameWrapper.classList.add('heavy-shake'); setTimeout(() => gameWrapper.classList.remove('heavy-shake'), 600);
                             for (let i = 0; i < 5; i++) { spawnGravityParticles(400, 100 + Math.random() * 100, '#ff0000', true); spawnGravityParticles(400, 100 + Math.random() * 100, '#8e44ad', true); }
                             defender.el.style.display = 'none'; document.querySelectorAll('.slash-mark').forEach(x => x.remove()); mainBody.style.background = ''; setTimeout(() => finishFatality(attacker, defender), 1000);
                         }, 1200);
@@ -2510,7 +2562,7 @@
             } else if (roleName === 'mage') {
                 setX(attacker.id === 'p1' ? 250 : 550); attacker.el.classList.add('palm-flurry'); playSound('charge');
                 let fInt = setInterval(() => { if (!isPaused) { spawnGravityParticles(400, 50 + Math.random() * 150, '#ff4757', true); playSound('hit'); } }, 80);
-                setTimeout(() => { clearInterval(fInt); playSound('heavy'); mainBody.classList.add('shake-screen'); spawnGravityParticles(400, 150, '#ff4757', true); defender.el.style.display = 'none'; finishFatality(attacker, defender); }, 1500);
+                setTimeout(() => { clearInterval(fInt); playSound('heavy'); gameWrapper.classList.add('shake-screen'); spawnGravityParticles(400, 150, '#ff4757', true); defender.el.style.display = 'none'; finishFatality(attacker, defender); }, 1500);
             } else if (roleName === 'witch') {
                 setX(attacker.id === 'p1' ? 300 : 500); attacker.el.classList.add('crane'); defender.y = 150; defender.el.style.bottom = '150px'; defender.el.style.filter = 'hue-rotate(270deg) brightness(2)'; playSound('heal');
                 let sInt = setInterval(() => { if (!isPaused) spawnGravityParticles(400, 200, '#9b59b6', false); }, 100);
@@ -2519,18 +2571,18 @@
                 setX(attacker.id === 'p1' ? 50 : 750); attacker.el.classList.add('palm'); playSound('charge');
                 let lz = document.createElement('div'); lz.style.cssText = `position:absolute; width:800px; height:4px; background:#2ecc71; top:${350 - attacker.y - 60}px; left:0; z-index:200; opacity:0.5; box-shadow:0 0 10px #2ecc71;`; propsLayer.appendChild(lz);
                 setTimeout(() => {
-                    lz.style.opacity = 1; lz.style.height = '25px'; playSound('clang'); playSound('heavy'); mainBody.classList.add('heavy-shake'); setTimeout(() => mainBody.classList.remove('heavy-shake'), 400);
+                    lz.style.opacity = 1; lz.style.height = '25px'; playSound('clang'); playSound('heavy'); gameWrapper.classList.add('heavy-shake'); setTimeout(() => gameWrapper.classList.remove('heavy-shake'), 400);
                     spawnGravityParticles(400, 100, '#2ecc71', true); spawnGravityParticles(400, 100, '#2ecc71', true); defender.el.style.display = 'none';
                     setTimeout(() => { lz.remove(); finishFatality(attacker, defender); }, 500);
                 }, 1000);
             } else if (roleName === 'paladin') {
                 setX(attacker.id === 'p1' ? 400 : 400); attacker.el.classList.add('block'); playSound('charge');
                 let hl = document.createElement('div'); hl.style.cssText = `position:absolute; width:150px; height:600px; background:linear-gradient(to right,transparent,#fff,transparent); top:-200px; left:325px; z-index:200; opacity:0; box-shadow:0 0 30px #f1c40f;`; propsLayer.appendChild(hl);
-                setTimeout(() => { hl.style.opacity = 1; playSound('smite'); mainBody.classList.add('heavy-shake'); spawnGravityParticles(400, 50, '#f1c40f', true); spawnGravityParticles(400, 150, '#fff', true); defender.el.style.display = 'none'; setTimeout(() => { hl.remove(); finishFatality(attacker, defender); }, 1500); }, 1000);
+                setTimeout(() => { hl.style.opacity = 1; playSound('smite'); gameWrapper.classList.add('heavy-shake'); spawnGravityParticles(400, 50, '#f1c40f', true); spawnGravityParticles(400, 150, '#fff', true); defender.el.style.display = 'none'; setTimeout(() => { hl.remove(); finishFatality(attacker, defender); }, 1500); }, 1000);
             } else if (roleName === 'mercenary') {
                 setX(attacker.id === 'p1' ? 250 : 550); attacker.el.classList.add('palm'); playSound('charge');
                 setTimeout(() => {
-                    playSound('heavy'); playSound('hit'); mainBody.classList.add('heavy-shake');
+                    playSound('heavy'); playSound('hit'); gameWrapper.classList.add('heavy-shake');
                     let ex = document.createElement('div'); ex.style.cssText = `position:absolute; width:200px; height:200px; background:radial-gradient(circle,#fff,#ff4757,transparent); border-radius:50%; top:150px; left:300px; z-index:200; opacity:0; box-shadow:0 0 50px #ff4757; transition:all 0.2s ease-out; transform:scale(0.1);`; propsLayer.appendChild(ex);
                     setTimeout(() => { ex.style.opacity = 1; ex.style.transform = 'scale(2)'; }, 50);
                     defender.el.style.display = 'none'; spawnGravityParticles(400, 200, '#ff4757', true);
@@ -2544,7 +2596,7 @@
                     setTimeout(() => {
                         attacker.el.classList.remove('fatality-strikes'); attacker.el.classList.add('uppercut'); playSound('heavy'); playSound('clang');
                         const beam = document.createElement('div'); beam.className = 'energy-beam'; beam.innerHTML = '<div class="beam-core"></div>'; beam.style.setProperty('--beam-color', '#00d2ff'); beam.style.left = (attacker.id === 'p1' ? 340 : 0) + 'px'; beam.style.width = '800px'; beam.style.top = (350 - attacker.y - 80) + 'px'; propsLayer.appendChild(beam);
-                        setTimeout(() => { beam.style.opacity = 1; mainBody.classList.add('heavy-shake'); }, 50);
+                        setTimeout(() => { beam.style.opacity = 1; gameWrapper.classList.add('heavy-shake'); }, 50);
                         defender.el.style.display = 'none'; spawnGravityParticles(400, 200, '#00d2ff', true);
                         setTimeout(() => { beam.remove(); finishFatality(attacker, defender); }, 1000);
                     }, 1800);
@@ -2625,7 +2677,7 @@
             
             // WALL BOUNCE MECHANIC
             if (isUlt && !defender.isBlocking && !isProj) {
-                isSlowMo = false; mainBody.classList.remove('slow-mo'); mainBody.classList.add('shake-screen'); stageArea.classList.add('stage-flash');
+                isSlowMo = false; mainBody.classList.remove('slow-mo'); gameWrapper.classList.add('shake-screen'); stageArea.classList.add('stage-flash');
                 let pushDist = enemyType === 'boss' && !defender.isPlayer ? -40 : -100;
                 moveFighter(defender, pushDist); 
                 
@@ -2636,7 +2688,7 @@
                     playSound('clang'); playSound('heavy');
                 }
                 
-                setTimeout(() => { mainBody.classList.remove('shake-screen'); stageArea.classList.remove('stage-flash'); }, 400);
+                setTimeout(() => { gameWrapper.classList.remove('shake-screen'); stageArea.classList.remove('stage-flash'); }, 400);
             }
 
             defender.hp -= finalDmg; if (defender.hp < 0) defender.hp = 0;
@@ -2665,7 +2717,7 @@
             let realX = defender.id === 'p1' ? defender.baseX : 800 - defender.baseX; let dmgColor = isUlt ? '#f1c40f' : '#ff4757'; let dmgText = finalDmg;
             if (attacker.isCrit) { 
                 dmgColor = '#9b59b6'; dmgText = finalDmg + ' CRIT!'; playSound('heavy'); 
-                mainBody.classList.add('shake-screen'); setTimeout(() => mainBody.classList.remove('shake-screen'), 150);
+                gameWrapper.classList.add('shake-screen'); setTimeout(() => gameWrapper.classList.remove('shake-screen'), 150);
             }
             if (isUlt && Math.random() < 0.3) { document.body.classList.add('impact-frame'); playSound('smite'); setTimeout(() => document.body.classList.remove('impact-frame'), 150); }
             spawnDamageText(realX, 350 - defender.y - 70, dmgText, dmgColor);
@@ -3056,7 +3108,6 @@
                 if(f.id === 'p2') f.el.style.opacity = 1;
             });
 
-            // Added Role Class & Rank into Health Bars explicitly as requested
             let combatRank = getPlayerRank(playerStats.stage);
             let roleDisplay = playerStats.role ? playerStats.role.toUpperCase() : 'BALANCED';
             document.getElementById('p1-name-display').innerHTML = `SydaR <span class="hud-rank" style="color: ${combatRank.color}; text-shadow: 0 0 10px ${combatRank.glow};">[${combatRank.name} | ${roleDisplay}]</span>`;

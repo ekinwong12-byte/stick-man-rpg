@@ -213,11 +213,11 @@
         
         .shop-panel { 
             background: linear-gradient(135deg, rgba(31, 40, 51, 0.9), rgba(11, 12, 16, 0.95)); 
-            padding: 25px; padding-bottom: 5px; border-radius: 20px; border: 1px solid rgba(102, 252, 241, 0.3); 
+            padding: 20px; border-radius: 20px; border: 1px solid rgba(102, 252, 241, 0.3); 
             box-shadow: 0 15px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(102, 252, 241, 0.05); 
             width: 100%; max-width: 850px; text-align: center; 
-            max-height: 85vh; 
-            overflow: hidden; 
+            max-height: 85dvh; 
+            overflow-y: auto; overflow-x: hidden;
             display: flex; flex-direction: column; position: relative; 
         }
         
@@ -228,13 +228,11 @@
         .tab-btn:hover { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
         .tab-btn.active { color: #66fcf1; border-bottom-color: #66fcf1; text-shadow: 0 0 15px #66fcf1; }
         
-        #main-shop-view .tab-content, #missions-view .tab-content { display: none; animation: fadeIn 0.3s ease-in; overflow-y: auto; padding-bottom: 10px;}
+        #main-shop-view .tab-content, #missions-view .tab-content { display: none; animation: fadeIn 0.3s ease-in; padding-bottom: 10px;}
         #main-shop-view .tab-content.active, #missions-view .tab-content.active { display: block; }
         
         /* Views */
-        #main-shop-view, #inventory-view, #tree-view, #missions-view {
-            width: 100%; height: 100%; overflow-y: auto; flex-grow: 1; padding-bottom: 10px;
-        }
+        #main-shop-view { display: flex; flex-direction: column; }
         #inventory-view, #tree-view, #missions-view { display: none; flex-direction: column; gap: 15px; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -290,10 +288,16 @@
 
         /* Sticky Action Bar ensures Close / Next buttons are always visible */
         .sticky-action-bar { 
-            position: sticky; bottom: -5px; z-index: 100; 
-            background: linear-gradient(to top, rgba(11,12,16,1) 50%, rgba(11,12,16,0));
-            padding-top: 25px; padding-bottom: 5px; 
-            display: flex; flex-direction: column; gap: 10px; margin-top: auto; 
+            position: sticky; bottom: -20px; left: 0; z-index: 100; 
+            background: linear-gradient(to top, rgba(11,12,16,1) 70%, rgba(11,12,16,0));
+            padding-top: 25px; padding-bottom: 20px; 
+            display: flex; flex-direction: column; gap: 10px; margin-top: auto; margin-bottom: -20px;
+            width: 100%;
+        }
+        .sticky-close-btn {
+            background: linear-gradient(to bottom, #3498db, #2980b9) !important;
+            box-shadow: 0 6px 0 #1a5276, 0 10px 20px rgba(0,0,0,0.5) !important;
+            margin: 0 !important;
         }
 
         /* V3 Mobile Controls */
@@ -523,7 +527,7 @@
             
             #in-fight-controls { top: 120px !important; right: 5px !important; transform: scale(0.85); transform-origin: top right; }
             
-            .shop-panel { padding: 15px 10px !important; border-radius: 12px !important; max-height: 85vh !important; }
+            .shop-panel { padding: 15px 10px !important; border-radius: 12px !important; max-height: 85dvh !important; }
             .shop-panel h1 { font-size: clamp(1.4rem, 6vw, 2.2rem) !important; }
             .shop-tabs { margin-bottom: 10px !important; padding-bottom: 2px !important; }
             .tab-btn { padding: 8px !important; font-size: clamp(0.75rem, 3vw, 1.05rem) !important; }
@@ -1070,7 +1074,7 @@
 
         const basics_pool = [
             { id: 'palm', name: 'PALM STRIKE', limb: '.front-arm .lower', dmg: 8, cost: 0, jump: 0, shift: 80, range: 180, hitDelay: 100 }, 
-            { id: 'crane', name: 'CRANE KICK', limb: '.front-leg .lower', dmg:10, cost: 0, jump: 0, shift: 70, range: 180, hitDelay: 120 }, 
+            { id: 'crane', name: 'CRANE KICK', limb: '.front-leg .lower', dmg: 10, cost: 0, jump: 0, shift: 70, range: 180, hitDelay: 120 }, 
             { id: 'uppercut', name: 'UPPERCUT', limb: '.front-arm .lower', dmg: 12, cost: 0, jump: 15, shift: 60, range: 160, hitDelay: 150 }, 
             { id: 'spin-kick', name: 'SPIN KICK', limb: '.back-leg .lower', dmg: 14, cost: 0, jump: 0, shift: 80, range: 180, hitDelay: 150 },
             { id: 'hook', name: 'HOOK PUNCH', limb: '.back-arm .lower', dmg: 11, cost: 0, jump: 0, shift: 70, range: 160, hitDelay: 100 }, 
@@ -1369,8 +1373,8 @@
         };
 
         const toggleMissions = (show) => {
-            document.getElementById('main-shop-view').style.display = show ? 'none' : 'block';
-            document.getElementById('missions-view').style.display = show ? 'block' : 'none';
+            document.getElementById('main-shop-view').style.display = show ? 'none' : 'flex';
+            document.getElementById('missions-view').style.display = show ? 'flex' : 'none';
             document.getElementById('inventory-view').style.display = 'none';
             document.getElementById('tree-view').style.display = 'none';
             if(show) updateMissionUI();
@@ -1668,14 +1672,14 @@
                 } else { 
                     document.getElementById('in-fight-controls').style.display = 'flex'; document.getElementById('shop-overlay').style.display = 'none';
                 }
-            } else { document.getElementById('main-shop-view').style.display = show ? 'none' : 'block'; }
+            } else { document.getElementById('main-shop-view').style.display = show ? 'none' : 'flex'; }
             document.getElementById('inventory-view').style.display = show ? 'flex' : 'none';
             document.getElementById('tree-view').style.display = 'none'; document.getElementById('missions-view').style.display = 'none';
             if(show) renderInventory();
         };
         
         const toggleTree = (show) => {
-            document.getElementById('main-shop-view').style.display = show ? 'none' : 'block';
+            document.getElementById('main-shop-view').style.display = show ? 'none' : 'flex';
             document.getElementById('tree-view').style.display = show ? 'flex' : 'none';
             document.getElementById('inventory-view').style.display = 'none'; document.getElementById('missions-view').style.display = 'none';
             if(show) updateUI();
@@ -3108,6 +3112,7 @@
                 if(f.id === 'p2') f.el.style.opacity = 1;
             });
 
+            // Added Role Class & Rank into Health Bars explicitly as requested
             let combatRank = getPlayerRank(playerStats.stage);
             let roleDisplay = playerStats.role ? playerStats.role.toUpperCase() : 'BALANCED';
             document.getElementById('p1-name-display').innerHTML = `SydaR <span class="hud-rank" style="color: ${combatRank.color}; text-shadow: 0 0 10px ${combatRank.glow};">[${combatRank.name} | ${roleDisplay}]</span>`;
